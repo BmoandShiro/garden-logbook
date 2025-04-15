@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+
+enum Permission {
+  CREATE_PLANT
+  EDIT_PLANT
+  DELETE_PLANT
+  CREATE_LOG
+  EDIT_LOG
+  DELETE_LOG
+  MANAGE_USERS
+  MANAGE_ROLES
+  MANAGE_STRAINS
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String      @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role        @default(USER)
+  permissions   Permission[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  plants        Plant[]
+  logs          Log[]
+  strains       Strain[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Plant {
+  id          String   @id @default(cuid())
+  name        String
+  strainId    String?
+  strain      Strain?  @relation(fields: [strainId], references: [id])
+  stage       Stage    @default(VEGETATIVE)
+  location    String?
+  startDate   DateTime @default(now())
+  harvestDate DateTime?
+  notes       String?  @db.Text
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs        Log[]
+  tags        Tag[]    @relation("PlantToTag")
+}
+
+model Strain {
+  id            String   @id @default(cuid())
+  name          String
+  type          String?  // indica, sativa, hybrid
+  floweringTime Int?     // in weeks
+  description   String?  @db.Text
+  imageUrl      String?
+  thcContent    Float?
+  cbdContent    Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plants        Plant[]
+}
+
+model Log {
+  id          String    @id @default(cuid())
+  date        DateTime  @default(now())
+  type        LogType
+  stage       Stage
+  temperature Float?    // in Celsius
+  humidity    Float?    // percentage
+  pH          Float?
+  ec          Float?    // electrical conductivity
+  par         Float?    // Photosynthetically Active Radiation
+  waterAmount Float?    // in milliliters
+  nutrients   String[]  // array of nutrient names
+  notes       String?   @db.Text
+  imageUrl    String?
+  plantId     String
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data        Json?     // Flexible field for additional measurements
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+  plants    Plant[]  @relation("PlantToTag")
+}
+
+enum LogType {
+  WATERING
+  FEEDING
+  ENVIRONMENTAL
+  PRUNING
+  TRAINING
+  DEFOLIATION
+  FLUSHING
+  HARVEST
+  PEST_DISEASE
+  GENERAL
+}
+
+enum Stage {
+  SEEDLING
+  VEGETATIVE
+  FLOWERING
+  HARVEST
+  DRYING
+  CURING
+}
