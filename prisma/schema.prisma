@@ -37,6 +37,7 @@ model User {
   email         String      @unique
   emailVerified DateTime?
   image         String?
+  password      String?     // Optional to allow OAuth users without passwords
   role          Role        @default(USER)
   permissions   Permission[]
   createdAt     DateTime    @default(now())

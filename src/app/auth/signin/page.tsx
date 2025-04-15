@@ -3,15 +3,31 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     await signIn('email', { email, callbackUrl: '/dashboard' });
+    setIsLoading(false);
+  };
+
+  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    await signIn('credentials', {
+      email,
+      password,
+      callbackUrl: '/dashboard',
+    });
     setIsLoading(false);
   };
 
@@ -26,8 +42,16 @@ export default function SignIn() {
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
+          {registered && (
+            <div className="mb-4 rounded-md bg-green-50 p-4">
+              <div className="text-sm text-green-700">
+                Account created successfully! You can now sign in.
+              </div>
+            </div>
+          )}
+          
           <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleCredentialsSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
                   Email address
@@ -47,12 +71,29 @@ export default function SignIn() {
               </div>
 
               <div>
+                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
+                  Password
+                </label>
+                <div className="mt-2">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <button
                   type="submit"
                   disabled={isLoading}
                   className="flex w-full justify-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
                 >
-                  {isLoading ? 'Sending link...' : 'Sign in with Email'}
+                  {isLoading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
             </form>
@@ -67,7 +108,7 @@ export default function SignIn() {
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 grid grid-cols-1 gap-4">
                 <button
                   onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
                   className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-1.5 text-sm font-semibold leading-6 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24292F]"
@@ -92,7 +133,27 @@ export default function SignIn() {
                   </svg>
                   <span className="text-sm font-semibold leading-6">Google</span>
                 </button>
+
+                <button
+                  onClick={() => signIn('email', { email, callbackUrl: '/dashboard' })}
+                  className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-1.5 text-sm font-semibold leading-6 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24292F]"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                  <span className="text-sm font-semibold leading-6">Magic Link</span>
+                </button>
               </div>
+            </div>
+
+            <div className="mt-6 text-center text-sm">
+              <Link
+                href="/auth/signup"
+                className="font-semibold leading-6 text-green-600 hover:text-green-500"
+              >
+                Don't have an account? Sign up
+              </Link>
             </div>
           </div>
         </div>

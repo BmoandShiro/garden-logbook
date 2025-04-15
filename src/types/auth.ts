@@ -1,3 +1,28 @@
+import 'next-auth';
+import { Role } from '@prisma/client';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id?: string;
+      email?: string | null;
+      name?: string | null;
+      image?: string | null;
+      role?: Role;
+    }
+  }
+}
+
+export interface UserSession {
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    image?: string;
+    role?: Role;
+  }
+}
+
 export enum Role {
   ADMIN = 'ADMIN',
   USER = 'USER',
