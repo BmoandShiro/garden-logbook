@@ -64,26 +64,14 @@ export default function RoomList({ rooms, gardenId }: RoomListProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {rooms.map((room) => (
         <div
           key={room.id}
-          className="group bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors duration-200 border border-gray-700"
+          className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-emerald-600"
         >
-          <div className="flex items-start justify-between">
-            <div 
-              className="flex-grow cursor-pointer"
-              onClick={() => router.push(`/gardens/${gardenId}/rooms/${room.id}`)}
-            >
-              <h3 className="text-lg font-medium text-emerald-100">{room.name}</h3>
-              <p className="mt-1 text-sm text-emerald-300">{room.type}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              {room.dimensions && (
-                <span className="text-xs text-emerald-400 bg-emerald-900/30 px-2 py-1 rounded">
-                  {room.dimensions}
-                </span>
-              )}
+          <div className="absolute top-0 right-0 z-10" onClick={(e) => e.stopPropagation()}>
+            <div className="p-2">
               <DeleteButton
                 onDelete={() => handleDelete(room.id)}
                 itemName="Room"
@@ -91,35 +79,50 @@ export default function RoomList({ rooms, gardenId }: RoomListProps) {
               />
             </div>
           </div>
-          
-          {room.description && (
-            <div 
-              className="mt-4 cursor-pointer"
-              onClick={() => router.push(`/gardens/${gardenId}/rooms/${room.id}`)}
-            >
-              <p className="text-sm text-emerald-200 line-clamp-2">{room.description}</p>
-            </div>
-          )}
-
           <div 
-            className="mt-4 flex flex-wrap gap-2 cursor-pointer"
+            className="flex-grow cursor-pointer"
             onClick={() => router.push(`/gardens/${gardenId}/rooms/${room.id}`)}
           >
-            {room.equipment?.length > 0 && (
-              <span className="text-xs bg-gray-700 text-emerald-300 px-2 py-1 rounded-full">
-                {room.equipment.length} Equipment
-              </span>
-            )}
-            {room.cleaningSOPs?.length > 0 && (
-              <span className="text-xs bg-gray-700 text-emerald-300 px-2 py-1 rounded-full">
-                {room.cleaningSOPs.length} SOPs
-              </span>
-            )}
-            {room.maintenanceTasks?.length > 0 && (
-              <span className="text-xs bg-gray-700 text-emerald-300 px-2 py-1 rounded-full">
-                {room.maintenanceTasks.length} Tasks
-              </span>
-            )}
+            <div className="aspect-h-3 aspect-w-4 relative bg-emerald-950 sm:aspect-none sm:h-48">
+              <div className="h-full w-full bg-gradient-to-br from-emerald-900 to-emerald-950 group-hover:from-emerald-800 group-hover:to-emerald-900 transition-colors" />
+            </div>
+            <div className="flex flex-1 flex-col space-y-2 p-4">
+              <h3 className="text-sm font-medium text-emerald-100 group-hover:text-emerald-50">{room.name}</h3>
+              {room.type && (
+                <span className="text-xs text-emerald-400 bg-emerald-900/30 px-2 py-1 rounded inline-block w-fit">
+                  {room.type}
+                </span>
+              )}
+              {room.description && (
+                <p className="text-sm text-emerald-300/70 line-clamp-3">
+                  {room.description}
+                </p>
+              )}
+              <div className="flex flex-1 items-end justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {room.equipment?.length > 0 && (
+                    <span className="text-xs text-emerald-300/70">
+                      {room.equipment.length} equipment
+                    </span>
+                  )}
+                  {room.cleaningSOPs?.length > 0 && (
+                    <span className="text-xs text-emerald-300/70">
+                      {room.cleaningSOPs.length} SOPs
+                    </span>
+                  )}
+                  {room.maintenanceTasks?.length > 0 && (
+                    <span className="text-xs text-emerald-300/70">
+                      {room.maintenanceTasks.length} tasks
+                    </span>
+                  )}
+                </div>
+                {room.dimensions && (
+                  <span className="text-xs text-emerald-300/70">
+                    {room.dimensions}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       ))}
