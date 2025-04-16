@@ -93,6 +93,9 @@ model Plant {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs        Log[]
   tags        Tag[]    @relation("PlantToTag")
+  room        Room?     @relation(fields: [roomId], references: [id])
+  roomId      String?
+  logEntries  LogEntry[]
 }
 
 model Strain {
@@ -162,4 +165,46 @@ enum Stage {
   HARVEST
   DRYING
   CURING
+}
+
+model LogTemplate {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   User        @relation(fields: [userId], references: [id])
+  userId      String
+  room        Room?       @relation(fields: [roomId], references: [id])
+  roomId      String?
+  fields      Json        // Stores the template fields configuration
+  isActive    Boolean     @default(true)
+  entries     LogEntry[]
+}
+
+model LogEntry {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  date          DateTime    
+  template      LogTemplate @relation(fields: [templateId], references: [id])
+  templateId    String
+  createdBy     User        @relation(fields: [userId], references: [id])
+  userId        String
+  room          Room        @relation(fields: [roomId], references: [id])
+  roomId        String
+  data          Json        // Stores the actual log data
+  notes         String?     
+  plants        Plant[]     // Plants involved in this log entry
+}
+
+model Room {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  templates     LogTemplate[]
+  logEntries    LogEntry[]
+  plants        Plant[]       // Plants in this room
 }
