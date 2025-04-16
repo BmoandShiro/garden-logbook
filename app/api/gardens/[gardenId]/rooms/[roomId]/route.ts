@@ -1,69 +1,70 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-// TODO: Update with correct path
-// import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+
+type GardenWithMembers = Prisma.GardenGetPayload<{
+  include: {
+    members: {
+      select: {
+        userId: true;
+        permissions: true;
+      };
+    };
+  };
+}>;
 
 export async function DELETE(
   request: Request,
   { params }: { params: { gardenId: string; roomId: string } }
 ) {
   try {
-    // TODO: Uncomment when authOptions path is fixed
-    // const session = await getServerSession(authOptions);
-    const session = await getServerSession();
-
-    if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if the garden exists and the user has access to it
     const garden = await prisma.garden.findUnique({
       where: { id: params.gardenId },
       include: {
-        createdBy: true,
         members: {
-          select: {
+          where: { userId: session.user.id },
+          select: { 
             userId: true,
-          },
-        },
-      },
-    });
+            permissions: true
+          }
+        }
+      }
+    }) as GardenWithMembers | null;
 
     if (!garden) {
-      return new NextResponse('Garden not found', { status: 404 });
+      return NextResponse.json({ error: 'Garden not found' }, { status: 404 });
     }
 
-    // Check if user is the garden creator or a member
-    const isCreator = garden.createdBy.id === session.user.id;
-    const isMember = garden.members.some((member: { userId: string }) => member.userId === session.user.id);
-
-    if (!isCreator && !isMember) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const member = garden.members[0];
+    if (!member || !member.permissions.includes('DELETE')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Check if the room exists and belongs to the garden
     const room = await prisma.room.findUnique({
-      where: {
-        id: params.roomId,
-        gardenId: params.gardenId,
-      },
+      where: { id: params.roomId }
     });
 
-    if (!room) {
-      return new NextResponse('Room not found', { status: 404 });
+    if (!room || room.gardenId !== params.gardenId) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Delete the room and all related records
     await prisma.room.delete({
-      where: {
-        id: params.roomId,
-      },
+      where: { id: params.roomId }
     });
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ message: 'Room deleted successfully' });
   } catch (error) {
     console.error('Error deleting room:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete room' },
+      { status: 500 }
+    );
   }
 } 

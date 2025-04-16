@@ -62,6 +62,7 @@ model User {
   gardenMemberships GardenMember[]
   addedMembers  GardenMember[] @relation("MemberAdder")
   roomTemplates RoomTemplate[]
+  createdRooms  Room[]      @relation("RoomCreator")
 }
 
 model Account {
@@ -226,7 +227,7 @@ model Room {
   updatedAt       DateTime @updatedAt
   gardenId        String
   garden          Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-  createdBy       User     @relation(fields: [creatorId], references: [id])
+  createdBy       User     @relation("RoomCreator", fields: [creatorId], references: [id])
   creatorId       String
   equipment       Equipment[]
   cleaningSOPs    CleaningSOP[]

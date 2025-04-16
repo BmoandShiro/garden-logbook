@@ -16,8 +16,17 @@ declare module "next-auth" {
   }
 }
 
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: Role;
+    permissions: Permission[];
+  }
+}
+
 declare module "@auth/core/adapters" {
   interface AdapterUser {
     role: Role;
+    permissions: Permission[];
   }
 } 
