@@ -31,6 +31,15 @@ enum Permission {
   MANAGE_STRAINS
 }
 
+enum ResourcePermission {
+  VIEW        // Can view the resource
+  EDIT        // Can edit resource details
+  DELETE      // Can delete the resource
+  MANAGE      // Can manage resource settings
+  INVITE      // Can invite others
+  MANAGE_PERMS // Can manage others' permissions
+}
+
 model User {
   id            String      @id @default(cuid())
   name          String?
@@ -49,6 +58,10 @@ model User {
   sessions      Session[]
   logTemplates  LogTemplate[]
   logEntries    LogEntry[]
+  ownedGardens  Garden[]    @relation("GardenCreator")
+  gardenMemberships GardenMember[]
+  addedMembers  GardenMember[] @relation("MemberAdder")
+  roomTemplates RoomTemplate[]
 }
 
 model Account {
@@ -95,9 +108,11 @@ model Plant {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs        Log[]
   tags        Tag[]    @relation("PlantToTag")
-  room        Room?     @relation(fields: [roomId], references: [id])
+  room        Room?    @relation(fields: [roomId], references: [id])
   roomId      String?
   logEntries  LogEntry[]
+  gardenId    String?
+  garden      Garden?  @relation(fields: [gardenId], references: [id], onDelete: Cascade)
 }
 
 model Strain {
@@ -201,14 +216,22 @@ model LogEntry {
 }
 
 model Room {
-  id            String        @id @default(cuid())
-  name          String
-  description   String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  templates     LogTemplate[]
-  logEntries    LogEntry[]
-  plants        Plant[]       // Plants in this room
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  type            String?
+  dimensions      String?
+  blueprintUrl    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  gardenId        String
+  garden          Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  equipment       Equipment[]
+  cleaningSOPs    CleaningSOP[]
+  maintenanceTasks MaintenanceTask[]
+  plants          Plant[]
+  logTemplates    LogTemplate[]
+  logEntries      LogEntry[]
 }
 
 model VerificationToken {
@@ -217,4 +240,82 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Garden {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  isPrivate   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  creatorId   String
+  createdBy   User     @relation("GardenCreator", fields: [creatorId], references: [id])
+  members     GardenMember[]
+  rooms       Room[]
+  plants      Plant[]
+}
+
+model GardenMember {
+  id          String   @id @default(cuid())
+  garden      Garden   @relation(fields: [gardenId], references: [id])
+  gardenId    String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  addedBy     User     @relation("MemberAdder", fields: [addedById], references: [id])
+  addedById   String
+  permissions ResourcePermission[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([gardenId, userId])
+}
+
+model Equipment {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model CleaningSOP {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  frequency   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model MaintenanceTask {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  frequency   String
+  nextDueDate DateTime
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model RoomTemplate {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  type              String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultEquipment  Json
+  defaultSOPs       Json
+  defaultMaintenance Json
 }
