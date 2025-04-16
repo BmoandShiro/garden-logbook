@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -59,9 +59,9 @@ export async function POST(
 
     // Check if user has access to this garden
     const isCreator = garden.creatorId === session.user.id;
-    const isMember = garden.members.some((member) => member.userId === session.user.id);
+    const hasAccess = garden.members.some((member: { userId: string }) => member.userId === session.user.id);
 
-    if (!isCreator && !isMember) {
+    if (!isCreator && !hasAccess) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -115,35 +115,18 @@ export async function POST(
     });
 
     return NextResponse.json(room);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[ROOMS_POST]', error);
     if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.errors), { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
-
-    // Prisma error handling
-    if (error.code) {  // Prisma errors have error codes
-      console.error('[PRISMA_ERROR]', {
-        code: error.code,
-        message: error.message,
-        meta: error.meta
-      });
-      return new NextResponse(
-        JSON.stringify({
-          error: 'Database error',
-          code: error.code,
-          message: error.message
-        }),
-        { status: 500 }
-      );
+    
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    // Generic error handling
-    return new NextResponse(
-      JSON.stringify({
-        error: 'Internal error',
-        message: error.message || 'An unexpected error occurred'
-      }),
+    
+    return NextResponse.json(
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }
