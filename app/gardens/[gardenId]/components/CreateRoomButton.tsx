@@ -25,6 +25,7 @@ interface MaintenanceTask {
   title: string;
   description: string;
   frequency: string;
+  nextDueDate: string;
 }
 
 export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
@@ -48,7 +49,12 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
   
   // Maintenance tasks
   const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([
-    { title: '', description: '', frequency: 'weekly' }
+    { 
+      title: '', 
+      description: '', 
+      frequency: 'weekly',
+      nextDueDate: new Date().toISOString().split('T')[0]
+    }
   ]);
 
   const addEquipment = () => {
@@ -72,7 +78,15 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
   };
 
   const addMaintenanceTask = () => {
-    setMaintenanceTasks([...maintenanceTasks, { title: '', description: '', frequency: 'weekly' }]);
+    setMaintenanceTasks([
+      ...maintenanceTasks, 
+      { 
+        title: '', 
+        description: '', 
+        frequency: 'weekly',
+        nextDueDate: new Date().toISOString().split('T')[0]
+      }
+    ]);
   };
 
   const updateMaintenanceTask = (index: number, field: keyof MaintenanceTask, value: string) => {
@@ -300,36 +314,57 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                           onClick={addMaintenanceTask}
                           className="text-sm text-emerald-500 hover:text-emerald-400"
                         >
-                          + Add Task
+                          Add Task
                         </button>
                       </div>
                       {maintenanceTasks.map((task, index) => (
-                        <div key={index} className="space-y-2">
-                          <input
-                            type="text"
-                            value={task.title}
-                            onChange={(e) => updateMaintenanceTask(index, 'title', e.target.value)}
-                            placeholder="Task title"
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
-                          />
-                          <textarea
-                            value={task.description}
-                            onChange={(e) => updateMaintenanceTask(index, 'description', e.target.value)}
-                            placeholder="Task description"
-                            rows={2}
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
-                          />
-                          <select
-                            value={task.frequency}
-                            onChange={(e) => updateMaintenanceTask(index, 'frequency', e.target.value)}
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
-                          >
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="biweekly">Bi-weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="quarterly">Quarterly</option>
-                          </select>
+                        <div key={index} className="space-y-4 p-4 bg-gray-800/50 rounded-lg">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm text-emerald-300">Title</label>
+                              <input
+                                type="text"
+                                value={task.title}
+                                onChange={(e) => updateMaintenanceTask(index, 'title', e.target.value)}
+                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm text-emerald-300">Frequency</label>
+                              <select
+                                value={task.frequency}
+                                onChange={(e) => updateMaintenanceTask(index, 'frequency', e.target.value)}
+                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                              >
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="biweekly">Bi-weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="yearly">Yearly</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm text-emerald-300">Description</label>
+                            <textarea
+                              value={task.description}
+                              onChange={(e) => updateMaintenanceTask(index, 'description', e.target.value)}
+                              rows={2}
+                              className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-emerald-300">Next Due Date</label>
+                            <input
+                              type="date"
+                              value={task.nextDueDate}
+                              onChange={(e) => updateMaintenanceTask(index, 'nextDueDate', e.target.value)}
+                              className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                              required
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>

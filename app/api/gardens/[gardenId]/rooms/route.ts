@@ -27,6 +27,7 @@ const createRoomSchema = z.object({
       title: z.string().min(1, 'Task title is required'),
       description: z.string().optional(),
       frequency: z.string(),
+      nextDueDate: z.string().transform(str => new Date(str)),
     })
   ),
 });
@@ -47,6 +48,7 @@ export async function POST(
         id: params.gardenId,
       },
       include: {
+        createdBy: true,
         members: true,
       },
     });
@@ -56,7 +58,7 @@ export async function POST(
     }
 
     // Check if user has access to this garden
-    const isCreator = garden.createdBy.id === session.user.id;
+    const isCreator = garden.creatorId === session.user.id;
     const isMember = garden.members.some((member) => member.userId === session.user.id);
 
     if (!isCreator && !isMember) {
@@ -95,6 +97,8 @@ export async function POST(
             title: task.title,
             description: task.description,
             frequency: task.frequency,
+            nextDueDate: task.nextDueDate,
+            completed: false,
           })),
         },
       },
@@ -108,6 +112,9 @@ export async function POST(
     return NextResponse.json(room);
   } catch (error) {
     console.error('[ROOMS_POST]', error);
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify(error.errors), { status: 400 });
+    }
     return new NextResponse('Internal error', { status: 500 });
   }
 } 
