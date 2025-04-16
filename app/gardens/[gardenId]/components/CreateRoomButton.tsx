@@ -118,7 +118,18 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(error || 'Failed to create room');
+        let errorMessage = 'Failed to create room';
+        try {
+          // Try to parse the error as JSON
+          const errorData = JSON.parse(error);
+          errorMessage = errorData.message || errorData.error || error;
+          console.error('Room creation error:', errorData);
+        } catch {
+          // If parsing fails, use the raw error text
+          console.error('Room creation error:', error);
+          errorMessage = error;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();

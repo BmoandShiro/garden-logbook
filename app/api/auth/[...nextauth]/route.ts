@@ -4,9 +4,6 @@ import NextAuth from "next-auth/next";
 import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
 import { db } from "../../../../lib/db";
-import { Session } from "next-auth";
-import { JWT } from "next-auth/jwt";
-import { AdapterUser } from "next-auth/adapters";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
@@ -33,6 +30,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = user.id;
         session.user.role = user.role;
         session.user.permissions = user.permissions;
+        session.user.image = user.image;
       }
       return session;
     },
@@ -40,18 +38,18 @@ export const authOptions: NextAuthOptions = {
       if (!user.email) return false;
       
       try {
-        // Check if user exists
+        // Check if user exists with this email
         const existingUser = await db.user.findUnique({
           where: { email: user.email },
           include: { accounts: true },
         });
 
-        // If user doesn't exist, create them
+        // If user doesn't exist, create them with available info
         if (!existingUser) {
           await db.user.create({
             data: {
               email: user.email,
-              name: user.name,
+              name: user.name || user.email.split('@')[0],
               image: user.image,
               role: "USER",
               permissions: [],
@@ -60,19 +58,46 @@ export const authOptions: NextAuthOptions = {
           return true;
         }
 
-        // If this is a different auth provider but same email
+        // Update existing user's image if they're signing in with Google and don't have an image
+        if (account?.provider === 'google' && !existingUser.image && user.image) {
+          await db.user.update({
+            where: { email: user.email },
+            data: { image: user.image },
+          });
+        }
+
+        // If this is a different auth provider but same email, allow it
         if (account && existingUser.accounts.length === 0) {
-          // Allow linking the account
           return true;
         }
 
-        // If user exists and has accounts, check if this account is one of them
-        const existingAccount = existingUser.accounts.find(
-          (acc) => acc.provider === account?.provider
-        );
+        // Allow sign in if using email provider or if account is already linked
+        if (!account || account.provider === 'email' || 
+            existingUser.accounts.some(acc => acc.provider === account.provider)) {
+          return true;
+        }
 
-        // Allow sign in if account is already linked or if user has no linked accounts
-        return !!existingAccount || existingUser.accounts.length === 0;
+        // Link new account to existing user if using a different provider
+        if (account) {
+          await db.account.create({
+            data: {
+              userId: existingUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              refresh_token: account.refresh_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              session_state: account.session_state,
+            },
+          });
+          return true;
+        }
+
+        return true;
       } catch (error) {
         console.error("Sign in error:", error);
         return false;

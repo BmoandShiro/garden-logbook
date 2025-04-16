@@ -79,6 +79,11 @@ export async function POST(
             id: params.gardenId,
           },
         },
+        createdBy: {
+          connect: {
+            id: session.user.id
+          }
+        },
         equipment: {
           create: body.equipment.map((item) => ({
             name: item.name,
@@ -115,6 +120,31 @@ export async function POST(
     if (error instanceof z.ZodError) {
       return new NextResponse(JSON.stringify(error.errors), { status: 400 });
     }
-    return new NextResponse('Internal error', { status: 500 });
+
+    // Prisma error handling
+    if (error.code) {  // Prisma errors have error codes
+      console.error('[PRISMA_ERROR]', {
+        code: error.code,
+        message: error.message,
+        meta: error.meta
+      });
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Database error',
+          code: error.code,
+          message: error.message
+        }),
+        { status: 500 }
+      );
+    }
+
+    // Generic error handling
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Internal error',
+        message: error.message || 'An unexpected error occurred'
+      }),
+      { status: 500 }
+    );
   }
 } 

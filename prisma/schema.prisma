@@ -226,6 +226,8 @@ model Room {
   updatedAt       DateTime @updatedAt
   gardenId        String
   garden          Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  createdBy       User     @relation(fields: [creatorId], references: [id])
+  creatorId       String
   equipment       Equipment[]
   cleaningSOPs    CleaningSOP[]
   maintenanceTasks MaintenanceTask[]
