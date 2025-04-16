@@ -1,15 +1,19 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import RoomList from "./components/RoomList";
 import CreateRoomButton from "./components/CreateRoomButton";
-import type { GardenMember } from "@prisma/client";
 
 interface GardenPageProps {
   params: {
     gardenId: string;
   };
+}
+
+interface GardenMember {
+  userId: string;
+  gardenId: string;
 }
 
 export default async function GardenPage({ params }: GardenPageProps) {
