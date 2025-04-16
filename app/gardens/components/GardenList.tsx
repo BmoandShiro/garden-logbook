@@ -79,6 +79,22 @@ export function GardenList({ gardens }: GardenListProps) {
           key={garden.id}
           className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-emerald-600"
         >
+          <div className="absolute top-0 right-0 z-10" onClick={(e) => e.stopPropagation()}>
+            <div className="p-2">
+              {garden.isPrivate && (
+                <span className="inline-flex items-center rounded-md bg-emerald-950/90 px-2 py-1 text-xs font-medium text-emerald-200">
+                  Private
+                </span>
+              )}
+              {session?.user?.id === garden.createdBy.id && (
+                <DeleteButton
+                  onDelete={() => handleDelete(garden.id)}
+                  itemName="Garden"
+                  small
+                />
+              )}
+            </div>
+          </div>
           <Link href={`/gardens/${garden.id}`} className="flex-grow">
             <div className="aspect-h-3 aspect-w-4 relative bg-emerald-950 sm:aspect-none sm:h-48">
               {garden.imageUrl ? (
@@ -90,31 +106,6 @@ export function GardenList({ gardens }: GardenListProps) {
               ) : (
                 <div className="h-full w-full bg-gradient-to-br from-emerald-900 to-emerald-950 group-hover:from-emerald-800 group-hover:to-emerald-900 transition-colors" />
               )}
-            </div>
-            <div 
-              className="absolute top-0 right-0 w-16 h-16" 
-              onClick={(e) => e.preventDefault()}
-              style={{ pointerEvents: 'none' }}
-            >
-              <div 
-                className="absolute top-2 right-2 flex items-center gap-2"
-                style={{ pointerEvents: 'auto' }}
-              >
-                {garden.isPrivate && (
-                  <span className="inline-flex items-center rounded-md bg-emerald-950/90 px-2 py-1 text-xs font-medium text-emerald-200">
-                    Private
-                  </span>
-                )}
-                {session?.user?.id === garden.createdBy.id && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <DeleteButton
-                      onDelete={() => handleDelete(garden.id)}
-                      itemName="Garden"
-                      small
-                    />
-                  </div>
-                )}
-              </div>
             </div>
             <div className="flex flex-1 flex-col space-y-2 p-4">
               <h3 className="text-sm font-medium text-emerald-100 group-hover:text-emerald-50">{garden.name}</h3>
