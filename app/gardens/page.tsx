@@ -3,12 +3,13 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CreateGardenButton from "./components/CreateGardenButton";
+import ManageGardensButton from "./components/ManageGardensButton";
 import { GardenList } from "./components/GardenList";
 
 export default async function GardensPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/signin?callbackUrl=/gardens");
   }
 
@@ -52,7 +53,10 @@ export default async function GardensPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-emerald-100">My Gardens</h1>
-        <CreateGardenButton />
+        <div className="flex gap-4">
+          <CreateGardenButton />
+          <ManageGardensButton gardens={gardens} userId={session.user.id} />
+        </div>
       </div>
       
       <GardenList gardens={gardens} />

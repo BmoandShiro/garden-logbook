@@ -2,10 +2,12 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import { NextAuthProvider } from './providers';
 import { Navigation } from './components/Navigation';
+import type { Metadata } from "next";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Garden Logbook',
   description: 'Track and manage your garden with ease',
 };
@@ -24,6 +26,7 @@ export default function RootLayout({
             <main>{children}</main>
           </div>
         </NextAuthProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

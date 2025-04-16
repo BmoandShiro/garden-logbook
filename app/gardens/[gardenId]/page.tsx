@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import RoomList from "../components/RoomList";
+import RoomList from "./components/RoomList";
+import CreateRoomButton from "./components/CreateRoomButton";
 import type { GardenMember } from "@prisma/client";
 
 interface GardenPageProps {
@@ -34,6 +35,24 @@ export default async function GardenPage({ params }: GardenPageProps) {
       members: true,
       rooms: {
         include: {
+          equipment: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          cleaningSOPs: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          maintenanceTasks: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
           _count: {
             select: {
               plants: true,
@@ -58,7 +77,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
   }
 
   // Check if user has access to this garden
-  const isCreator = garden.creatorId === session.user.id;
+  const isCreator = garden.createdBy.id === session.user.id;
   const isMember = garden.members.some((member: GardenMember) => member.userId === session.user.id);
 
   if (!isCreator && !isMember) {
@@ -70,7 +89,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-emerald-100">{garden.name}</h1>
-          {/* Add garden actions here later */}
+          <CreateRoomButton gardenId={params.gardenId} />
         </div>
         {garden.description && (
           <p className="mt-2 text-emerald-300/70">{garden.description}</p>
@@ -90,7 +109,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-emerald-100 mb-4">Rooms</h2>
-        <RoomList rooms={garden.rooms} />
+        <RoomList rooms={garden.rooms} gardenId={params.gardenId} />
       </div>
     </div>
   );

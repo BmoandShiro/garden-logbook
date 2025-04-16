@@ -259,7 +259,7 @@ model Garden {
 
 model GardenMember {
   id          String   @id @default(cuid())
-  garden      Garden   @relation(fields: [gardenId], references: [id])
+  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   gardenId    String
   user        User     @relation(fields: [userId], references: [id])
   userId      String

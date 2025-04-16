@@ -1,19 +1,51 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+const createRoomSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  type: z.string().optional(),
+  dimensions: z.string().optional(),
+  equipment: z.array(
+    z.object({
+      name: z.string().min(1, 'Equipment name is required'),
+      description: z.string().optional(),
+    })
+  ),
+  cleaningSOPs: z.array(
+    z.object({
+      title: z.string().min(1, 'SOP title is required'),
+      description: z.string().optional(),
+      frequency: z.string(),
+    })
+  ),
+  maintenanceTasks: z.array(
+    z.object({
+      title: z.string().min(1, 'Task title is required'),
+      description: z.string().optional(),
+      frequency: z.string(),
+    })
+  ),
+});
 
 export async function POST(
   request: Request,
   { params }: { params: { gardenId: string } }
 ) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
+
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const garden = await prisma.garden.findUnique({
-      where: { id: params.gardenId },
+      where: {
+        id: params.gardenId,
+      },
       include: {
         members: true,
       },
@@ -23,77 +55,59 @@ export async function POST(
       return new NextResponse('Garden not found', { status: 404 });
     }
 
-    // Check if user has access to the garden
-    const hasAccess = garden.createdById === session.user.id || 
-                     garden.members.some(member => member.id === session.user.id);
-    
-    if (!hasAccess) {
+    // Check if user has access to this garden
+    const isCreator = garden.createdBy.id === session.user.id;
+    const isMember = garden.members.some((member) => member.userId === session.user.id);
+
+    if (!isCreator && !isMember) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const body = await request.json();
-    const {
-      name,
-      description,
-      type,
-      dimensions,
-      blueprintUrl,
-      equipment,
-      cleaningSOPs,
-      maintenanceTasks,
-    } = body;
+    const json = await request.json();
+    const body = createRoomSchema.parse(json);
 
-    // Create room with all related data in a transaction
-    const room = await prisma.$transaction(async (tx) => {
-      // Create the room
-      const room = await tx.room.create({
-        data: {
-          name,
-          description,
-          type,
-          dimensions,
-          blueprintUrl,
-          gardenId: params.gardenId,
+    const room = await prisma.room.create({
+      data: {
+        name: body.name,
+        description: body.description,
+        type: body.type,
+        dimensions: body.dimensions,
+        garden: {
+          connect: {
+            id: params.gardenId,
+          },
         },
-      });
-
-      // Create equipment
-      if (equipment?.length > 0) {
-        await tx.equipment.createMany({
-          data: equipment.map((item: any) => ({
-            ...item,
-            roomId: room.id,
+        equipment: {
+          create: body.equipment.map((item) => ({
+            name: item.name,
+            description: item.description,
           })),
-        });
-      }
-
-      // Create cleaning SOPs
-      if (cleaningSOPs?.length > 0) {
-        await tx.cleaningSOP.createMany({
-          data: cleaningSOPs.map((sop: any) => ({
-            ...sop,
-            roomId: room.id,
+        },
+        cleaningSOPs: {
+          create: body.cleaningSOPs.map((sop) => ({
+            title: sop.title,
+            description: sop.description,
+            frequency: sop.frequency,
           })),
-        });
-      }
-
-      // Create maintenance tasks
-      if (maintenanceTasks?.length > 0) {
-        await tx.maintenanceTask.createMany({
-          data: maintenanceTasks.map((task: any) => ({
-            ...task,
-            nextDueDate: new Date(task.nextDueDate),
-            roomId: room.id,
+        },
+        maintenanceTasks: {
+          create: body.maintenanceTasks.map((task) => ({
+            title: task.title,
+            description: task.description,
+            frequency: task.frequency,
           })),
-        });
-      }
-
-      return room;
+        },
+      },
+      include: {
+        equipment: true,
+        cleaningSOPs: true,
+        maintenanceTasks: true,
+      },
     });
 
     return NextResponse.json(room);
   } catch (error) {
     console.error('[ROOMS_POST]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return new NextResponse('Internal error', { status: 500 });
   }
 } 
