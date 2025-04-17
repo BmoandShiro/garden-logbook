@@ -45,7 +45,7 @@ export default async function RoomPage({ params }: PageProps) {
       },
       equipment: {
         include: {
-          createdBy: true
+          room: true
         }
       },
       cleaningSOPs: {

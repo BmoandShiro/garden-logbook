@@ -88,6 +88,7 @@ export async function POST(
           create: body.equipment.map((item) => ({
             name: item.name,
             description: item.description,
+            creatorId: session.user.id
           })),
         },
         cleaningSOPs: {
@@ -95,6 +96,7 @@ export async function POST(
             title: sop.title,
             description: sop.description,
             frequency: sop.frequency,
+            creatorId: session.user.id
           })),
         },
         maintenanceTasks: {
@@ -104,6 +106,7 @@ export async function POST(
             frequency: task.frequency,
             nextDueDate: task.nextDueDate,
             completed: false,
+            creatorId: session.user.id
           })),
         },
       },

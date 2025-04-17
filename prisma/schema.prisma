@@ -63,6 +63,10 @@ model User {
   addedMembers  GardenMember[] @relation("MemberAdder")
   roomTemplates RoomTemplate[]
   createdRooms  Room[]      @relation("RoomCreator")
+  createdZones  Zone[]
+  createdEquipment Equipment[]
+  createdSOPs   CleaningSOP[]
+  createdTasks  MaintenanceTask[]
 }
 
 model Account {
@@ -235,6 +239,7 @@ model Room {
   plants          Plant[]
   logTemplates    LogTemplate[]
   logEntries      LogEntry[]
+  zones           Zone[]
 }
 
 model VerificationToken {
@@ -283,6 +288,8 @@ model Equipment {
   updatedAt   DateTime @updatedAt
   roomId      String
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
 }
 
 model CleaningSOP {
@@ -294,6 +301,8 @@ model CleaningSOP {
   updatedAt   DateTime @updatedAt
   roomId      String
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
 }
 
 model MaintenanceTask {
@@ -307,6 +316,8 @@ model MaintenanceTask {
   updatedAt   DateTime @updatedAt
   roomId      String
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
 }
 
 model RoomTemplate {
@@ -321,4 +332,18 @@ model RoomTemplate {
   defaultEquipment  Json
   defaultSOPs       Json
   defaultMaintenance Json
+}
+
+model Zone {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String?  // e.g., "Propagation", "Flowering", "Drying"
+  dimensions  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
 }

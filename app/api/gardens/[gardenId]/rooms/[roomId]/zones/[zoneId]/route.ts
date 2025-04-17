@@ -9,44 +9,39 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-
+    
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const zone = await prisma.zone.findUnique({
+    const garden = await prisma.garden.findUnique({
       where: {
-        id: params.zoneId,
+        id: params.gardenId,
       },
       include: {
-        room: {
-          include: {
-            garden: {
-              include: {
-                members: true,
-              },
-            },
-          },
-        },
+        createdBy: true,
+        members: true,
       },
     });
 
-    if (!zone) {
-      return new NextResponse('Zone not found', { status: 404 });
+    if (!garden) {
+      return new NextResponse('Garden not found', { status: 404 });
     }
 
-    // Check if user has access to this zone's garden
-    const isCreator = zone.room.garden.creatorId === session.user.id;
-    const isMember = zone.room.garden.members.some((member: { userId: string }) => member.userId === session.user.id);
+    // Check if user has access to this garden
+    const isCreator = garden.creatorId === session.user.id;
+    const hasAccess = garden.members.some((member: { userId: string }) => member.userId === session.user.id);
 
-    if (!isCreator && !isMember) {
+    if (!isCreator && !hasAccess) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Delete the zone
     await prisma.zone.delete({
       where: {
         id: params.zoneId,
-      },
+        roomId: params.roomId
+      }
     });
 
     return new NextResponse(null, { status: 204 });
@@ -55,6 +50,7 @@ export async function DELETE(
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
