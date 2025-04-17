@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
-import { db } from "../../../lib/db";
-import { ResourcePermission } from "@prisma/client";
+import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { ResourcePermission, Prisma } from "@prisma/client";
 
 // GET /api/gardens - List gardens
 export async function GET() {
@@ -80,19 +80,33 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Session data:', session);
     
     if (!session?.user) {
+      console.log('Unauthorized: No session found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, description, isPrivate, imageUrl } = await req.json();
+    const body = await req.json();
+    console.log('Request body:', body);
+
+    const { name, description, isPrivate, imageUrl } = body;
 
     if (!name) {
+      console.log('Validation error: Name is required');
       return NextResponse.json(
         { error: "Name is required" },
         { status: 400 }
       );
     }
+
+    console.log('Creating garden with data:', {
+      name,
+      description,
+      isPrivate,
+      imageUrl,
+      creatorId: session.user.id
+    });
 
     // Create the garden and automatically add creator as a member with all permissions
     const garden = await db.garden.create({
@@ -134,11 +148,31 @@ export async function POST(req: Request) {
       }
     });
 
+    console.log('Garden created successfully:', garden);
     return NextResponse.json(garden);
   } catch (error) {
-    console.error("Error creating garden:", error);
+    console.error('Detailed error creating garden:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Check if it's a Prisma error
+    if (error instanceof Error && 'code' in error) {
+      const prismaError = error as any;
+      console.error('Prisma error code:', prismaError.code);
+      
+      // Handle specific Prisma errors
+      if (prismaError.code === 'P2002') {
+        return NextResponse.json(
+          { error: "A garden with this name already exists" },
+          { status: 409 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

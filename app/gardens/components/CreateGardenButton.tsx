@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function CreateGardenButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -17,6 +18,7 @@ export default function CreateGardenButton() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/gardens', {
@@ -27,14 +29,22 @@ export default function CreateGardenButton() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to create garden');
+        if (response.status === 401) {
+          setError('Your session has expired. Please sign in again.');
+          router.push('/auth/signin');
+          return;
+        }
+        throw new Error(data.error || 'Failed to create garden');
       }
 
       setIsModalOpen(false);
       router.refresh();
     } catch (error) {
       console.error('Error creating garden:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create garden');
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +66,11 @@ export default function CreateGardenButton() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-dark-bg-secondary rounded-lg p-6 max-w-md w-full ring-1 ring-dark-border shadow-xl">
             <h2 className="text-2xl font-bold mb-4 text-dark-text-primary">Create New Garden</h2>
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded text-red-500">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
