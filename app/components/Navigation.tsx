@@ -11,8 +11,6 @@ import Image from 'next/image';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Gardens', href: '/gardens' },
-  { name: 'My Plants', href: '/plants' },
-  { name: 'Add Plant', href: '/plants/new' },
   { name: 'Logs', href: '/logs' },
 ];
 
