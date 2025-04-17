@@ -67,6 +67,7 @@ model User {
   createdEquipment Equipment[]
   createdSOPs   CleaningSOP[]
   createdTasks  MaintenanceTask[]
+  createdPlants ZonePlant[]
 }
 
 model Account {
@@ -338,12 +339,29 @@ model Zone {
   id          String   @id @default(cuid())
   name        String
   description String?
-  type        String?  // e.g., "Propagation", "Flowering", "Drying"
+  type        String?
   dimensions  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   roomId      String
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation(fields: [creatorId], references: [id])
   creatorId   String
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  plants      ZonePlant[]
+}
+
+model ZonePlant {
+  id                  String    @id @default(cuid())
+  name                String
+  species             String
+  variety             String?
+  plantedDate         DateTime?
+  expectedHarvestDate DateTime?
+  notes               String?   @db.Text
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  zoneId              String
+  zone                Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  creatorId           String
+  createdBy           User      @relation(fields: [creatorId], references: [id])
 }

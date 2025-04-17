@@ -10,50 +10,57 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 
-interface CreateZoneButtonProps {
+interface CreatePlantButtonProps {
   gardenId: string;
   roomId: string;
+  zoneId: string;
 }
 
-export default function CreateZoneButton({ gardenId, roomId }: CreateZoneButtonProps) {
+export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePlantButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState('');
-  const [dimensions, setDimensions] = useState('');
+  const [species, setSpecies] = useState('');
+  const [variety, setVariety] = useState('');
+  const [plantedDate, setPlantedDate] = useState('');
+  const [expectedHarvestDate, setExpectedHarvestDate] = useState('');
+  const [notes, setNotes] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       setIsSubmitting(true);
-      const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones`, {
+      const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name,
-          description,
-          type,
-          dimensions,
+          species,
+          variety: variety || null,
+          plantedDate: plantedDate || null,
+          expectedHarvestDate: expectedHarvestDate || null,
+          notes: notes || null,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create zone');
+        throw new Error('Failed to create plant');
       }
 
-      toast.success('Zone created successfully');
+      toast.success('Plant created successfully');
       router.refresh();
       setIsOpen(false);
       setName('');
-      setDescription('');
-      setType('');
-      setDimensions('');
+      setSpecies('');
+      setVariety('');
+      setPlantedDate('');
+      setExpectedHarvestDate('');
+      setNotes('');
     } catch (error) {
-      toast.error('Error creating zone');
+      toast.error('Error creating plant');
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -67,13 +74,13 @@ export default function CreateZoneButton({ gardenId, roomId }: CreateZoneButtonP
         className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Create Zone
+        Add Plant
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Zone</DialogTitle>
+            <DialogTitle>Add New Plant</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,39 +89,60 @@ export default function CreateZoneButton({ gardenId, roomId }: CreateZoneButtonP
               <Input
                 id="name"
                 value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-                placeholder="Enter zone name"
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter plant name"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="species">Species</Label>
+              <Input
+                id="species"
+                value={species}
+                onChange={(e) => setSpecies(e.target.value)}
+                placeholder="Enter plant species"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="variety">Variety (optional)</Label>
+              <Input
+                id="variety"
+                value={variety}
+                onChange={(e) => setVariety(e.target.value)}
+                placeholder="Enter plant variety"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plantedDate">Planting Date (optional)</Label>
+              <Input
+                id="plantedDate"
+                type="date"
+                value={plantedDate}
+                onChange={(e) => setPlantedDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="expectedHarvestDate">Expected Harvest Date (optional)</Label>
+              <Input
+                id="expectedHarvestDate"
+                type="date"
+                value={expectedHarvestDate}
+                onChange={(e) => setExpectedHarvestDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
               <Textarea
-                id="description"
-                value={description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-                placeholder="Enter zone description"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Input
-                id="type"
-                value={type}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setType(e.target.value)}
-                placeholder="Enter zone type (e.g., Growing Area, Storage)"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dimensions">Dimensions</Label>
-              <Input
-                id="dimensions"
-                value={dimensions}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDimensions(e.target.value)}
-                placeholder="Enter zone dimensions"
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Enter any notes about the plant"
               />
             </div>
 
@@ -133,7 +161,7 @@ export default function CreateZoneButton({ gardenId, roomId }: CreateZoneButtonP
                 disabled={isSubmitting}
                 className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100"
               >
-                Create Zone
+                Add Plant
               </Button>
             </div>
           </form>
