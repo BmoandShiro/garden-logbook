@@ -40,6 +40,18 @@ enum ResourcePermission {
   MANAGE_PERMS // Can manage others' permissions
 }
 
+enum ScheduleFrequency {
+  HOURLY
+  DAILY
+  WEEKLY
+  BIWEEKLY    // Every two weeks
+  MONTHLY
+  QUARTERLY   // Every three months
+  BIANNUAL    // Every six months
+  YEARLY
+  CUSTOM      // For custom intervals
+}
+
 model User {
   id            String      @id @default(cuid())
   name          String?
@@ -142,15 +154,38 @@ model Log {
   date        DateTime  @default(now())
   type        LogType
   stage       Stage
+  // Environmental measurements
   temperature Float?    // in Celsius
   humidity    Float?    // percentage
   pH          Float?
   ec          Float?    // electrical conductivity
   par         Float?    // Photosynthetically Active Radiation
+  co2         Float?    // CO2 levels in PPM
+  vpd         Float?    // Vapor Pressure Deficit
+  
+  // Water and nutrients
   waterAmount Float?    // in milliliters
+  runoff      Float?    // runoff pH/EC measurements
   nutrients   String[]  // array of nutrient names
+  nutrientPpm Float?    // Total PPM of nutrient solution
+  
+  // Growth measurements
+  height      Float?    // plant height in cm
+  width       Float?    // plant width/spread in cm
+  nodeCount   Int?      // number of nodes
+  
+  // Health indicators
+  healthRating Int?     // 1-5 scale
+  symptoms    String[]  // array of observed symptoms
+  pestFound   String[]  // array of pests found
+  
+  // Actions taken
+  actions     String[]  // array of actions taken
+  materials   String[]  // materials used (nutrients, pesticides, etc)
+  
+  // General
   notes       String?   @db.Text
-  imageUrl    String?
+  imageUrls   String[]  // array of image URLs
   plantId     String
   userId      String
   createdAt   DateTime  @default(now())
@@ -158,6 +193,14 @@ model Log {
   plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   data        Json?     // Flexible field for additional measurements
+  
+  // Location context
+  gardenId    String?
+  garden      Garden?   @relation(fields: [gardenId], references: [id])
+  roomId      String?
+  room        Room?     @relation(fields: [roomId], references: [id])
+  zoneId      String?
+  zone        Zone?     @relation(fields: [zoneId], references: [id])
 }
 
 model Tag {
@@ -169,16 +212,22 @@ model Tag {
 }
 
 enum LogType {
-  WATERING
-  FEEDING
-  ENVIRONMENTAL
-  PRUNING
-  TRAINING
-  DEFOLIATION
-  FLUSHING
-  HARVEST
-  PEST_DISEASE
-  GENERAL
+  WATERING          // Basic watering log
+  FEEDING           // Nutrient feeding
+  ENVIRONMENTAL     // Environmental conditions
+  PRUNING           // Plant maintenance
+  TRAINING          // Plant training techniques
+  DEFOLIATION       // Leaf removal
+  FLUSHING          // Pre-harvest flushing
+  HARVEST           // Harvest records
+  PEST_DISEASE      // Pest or disease issues
+  TRANSPLANT        // Moving to new container/location
+  GERMINATION       // Seed starting
+  CLONING           // Cloning activities
+  INSPECTION        // Regular plant checkups
+  TREATMENT         // Pest/disease treatments
+  STRESS           // Stress symptoms
+  GENERAL          // General observations
 }
 
 enum Stage {
@@ -190,35 +239,96 @@ enum Stage {
   CURING
 }
 
+enum FieldType {
+  TEXT        // Free text input
+  NUMBER      // Numeric input with optional units
+  BOOLEAN     // Yes/No checkbox
+  SELECT      // Dropdown selection
+  MULTI_SELECT // Multiple choice selection
+  DATE        // Date picker
+  TIME        // Time picker
+  DATETIME    // Date and time picker
+  RATING      // 1-5 or 1-10 rating
+  MEASUREMENT // Numeric with units (e.g., pH, EC, PPM)
+  TEMPERATURE // Temperature with unit conversion
+  HUMIDITY    // Humidity percentage
+  COUNTER     // Incrementing/decrementing counter
+  TIMER       // Duration/timer
+  MEDIA       // Image/video upload
+  LOCATION    // Location selection (Garden/Room/Zone)
+}
+
 model LogTemplate {
   id          String      @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  type        LogType     // The primary type of log this template is for
+  icon        String?     // Icon identifier for the template
+  color       String?     // Color theme for the template
+  
+  // Template configuration
+  fields      Json        // Array of field definitions with validation rules
+  layout      Json?       // UI layout configuration
+  defaultValues Json?     // Default values for fields
+  required    String[]    // Array of required field IDs
+  
+  // Scheduling
+  scheduleConfig Json?    // { frequency: ScheduleFrequency, interval: number, times: string[], daysOfWeek: number[] }
+  reminders   Boolean     @default(false)
+  reminderBefore Int?     // Minutes before scheduled time to send reminder
+  
+  // Template metadata
+  isActive    Boolean     @default(true)
+  isPublic    Boolean     @default(false)
+  version     Int         @default(1)
+  
+  // Relations
   createdBy   User        @relation(fields: [userId], references: [id])
   userId      String
+  garden      Garden?     @relation(fields: [gardenId], references: [id])
+  gardenId    String?
   room        Room?       @relation(fields: [roomId], references: [id])
   roomId      String?
-  fields      Json        // Stores the template fields configuration
-  isActive    Boolean     @default(true)
   entries     LogEntry[]
+  
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model LogEntry {
   id            String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  date          DateTime    
   template      LogTemplate @relation(fields: [templateId], references: [id])
   templateId    String
+  
+  // Core data
+  data          Json        // The actual log data matching template fields
+  date          DateTime    // When the logged activity occurred
+  duration      Int?        // Duration in minutes (if applicable)
+  status        String      @default("completed") // drafted, completed, flagged, etc.
+  
+  // Relations
   createdBy     User        @relation(fields: [userId], references: [id])
   userId        String
-  room          Room        @relation(fields: [roomId], references: [id])
-  roomId        String
-  data          Json        // Stores the actual log data
-  notes         String?     
   plants        Plant[]     // Plants involved in this log entry
+  garden        Garden?     @relation(fields: [gardenId], references: [id])
+  gardenId      String?
+  room          Room?       @relation(fields: [roomId], references: [id])
+  roomId        String?
+  zone          Zone?       @relation(fields: [zoneId], references: [id])
+  zoneId        String?
+  
+  // Additional context
+  notes         String?     // Additional notes
+  tags          String[]    // Custom tags
+  imageUrls     String[]    // Associated images
+  weather       Json?       // Weather conditions (if outdoor)
+  
+  // Timestamps
+  scheduledFor  DateTime?   // When this log was scheduled for
+  completedAt   DateTime?   // When the log was marked as completed
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Room {
@@ -240,6 +350,7 @@ model Room {
   plants          Plant[]
   logTemplates    LogTemplate[]
   logEntries      LogEntry[]
+  logs            Log[]
   zones           Zone[]
 }
 
@@ -264,6 +375,9 @@ model Garden {
   members     GardenMember[]
   rooms       Room[]
   plants      Plant[]
+  logTemplates LogTemplate[]
+  logEntries  LogEntry[]
+  logs        Log[]
 }
 
 model GardenMember {
@@ -348,6 +462,8 @@ model Zone {
   creatorId   String
   createdBy   User     @relation(fields: [creatorId], references: [id])
   plants      ZonePlant[]
+  logs        Log[]
+  logEntries  LogEntry[]
 }
 
 model ZonePlant {

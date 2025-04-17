@@ -16,8 +16,16 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Download, Upload, Filter, X } from 'lucide-react';
+import { Download, Upload, Filter, Plus } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
+import { AddLogButton } from '@/components/ui/add-log-button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface LogsViewProps {
   userId: string;
@@ -27,7 +35,7 @@ interface FilterState {
   search: string;
   logType: LogType | '';
   stage: Stage | '';
-  dateRange: DateRange | undefined;
+  dateRange: DateRange | null | undefined;
   plantId: string;
 }
 
@@ -36,6 +44,8 @@ export default function LogsView({ userId }: LogsViewProps) {
   const [logs, setLogs] = useState<Log[]>([]);
   const [plants, setPlants] = useState<Plant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPlantId, setSelectedPlantId] = useState<string>('');
+  const [showAddLogDialog, setShowAddLogDialog] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     logType: '',
@@ -136,49 +146,92 @@ export default function LogsView({ userId }: LogsViewProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
+      <h1 className="text-2xl font-semibold text-emerald-100">Logs</h1>
+      
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilters(!showFilters)}
+          className="text-sm"
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          Show Filters
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExport}
+          className="text-sm"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+
+        <div className="relative">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            className="hidden"
+            id="import-file"
+          />
+          <label
+            htmlFor="import-file"
+            className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-transparent px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
           >
-            <Filter className="h-4 w-4" />
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          
-          <div className="relative">
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleImport}
-              className="hidden"
-              id="import-file"
-            />
-            <label
-              htmlFor="import-file"
-              className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <Upload className="h-4 w-4" />
-              Import
-            </label>
-          </div>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </label>
         </div>
+
+        <Dialog open={showAddLogDialog} onOpenChange={setShowAddLogDialog}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-sm bg-[#064E3B] hover:bg-[#065F46] text-white border-0"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Log
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Log Entry</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Plant</label>
+                <Select
+                  value={selectedPlantId}
+                  onChange={(e) => setSelectedPlantId(e.target.value)}
+                >
+                  <option value="">Choose a plant</option>
+                  {plants.map((plant) => (
+                    <option key={plant.id} value={plant.id}>
+                      {plant.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              {selectedPlantId && (
+                <AddLogButton
+                  plantId={selectedPlantId}
+                  variant="outline"
+                  className="w-full bg-emerald-900 hover:bg-emerald-800 text-emerald-100"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-dark-bg-secondary">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg">
           <div>
-            <label className="block text-sm font-medium text-emerald-100 mb-1">Search</label>
+            <label className="block text-sm font-medium mb-1">Search</label>
             <Input
               type="text"
               placeholder="Search logs..."
@@ -188,7 +241,7 @@ export default function LogsView({ userId }: LogsViewProps) {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-emerald-100 mb-1">Log Type</label>
+            <label className="block text-sm font-medium mb-1">Log Type</label>
             <Select
               value={filters.logType}
               onChange={(e) => setFilters({ ...filters, logType: e.target.value as LogType | '' })}
@@ -203,7 +256,7 @@ export default function LogsView({ userId }: LogsViewProps) {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-emerald-100 mb-1">Growth Stage</label>
+            <label className="block text-sm font-medium mb-1">Growth Stage</label>
             <Select
               value={filters.stage}
               onChange={(e) => setFilters({ ...filters, stage: e.target.value as Stage | '' })}
@@ -218,7 +271,7 @@ export default function LogsView({ userId }: LogsViewProps) {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-emerald-100 mb-1">Plant</label>
+            <label className="block text-sm font-medium mb-1">Plant</label>
             <Select
               value={filters.plantId}
               onChange={(e) => setFilters({ ...filters, plantId: e.target.value })}
@@ -233,7 +286,7 @@ export default function LogsView({ userId }: LogsViewProps) {
           </div>
           
           <div className="md:col-span-2 lg:col-span-4">
-            <label className="block text-sm font-medium text-emerald-100 mb-1">Date Range</label>
+            <label className="block text-sm font-medium mb-1">Date Range</label>
             <DateRangePicker
               value={filters.dateRange}
               onChange={(range) => setFilters({ ...filters, dateRange: range })}
@@ -242,7 +295,7 @@ export default function LogsView({ userId }: LogsViewProps) {
         </div>
       )}
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
