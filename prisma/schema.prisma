@@ -164,6 +164,7 @@ model Log {
   stage       Stage
   // Environmental measurements
   temperature Float?    // in Celsius
+  temperatureUnit String? @default("CELSIUS")
   humidity    Float?    // percentage
   pH          Float?
   ec          Float?    // electrical conductivity
@@ -173,13 +174,16 @@ model Log {
   
   // Water and nutrients
   waterAmount Float?    // in milliliters
+  waterUnit   String?   @default("MILLILITERS")
   runoff      Float?    // runoff pH/EC measurements
   nutrients   String[]  // array of nutrient names
   nutrientPpm Float?    // Total PPM of nutrient solution
   
   // Growth measurements
-  height      Float?    // plant height in cm
-  width       Float?    // plant width/spread in cm
+  height      Float?    // plant height
+  heightUnit  String?   @default("CENTIMETERS")
+  width       Float?    // plant width/spread
+  widthUnit   String?   @default("CENTIMETERS")
   nodeCount   Int?      // number of nodes
   
   // Health indicators
@@ -208,9 +212,11 @@ model Log {
   zoneId      String?
   zone        Zone?     @relation(fields: [zoneId], references: [id])
   
-  // Plant relation
+  // Plant relations
   plantId     String?
   plant       Plant?    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  zonePlantId String?
+  zonePlant   ZonePlant? @relation(fields: [zonePlantId], references: [id], onDelete: Cascade)
 }
 
 model Tag {
@@ -474,6 +480,7 @@ model Zone {
   plants      Plant[]
   logs        Log[]
   logEntries  LogEntry[]
+  zonePlants  ZonePlant[]
 }
 
 model ZonePlant {
@@ -490,5 +497,5 @@ model ZonePlant {
   zone                Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   creatorId           String
   createdBy           User      @relation(fields: [creatorId], references: [id])
-  logs                Log[]     // Add this relation field
+  logs                Log[]
 }

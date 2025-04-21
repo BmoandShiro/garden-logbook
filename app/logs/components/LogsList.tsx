@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { LogType } from '@prisma/client';
 import DeleteLogButton from './DeleteLogButton';
+import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, formatMeasurement } from '@/lib/units';
 
 interface LogWithLocation {
   id: string;
@@ -22,8 +23,14 @@ interface LogWithLocation {
     name: string;
   };
   temperature?: number | null;
+  temperatureUnit?: string;
   humidity?: number | null;
   waterAmount?: number | null;
+  waterUnit?: string;
+  height?: number | null;
+  heightUnit?: string;
+  width?: number | null;
+  widthUnit?: string;
   healthRating?: number | null;
 }
 
@@ -93,22 +100,32 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                     <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
                   )}
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {log.temperature && (
+                    {log.temperature !== null && log.temperature !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                        🌡️ {log.temperature}°C
+                        🌡️ {formatMeasurement(log.temperature, log.temperatureUnit || TemperatureUnit.CELSIUS)}
                       </span>
                     )}
-                    {log.humidity && (
+                    {log.humidity !== null && log.humidity !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
                         💧 {log.humidity}%
                       </span>
                     )}
-                    {log.waterAmount && (
+                    {log.waterAmount !== null && log.waterAmount !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                        🚰 {log.waterAmount}ml
+                        🚰 {formatMeasurement(log.waterAmount, log.waterUnit || VolumeUnit.MILLILITERS)}
                       </span>
                     )}
-                    {log.healthRating && (
+                    {log.height !== null && log.height !== undefined && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                        📏 {formatMeasurement(log.height, log.heightUnit || LengthUnit.CENTIMETERS)}
+                      </span>
+                    )}
+                    {log.width !== null && log.width !== undefined && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                        ↔️ {formatMeasurement(log.width, log.widthUnit || LengthUnit.CENTIMETERS)}
+                      </span>
+                    )}
+                    {log.healthRating !== null && log.healthRating !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
                         ❤️ {log.healthRating}/5
                       </span>

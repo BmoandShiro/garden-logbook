@@ -1,0 +1,15 @@
+-- CreateEnum
+CREATE TYPE "PlantType" AS ENUM ('REGULAR', 'ZONE_PLANT');
+
+-- AlterTable
+ALTER TABLE "Log" ADD COLUMN     "heightUnit" TEXT DEFAULT 'CENTIMETERS',
+ADD COLUMN     "temperatureUnit" TEXT DEFAULT 'CELSIUS',
+ADD COLUMN     "waterUnit" TEXT DEFAULT 'MILLILITERS',
+ADD COLUMN     "widthUnit" TEXT DEFAULT 'CENTIMETERS';
+
+-- AlterTable
+ALTER TABLE "Plant" ADD COLUMN     "type" "PlantType" NOT NULL DEFAULT 'REGULAR',
+ADD COLUMN     "zoneId" TEXT;
+
+-- AddForeignKey
+ALTER TABLE "Plant" ADD CONSTRAINT "Plant_zoneId_fkey" FOREIGN KEY ("zoneId") REFERENCES "Zone"("id") ON DELETE CASCADE ON UPDATE CASCADE;

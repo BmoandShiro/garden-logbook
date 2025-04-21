@@ -6,6 +6,7 @@ import { LogType, Stage } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { TemperatureUnit, VolumeUnit, LengthUnit, convertTemperature, convertVolume, convertLength } from '@/lib/units';
 
 interface CreateLogModalProps {
   isOpen: boolean;
@@ -27,9 +28,15 @@ interface FormData {
   stage: Stage;
   notes: string;
   temperature: number | null;
+  temperatureUnit: TemperatureUnit;
   humidity: number | null;
   waterAmount: number | null;
+  waterUnit: VolumeUnit;
   healthRating: number | null;
+  height: number | null;
+  heightUnit: LengthUnit;
+  width: number | null;
+  widthUnit: LengthUnit;
   gardenId: string | null;
   roomId: string | null;
   zoneId: string | null;
@@ -43,9 +50,15 @@ const initialFormData: FormData = {
   stage: Stage.VEGETATIVE,
   notes: '',
   temperature: null,
+  temperatureUnit: TemperatureUnit.CELSIUS,
   humidity: null,
   waterAmount: null,
+  waterUnit: VolumeUnit.MILLILITERS,
   healthRating: null,
+  height: null,
+  heightUnit: LengthUnit.CENTIMETERS,
+  width: null,
+  widthUnit: LengthUnit.CENTIMETERS,
   gardenId: null,
   roomId: null,
   zoneId: null,
@@ -105,33 +118,50 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
 
     try {
       // Find the first plant in the selected location or its children
-      let plantId = null;
+      let selectedPlantId = null;
       if (selectedLocation) {
         if (selectedLocation.plants.length > 0) {
-          plantId = selectedLocation.plants[0].id;
+          selectedPlantId = selectedLocation.plants[0].id;
         }
       }
+
+      // Convert measurements to standard units before sending
+      const standardizedData = {
+        type: formData.type,
+        stage: formData.stage,
+        notes: formData.notes,
+        date: formData.date,
+        temperature: formData.temperature !== null 
+          ? convertTemperature(formData.temperature, formData.temperatureUnit, TemperatureUnit.CELSIUS)
+          : null,
+        temperatureUnit: TemperatureUnit.CELSIUS,
+        waterAmount: formData.waterAmount !== null
+          ? convertVolume(formData.waterAmount, formData.waterUnit, VolumeUnit.MILLILITERS)
+          : null,
+        waterUnit: VolumeUnit.MILLILITERS,
+        height: formData.height !== null
+          ? convertLength(formData.height, formData.heightUnit, LengthUnit.CENTIMETERS)
+          : null,
+        heightUnit: LengthUnit.CENTIMETERS,
+        width: formData.width !== null
+          ? convertLength(formData.width, formData.widthUnit, LengthUnit.CENTIMETERS)
+          : null,
+        widthUnit: LengthUnit.CENTIMETERS,
+        humidity: formData.humidity,
+        healthRating: formData.healthRating,
+        userId: session?.user?.id,
+        gardenId: selectedLocation?.type === 'garden' ? selectedLocation.id : null,
+        roomId: selectedLocation?.type === 'room' ? selectedLocation.id : null,
+        zoneId: selectedLocation?.type === 'zone' ? selectedLocation.id : null,
+        plantId: selectedPlantId,
+      };
 
       const response = await fetch('/api/logs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: session?.user?.id,
-          gardenId: selectedLocation?.type === 'garden' ? selectedLocation.id : null,
-          roomId: selectedLocation?.type === 'room' ? selectedLocation.id : null,
-          zoneId: selectedLocation?.type === 'zone' ? selectedLocation.id : null,
-          plantId,
-          type: formData.type,
-          stage: formData.stage,
-          notes: formData.notes,
-          temperature: formData.temperature ? parseFloat(formData.temperature.toString()) : null,
-          humidity: formData.humidity ? parseFloat(formData.humidity.toString()) : null,
-          waterAmount: formData.waterAmount ? parseFloat(formData.waterAmount.toString()) : null,
-          healthRating: formData.healthRating ? parseInt(formData.healthRating.toString()) : null,
-          date: formData.date,
-        }),
+        body: JSON.stringify(standardizedData),
       });
 
       const data = await response.json();
@@ -143,11 +173,12 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
       toast.success('Log created successfully');
       onSuccess();
       setFormData(initialFormData);
-      setSelectedLocation(null);
       onClose();
     } catch (error) {
       console.error('Error creating log:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create log');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -293,22 +324,33 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="temperature" className="block text-sm font-medium text-dark-text-primary mb-1">
-                  Temperature (°C)
+              <div className="space-y-1">
+                <label htmlFor="temperature" className="block text-sm font-medium text-dark-text-primary">
+                  Temperature
                 </label>
-                <input
-                  type="number"
-                  id="temperature"
-                  step="0.1"
-                  value={formData.temperature || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, temperature: e.target.value ? Number(e.target.value) : null }))}
-                  className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    id="temperature"
+                    step="0.1"
+                    value={formData.temperature || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, temperature: e.target.value ? Number(e.target.value) : null }))}
+                    className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  />
+                  <select
+                    value={formData.temperatureUnit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, temperatureUnit: e.target.value as TemperatureUnit }))}
+                    className="block w-24 rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  >
+                    {Object.values(TemperatureUnit).map((unit) => (
+                      <option key={unit} value={unit}>{unit === TemperatureUnit.CELSIUS ? '°C' : '°F'}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="humidity" className="block text-sm font-medium text-dark-text-primary mb-1">
+              <div className="space-y-1">
+                <label htmlFor="humidity" className="block text-sm font-medium text-dark-text-primary">
                   Humidity (%)
                 </label>
                 <input
@@ -322,22 +364,34 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
                 />
               </div>
 
-              <div>
-                <label htmlFor="waterAmount" className="block text-sm font-medium text-dark-text-primary mb-1">
-                  Water Amount (ml)
+              <div className="space-y-1">
+                <label htmlFor="waterAmount" className="block text-sm font-medium text-dark-text-primary">
+                  Water Amount
                 </label>
-                <input
-                  type="number"
-                  id="waterAmount"
-                  min="0"
-                  value={formData.waterAmount || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, waterAmount: e.target.value ? Number(e.target.value) : null }))}
-                  className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    id="waterAmount"
+                    min="0"
+                    step="0.1"
+                    value={formData.waterAmount || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, waterAmount: e.target.value ? Number(e.target.value) : null }))}
+                    className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  />
+                  <select
+                    value={formData.waterUnit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, waterUnit: e.target.value as VolumeUnit }))}
+                    className="block w-24 rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  >
+                    {Object.values(VolumeUnit).map((unit) => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="healthRating" className="block text-sm font-medium text-dark-text-primary mb-1">
+              <div className="space-y-1">
+                <label htmlFor="healthRating" className="block text-sm font-medium text-dark-text-primary">
                   Health Rating (1-5)
                 </label>
                 <input
@@ -349,6 +403,58 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
                   onChange={(e) => setFormData(prev => ({ ...prev, healthRating: e.target.value ? Number(e.target.value) : null }))}
                   className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="height" className="block text-sm font-medium text-dark-text-primary">
+                  Height
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    id="height"
+                    min="0"
+                    step="0.1"
+                    value={formData.height || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value ? Number(e.target.value) : null }))}
+                    className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  />
+                  <select
+                    value={formData.heightUnit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, heightUnit: e.target.value as LengthUnit }))}
+                    className="block w-24 rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  >
+                    {Object.values(LengthUnit).map((unit) => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="width" className="block text-sm font-medium text-dark-text-primary">
+                  Width
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    id="width"
+                    min="0"
+                    step="0.1"
+                    value={formData.width || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, width: e.target.value ? Number(e.target.value) : null }))}
+                    className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  />
+                  <select
+                    value={formData.widthUnit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, widthUnit: e.target.value as LengthUnit }))}
+                    className="block w-24 rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+                  >
+                    {Object.values(LengthUnit).map((unit) => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
