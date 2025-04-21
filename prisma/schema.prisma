@@ -52,6 +52,11 @@ enum ScheduleFrequency {
   CUSTOM      // For custom intervals
 }
 
+enum PlantType {
+  REGULAR
+  ZONE_PLANT
+}
+
 model User {
   id            String      @id @default(cuid())
   name          String?
@@ -131,6 +136,9 @@ model Plant {
   logEntries  LogEntry[]
   gardenId    String?
   garden      Garden?  @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  type        PlantType @default(REGULAR)
+  zoneId      String?
+  zone        Zone?    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 }
 
 model Strain {
@@ -186,11 +194,9 @@ model Log {
   // General
   notes       String?   @db.Text
   imageUrls   String[]  // array of image URLs
-  plantId     String?   // Made optional
   userId      String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  plant       Plant?    @relation(fields: [plantId], references: [id], onDelete: Cascade) // Made optional
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   data        Json?     // Flexible field for additional measurements
   
@@ -201,6 +207,10 @@ model Log {
   room        Room?     @relation(fields: [roomId], references: [id])
   zoneId      String?
   zone        Zone?     @relation(fields: [zoneId], references: [id])
+  
+  // Plant relation
+  plantId     String?
+  plant       Plant?    @relation(fields: [plantId], references: [id], onDelete: Cascade)
 }
 
 model Tag {
@@ -461,7 +471,7 @@ model Zone {
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   creatorId   String
   createdBy   User     @relation(fields: [creatorId], references: [id])
-  plants      ZonePlant[]
+  plants      Plant[]
   logs        Log[]
   logEntries  LogEntry[]
 }
@@ -480,4 +490,5 @@ model ZonePlant {
   zone                Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   creatorId           String
   createdBy           User      @relation(fields: [creatorId], references: [id])
+  logs                Log[]     // Add this relation field
 }

@@ -5,6 +5,7 @@ import { Dialog } from '@headlessui/react';
 import { LogType, Stage } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 interface CreateLogModalProps {
   isOpen: boolean;
@@ -61,9 +62,35 @@ async function fetchLocations(userId: string): Promise<LocationOption[]> {
   return response.json();
 }
 
+const getLocationPath = (location: LocationOption): string[] => {
+  const pathParts = location.path || [];
+  return [...pathParts, location.name];
+};
+
+const getLocationLabel = (location: LocationOption): string => {
+  return getLocationPath(location).join(' > ');
+};
+
+const filterLocations = (locations: LocationOption[], searchTerm: string): LocationOption[] => {
+  if (!searchTerm) return locations;
+  
+  return locations.filter((loc: LocationOption) => {
+    const path = getLocationPath(loc);
+    return path.some((part: string) => 
+      part.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+};
+
 export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: CreateLogModalProps) {
+  const { data: session } = useSession();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [selectedLocation, setSelectedLocation] = useState<LocationOption | null>(null);
+  const [gardenId, setGardenId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [zoneId, setZoneId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: locations = [], isLoading } = useQuery({
     queryKey: ['locations', userId],
@@ -71,23 +98,17 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     enabled: isOpen,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try {
-      // Combine date and time into a single Date object
-      const dateTime = new Date(`${formData.date}T${formData.time}`);
+    setIsSubmitting(true);
+    setError('');
 
+    try {
       // Find the first plant in the selected location or its children
       let plantId = null;
       if (selectedLocation) {
-        if (selectedLocation.type === 'plant') {
-          plantId = selectedLocation.id;
-        } else {
-          // Look for plants in the selected location
-          const plants = selectedLocation.plants;
-          if (plants && plants.length > 0) {
-            plantId = plants[0].id; // Use the first plant found
-          }
+        if (selectedLocation.plants.length > 0) {
+          plantId = selectedLocation.plants[0].id;
         }
       }
 
@@ -97,10 +118,19 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          userId,
-          date: dateTime.toISOString(),
-          plantId, // Add the found plantId
+          userId: session?.user?.id,
+          gardenId: selectedLocation?.type === 'garden' ? selectedLocation.id : null,
+          roomId: selectedLocation?.type === 'room' ? selectedLocation.id : null,
+          zoneId: selectedLocation?.type === 'zone' ? selectedLocation.id : null,
+          plantId,
+          type: formData.type,
+          stage: formData.stage,
+          notes: formData.notes,
+          temperature: formData.temperature ? parseFloat(formData.temperature.toString()) : null,
+          humidity: formData.humidity ? parseFloat(formData.humidity.toString()) : null,
+          waterAmount: formData.waterAmount ? parseFloat(formData.waterAmount.toString()) : null,
+          healthRating: formData.healthRating ? parseInt(formData.healthRating.toString()) : null,
+          date: formData.date,
         }),
       });
 
@@ -121,51 +151,51 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     }
   };
 
-  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const locationId = e.target.value;
-    const location = locations.find(loc => loc.id === locationId) || null;
-    setSelectedLocation(location);
+  const handleLocationChange = (locationId: string) => {
+    const selectedLocation = locations?.find(loc => loc.id === locationId);
+    if (!selectedLocation) return;
+
+    setSelectedLocation(selectedLocation);
 
     // Reset all location IDs
-    setFormData(prev => ({
-      ...prev,
+    const baseFormData: FormData = {
+      ...formData,
       gardenId: null,
       roomId: null,
       zoneId: null,
-      plantId: null,
-    }));
+      plantId: null
+    };
 
-    if (location) {
-      // Find parent locations in correct order based on path
-      const updates: Partial<FormData> = {};
-      
-      // Find locations for each level of the path
-      const gardenName = location.path[0];
-      const roomName = location.path[1];
-      const zoneName = location.path[2];
-      
-      const garden = locations.find(loc => loc.type === 'garden' && loc.name === gardenName);
-      const room = locations.find(loc => loc.type === 'room' && loc.name === roomName && loc.path[0] === gardenName);
-      const zone = locations.find(loc => loc.type === 'zone' && loc.name === zoneName && loc.path[0] === gardenName && loc.path[1] === roomName);
-
-      // Set IDs in hierarchical order
-      if (garden) updates.gardenId = garden.id;
-      if (room) updates.roomId = room.id;
-      if (zone) updates.zoneId = zone.id;
-
-      // Handle plant selection
-      if (location.type === 'plant') {
-        updates.plantId = location.id;
-      } else if (location.plants && location.plants.length > 0) {
-        updates.plantId = location.plants[0].id;
-      }
-
-      // Update all IDs at once
-      setFormData(prev => ({
-        ...prev,
-        ...updates
-      }));
+    // Set the appropriate location ID based on type
+    let updatedFormData: FormData = { ...baseFormData };
+    
+    switch (selectedLocation.type) {
+      case 'garden':
+        updatedFormData.gardenId = selectedLocation.id;
+        break;
+      case 'room':
+        updatedFormData.gardenId = selectedLocation.path[0];
+        updatedFormData.roomId = selectedLocation.id;
+        break;
+      case 'zone':
+        updatedFormData.gardenId = selectedLocation.path[0];
+        updatedFormData.roomId = selectedLocation.path[1];
+        updatedFormData.zoneId = selectedLocation.id;
+        break;
+      case 'plant':
+        updatedFormData.gardenId = selectedLocation.path[0];
+        updatedFormData.roomId = selectedLocation.path[1];
+        updatedFormData.zoneId = selectedLocation.path[2];
+        updatedFormData.plantId = selectedLocation.id;
+        break;
     }
+
+    // Set the first plant if available
+    if (selectedLocation.plants?.length > 0 && !selectedLocation.type.includes('plant')) {
+      updatedFormData.plantId = selectedLocation.plants[0].id;
+    }
+
+    setFormData(updatedFormData);
   };
 
   return (
@@ -250,13 +280,13 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               <select
                 id="location"
                 value={selectedLocation?.id || ''}
-                onChange={handleLocationChange}
+                onChange={(e) => handleLocationChange(e.target.value)}
                 className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
               >
                 <option value="">Select a location</option>
                 {locations?.map((loc: LocationOption) => (
                   <option key={`${loc.type}:${loc.id}`} value={loc.id}>
-                    {loc.path.join(' → ')}
+                    {(loc.path || []).join(' → ')}
                   </option>
                 ))}
               </select>

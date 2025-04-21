@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Plant } from '@prisma/client';
+
+interface PlantInfo {
+  id: string;
+  name: string;
+}
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -56,7 +62,7 @@ export async function GET(request: Request) {
         name: garden.name,
         type: 'garden',
         path: [garden.name],
-        plants: garden.plants
+        plants: garden.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name }))
       });
 
       // Add rooms
@@ -66,7 +72,7 @@ export async function GET(request: Request) {
           name: room.name,
           type: 'room',
           path: [garden.name, room.name],
-          plants: room.plants
+          plants: room.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name }))
         });
 
         // Add zones
@@ -76,7 +82,7 @@ export async function GET(request: Request) {
             name: zone.name,
             type: 'zone',
             path: [garden.name, room.name, zone.name],
-            plants: zone.plants
+            plants: zone.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name }))
           });
 
           // Add plants in zones

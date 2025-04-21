@@ -8,7 +8,11 @@ export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Please sign in to view logs' }, { status: 401 });
+  }
+
+  if (!session.user?.id) {
+    return NextResponse.json({ error: 'Invalid session. Please sign in again' }, { status: 401 });
   }
 
   try {
@@ -25,7 +29,7 @@ export async function GET(request: Request) {
 
     // Verify the user is requesting their own logs
     if (userId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'You can only view your own logs' }, { status: 401 });
     }
 
     // Build the where clause based on filters
@@ -56,12 +60,15 @@ export async function GET(request: Request) {
       ];
     }
 
+    console.log('Fetching logs with query:', where);
+
     const logs = await prisma.log.findMany({
       where,
       include: {
         plant: {
           select: {
             name: true,
+            stage: true,
           },
         },
         garden: {
@@ -83,14 +90,31 @@ export async function GET(request: Request) {
       orderBy: {
         date: 'desc',
       },
-      take: 50, // Limit to 50 logs per page for now
+      take: 50,
     });
 
+    console.log(`Found ${logs.length} logs`);
     return NextResponse.json(logs);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching logs:', error);
+    
+    // Handle Prisma-specific errors
+    if (error.code) {
+      switch (error.code) {
+        case 'P2002':
+          return NextResponse.json({ error: 'Database constraint violation' }, { status: 400 });
+        case 'P2025':
+          return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+        default:
+          return NextResponse.json(
+            { error: `Database error: ${error.message || 'Unknown error'}` },
+            { status: 500 }
+          );
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Failed to fetch logs' },
+      { error: error.message || 'Failed to fetch logs' },
       { status: 500 }
     );
   }
@@ -105,6 +129,8 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    console.log('Request body:', body);
+
     const {
       userId,
       type,
@@ -149,19 +175,38 @@ export async function POST(request: Request) {
       }
     };
 
+    console.log('Initial data object:', data);
+
     // Only add relations if IDs are provided
     if (gardenId) {
       data.garden = { connect: { id: gardenId } };
+      console.log('Added garden relation:', gardenId);
     }
     if (roomId) {
       data.room = { connect: { id: roomId } };
+      console.log('Added room relation:', roomId);
     }
     if (zoneId) {
       data.zone = { connect: { id: zoneId } };
+      console.log('Added zone relation:', zoneId);
     }
+
+    // Connect to plant if provided
     if (plantId) {
-      data.plant = { connect: { id: plantId } };
+      console.log('Checking plant ID:', plantId);
+      const plant = await prisma.plant.findUnique({
+        where: { id: plantId }
+      });
+
+      if (plant) {
+        console.log('Found Plant:', plant.id);
+        data.plant = { connect: { id: plantId } };
+      } else {
+        console.log('No plant found with ID:', plantId);
+      }
     }
+
+    console.log('Final data object:', data);
 
     // Create the log
     const log = await prisma.log.create({
@@ -177,6 +222,13 @@ export async function POST(request: Request) {
     return NextResponse.json(log);
   } catch (error: any) {
     console.error('Error creating log:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
     
     // Handle Prisma errors more specifically
     if (error.code === 'P2002') {
@@ -201,7 +253,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: error.message || 'Failed to create log' },
+      { error: `Failed to create log: ${error.message}` },
       { status: 500 }
     );
   }

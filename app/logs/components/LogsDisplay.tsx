@@ -34,7 +34,8 @@ async function fetchLogs(userId: string, filters: any) {
   });
   const response = await fetch(`/api/logs?${queryParams}`);
   if (!response.ok) {
-    throw new Error('Failed to fetch logs');
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || 'Failed to fetch logs');
   }
   return response.json();
 }
@@ -51,6 +52,10 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
   const { data: logs, isLoading, error, refetch } = useQuery<LogWithLocation[]>({
     queryKey: ['logs', userId, filters],
     queryFn: () => fetchLogs(userId, filters),
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
@@ -63,8 +68,16 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
 
   if (error) {
     return (
-      <div className="text-red-500 text-center py-4">
-        Error loading logs. Please try again later.
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-red-500 text-center">
+          {error instanceof Error ? error.message : 'Error loading logs. Please try again later.'}
+        </div>
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 text-sm font-medium text-white bg-garden-600 hover:bg-garden-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-400"
+        >
+          Retry
+        </button>
       </div>
     );
   }
