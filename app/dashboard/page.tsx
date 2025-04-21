@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -8,6 +9,13 @@ export default async function Dashboard() {
   if (!session) {
     redirect('/auth/signin');
   }
+
+  // Fetch zone plants count
+  const plantCount = await prisma.zonePlant.count({
+    where: {
+      creatorId: session.user.id
+    }
+  });
 
   return (
     <div className="py-10">
@@ -24,7 +32,7 @@ export default async function Dashboard() {
               {/* Quick Stats */}
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Plants</h3>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">0</p>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{plantCount}</p>
                 <p className="mt-2 text-sm text-dark-text-secondary">Active plants in your garden</p>
               </div>
 
@@ -46,7 +54,14 @@ export default async function Dashboard() {
               <h2 className="text-xl font-semibold text-dark-text-primary mb-4">Recent Plants</h2>
               <div className="rounded-lg bg-dark-bg-secondary overflow-hidden shadow ring-1 ring-dark-border">
                 <div className="p-6">
-                  <p className="text-center text-dark-text-secondary">No plants added yet</p>
+                  {plantCount > 0 ? (
+                    <div className="space-y-4">
+                      {/* Plants will be listed here in the client component */}
+                      <p className="text-dark-text-secondary">Loading plants...</p>
+                    </div>
+                  ) : (
+                    <p className="text-center text-dark-text-secondary">No plants added yet</p>
+                  )}
                 </div>
               </div>
             </div>

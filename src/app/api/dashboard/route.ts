@@ -13,8 +13,21 @@ export async function GET(request: Request) {
 
   try {
     const [plants, recentLogs] = await Promise.all([
-      prisma.plant.findMany({
-        where: { userId },
+      prisma.zonePlant.findMany({
+        where: { 
+          creatorId: userId,
+        },
+        include: {
+          zone: {
+            include: {
+              room: {
+                include: {
+                  garden: true
+                }
+              }
+            }
+          }
+        },
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
