@@ -3,7 +3,8 @@
 import { format } from 'date-fns';
 import { LogType } from '@prisma/client';
 import DeleteLogButton from './DeleteLogButton';
-import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, formatMeasurement } from '@/lib/units';
+import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, convertTemperature, convertVolume, convertLength, formatMeasurement } from '@/lib/units';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 
 interface LogWithLocation {
   id: string;
@@ -71,6 +72,28 @@ const getLocationString = (log: LogWithLocation) => {
 };
 
 export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
+  const { preferences } = useUserPreferences();
+  const unitPreferences = preferences.units;
+
+  const formatMeasurementWithPreferences = (value: number | null | undefined, sourceUnit: string | undefined, targetUnit: string) => {
+    if (value === null || value === undefined) return null;
+    
+    let convertedValue = value;
+    
+    // Convert from source unit to target unit
+    if (sourceUnit && sourceUnit !== targetUnit) {
+      if (Object.values(TemperatureUnit).includes(sourceUnit as TemperatureUnit)) {
+        convertedValue = convertTemperature(value, sourceUnit as TemperatureUnit, targetUnit as TemperatureUnit);
+      } else if (Object.values(VolumeUnit).includes(sourceUnit as VolumeUnit)) {
+        convertedValue = convertVolume(value, sourceUnit as VolumeUnit, targetUnit as VolumeUnit);
+      } else if (Object.values(LengthUnit).includes(sourceUnit as LengthUnit)) {
+        convertedValue = convertLength(value, sourceUnit as LengthUnit, targetUnit as LengthUnit);
+      }
+    }
+    
+    return formatMeasurement(convertedValue, targetUnit);
+  };
+
   return (
     <div className="bg-dark-bg-secondary rounded-lg shadow overflow-hidden">
       <div className="flow-root">
@@ -102,7 +125,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {log.temperature !== null && log.temperature !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                        🌡️ {formatMeasurement(log.temperature, log.temperatureUnit || TemperatureUnit.CELSIUS)}
+                        🌡️ {formatMeasurementWithPreferences(log.temperature, log.temperatureUnit, unitPreferences.temperature)}
                       </span>
                     )}
                     {log.humidity !== null && log.humidity !== undefined && (
@@ -112,17 +135,17 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                     )}
                     {log.waterAmount !== null && log.waterAmount !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                        🚰 {formatMeasurement(log.waterAmount, log.waterUnit || VolumeUnit.MILLILITERS)}
+                        🚰 {formatMeasurementWithPreferences(log.waterAmount, log.waterUnit, unitPreferences.volume)}
                       </span>
                     )}
                     {log.height !== null && log.height !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                        📏 {formatMeasurement(log.height, log.heightUnit || LengthUnit.CENTIMETERS)}
+                        📏 {formatMeasurementWithPreferences(log.height, log.heightUnit, unitPreferences.length)}
                       </span>
                     )}
                     {log.width !== null && log.width !== undefined && (
                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                        ↔️ {formatMeasurement(log.width, log.widthUnit || LengthUnit.CENTIMETERS)}
+                        ↔️ {formatMeasurementWithPreferences(log.width, log.widthUnit, unitPreferences.length)}
                       </span>
                     )}
                     {log.healthRating !== null && log.healthRating !== undefined && (

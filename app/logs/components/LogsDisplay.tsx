@@ -7,6 +7,11 @@ import { format } from 'date-fns';
 import LogFilters from './LogFilters';
 import LogsList from './LogsList';
 import CreateLogModal from './CreateLogModal';
+import UnitPreferences from './UnitPreferences';
+import { Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 
 interface LogWithLocation extends Log {
   plant?: {
@@ -42,6 +47,8 @@ async function fetchLogs(userId: string, filters: any) {
 
 export default function LogsDisplay({ userId }: LogsDisplayProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const { preferences, updateUnitPreference } = useUserPreferences();
   const [filters, setFilters] = useState({
     type: '',
     startDate: '',
@@ -86,12 +93,23 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-dark-text-primary">Log Entries</h2>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-garden-600 hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
-        >
-          Create Log
-        </button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsPreferencesOpen(true)}
+            className="text-dark-text-secondary hover:text-dark-text-primary"
+            title="Unit Preferences"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-garden-600 hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
+          >
+            Create Log
+          </button>
+        </div>
       </div>
       <LogFilters filters={filters} onFilterChange={setFilters} />
       <LogsList logs={logs || []} onLogDeleted={refetch} />
@@ -104,6 +122,22 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
           refetch();
         }}
       />
+
+      <Dialog open={isPreferencesOpen} onOpenChange={setIsPreferencesOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unit Preferences</DialogTitle>
+          </DialogHeader>
+          <UnitPreferences
+            preferences={preferences.units}
+            onChange={(newPreferences) => {
+              Object.entries(newPreferences).forEach(([unit, value]) => {
+                updateUnitPreference(unit as any, value as any);
+              });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
