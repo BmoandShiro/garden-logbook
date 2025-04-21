@@ -1,6 +1,6 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { NextAuthProvider } from './providers';
+import { Providers } from './providers';
 import { Navigation } from './components/Navigation';
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Garden Logbook',
-  description: 'Track and manage your garden with ease',
+  description: 'Track and manage your garden growth',
 };
 
 export default function RootLayout({
@@ -20,12 +20,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full dark">
       <body className={`${inter.className} h-full bg-dark-bg-primary text-dark-text-primary antialiased`}>
-        <NextAuthProvider>
+        <Providers>
           <div className="min-h-full">
             <Navigation />
             <main>{children}</main>
           </div>
-        </NextAuthProvider>
+        </Providers>
         <Toaster richColors position="top-right" />
       </body>
     </html>
