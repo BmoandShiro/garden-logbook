@@ -23,30 +23,30 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch all gardens and their hierarchy
+    // Get all gardens for the user (both owned and member of)
     const gardens = await prisma.garden.findMany({
       where: {
-        creatorId: userId,
+        OR: [
+          { creatorId: userId },
+          { members: { some: { userId } } }
+        ]
       },
       include: {
         rooms: {
           include: {
             zones: {
               include: {
-                plants: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
+                plants: true
+              }
             },
-          },
+            plants: true
+          }
         },
-      },
+        plants: true
+      }
     });
 
-    // Transform the data into a flat list of locations with their full paths
+    // Format the response to include path information
     const locations = [];
 
     for (const garden of gardens) {
@@ -56,36 +56,62 @@ export async function GET(request: Request) {
         name: garden.name,
         type: 'garden',
         path: [garden.name],
+        plants: garden.plants
       });
 
+      // Add rooms
       for (const room of garden.rooms) {
-        // Add room
         locations.push({
           id: room.id,
           name: room.name,
           type: 'room',
           path: [garden.name, room.name],
+          plants: room.plants
         });
 
+        // Add zones
         for (const zone of room.zones) {
-          // Add zone
           locations.push({
             id: zone.id,
             name: zone.name,
             type: 'zone',
             path: [garden.name, room.name, zone.name],
+            plants: zone.plants
           });
 
+          // Add plants in zones
           for (const plant of zone.plants) {
-            // Add plant
             locations.push({
               id: plant.id,
               name: plant.name,
               type: 'plant',
               path: [garden.name, room.name, zone.name, plant.name],
+              plants: []
             });
           }
         }
+
+        // Add plants in rooms
+        for (const plant of room.plants) {
+          locations.push({
+            id: plant.id,
+            name: plant.name,
+            type: 'plant',
+            path: [garden.name, room.name, plant.name],
+            plants: []
+          });
+        }
+      }
+
+      // Add plants in gardens
+      for (const plant of garden.plants) {
+        locations.push({
+          id: plant.id,
+          name: plant.name,
+          type: 'plant',
+          path: [garden.name, plant.name],
+          plants: []
+        });
       }
     }
 

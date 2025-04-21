@@ -18,6 +18,7 @@ interface LocationOption {
   name: string;
   type: 'garden' | 'room' | 'zone' | 'plant';
   path: string[];
+  plants: Array<{ id: string; name: string }>;
 }
 
 interface FormData {
@@ -76,6 +77,20 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
       // Combine date and time into a single Date object
       const dateTime = new Date(`${formData.date}T${formData.time}`);
 
+      // Find the first plant in the selected location or its children
+      let plantId = null;
+      if (selectedLocation) {
+        if (selectedLocation.type === 'plant') {
+          plantId = selectedLocation.id;
+        } else {
+          // Look for plants in the selected location
+          const plants = selectedLocation.plants;
+          if (plants && plants.length > 0) {
+            plantId = plants[0].id; // Use the first plant found
+          }
+        }
+      }
+
       const response = await fetch('/api/logs', {
         method: 'POST',
         headers: {
@@ -85,6 +100,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           ...formData,
           userId,
           date: dateTime.toISOString(),
+          plantId, // Add the found plantId
         }),
       });
 

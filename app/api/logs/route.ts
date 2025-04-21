@@ -118,6 +118,7 @@ export async function POST(request: Request) {
       roomId,
       zoneId,
       plantId,
+      date,
     } = body;
 
     // Verify the user is creating their own log
@@ -133,24 +134,43 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create the log with current date
+    // Build the data object explicitly
+    const data: any = {
+      date: date ? new Date(date) : new Date(),
+      type,
+      stage,
+      notes,
+      temperature,
+      humidity,
+      waterAmount,
+      healthRating,
+      user: {
+        connect: { id: userId }
+      }
+    };
+
+    // Only add relations if IDs are provided
+    if (gardenId) {
+      data.garden = { connect: { id: gardenId } };
+    }
+    if (roomId) {
+      data.room = { connect: { id: roomId } };
+    }
+    if (zoneId) {
+      data.zone = { connect: { id: zoneId } };
+    }
+    if (plantId) {
+      data.plant = { connect: { id: plantId } };
+    }
+
+    // Create the log
     const log = await prisma.log.create({
-      data: {
-        date: new Date(),
-        type,
-        stage,
-        notes,
-        temperature,
-        humidity,
-        waterAmount,
-        healthRating,
-        user: {
-          connect: { id: userId }
-        },
-        garden: gardenId ? { connect: { id: gardenId } } : undefined,
-        room: roomId ? { connect: { id: roomId } } : undefined,
-        zone: zoneId ? { connect: { id: zoneId } } : undefined,
-        plant: plantId ? { connect: { id: plantId } } : undefined,
+      data,
+      include: {
+        garden: true,
+        room: true,
+        zone: true,
+        plant: true,
       },
     });
 
@@ -169,6 +189,13 @@ export async function POST(request: Request) {
     if (error.code === 'P2003') {
       return NextResponse.json(
         { error: 'Invalid garden, room, zone, or plant ID' },
+        { status: 400 }
+      );
+    }
+
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Required relation not found. Please check your selection.' },
         { status: 400 }
       );
     }

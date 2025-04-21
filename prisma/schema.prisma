@@ -186,11 +186,11 @@ model Log {
   // General
   notes       String?   @db.Text
   imageUrls   String[]  // array of image URLs
-  plantId     String
+  plantId     String?   // Made optional
   userId      String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  plant       Plant?    @relation(fields: [plantId], references: [id], onDelete: Cascade) // Made optional
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   data        Json?     // Flexible field for additional measurements
   
