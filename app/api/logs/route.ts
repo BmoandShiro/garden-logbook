@@ -121,139 +121,59 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    const body = await request.json();
-    console.log('Request body:', body);
-
-    const {
-      userId,
-      type,
-      stage,
-      notes,
-      temperature,
-      humidity,
-      waterAmount,
-      healthRating,
-      gardenId,
-      roomId,
-      zoneId,
-      plantId,
-      date,
-    } = body;
-
-    // Verify the user is creating their own log
-    if (userId !== session.user.id) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Validate required fields
-    if (!type || !stage) {
-      return NextResponse.json(
-        { error: 'Type and stage are required' },
-        { status: 400 }
-      );
-    }
+    const data = await request.json();
+    
+    // Convert date and time to a proper DateTime
+    const [year, month, day] = data.date.split('-').map(Number);
+    const [hours, minutes] = data.time.split(':').map(Number);
+    const dateTime = new Date(year, month - 1, day, hours, minutes);
 
-    // Build the data object explicitly
-    const data: any = {
-      date: date ? new Date(date) : new Date(),
-      type,
-      stage,
-      notes,
-      temperature,
-      humidity,
-      waterAmount,
-      healthRating,
-      user: {
-        connect: { id: userId }
-      }
-    };
-
-    console.log('Initial data object:', data);
-
-    // Only add relations if IDs are provided
-    if (gardenId) {
-      data.garden = { connect: { id: gardenId } };
-      console.log('Added garden relation:', gardenId);
-    }
-    if (roomId) {
-      data.room = { connect: { id: roomId } };
-      console.log('Added room relation:', roomId);
-    }
-    if (zoneId) {
-      data.zone = { connect: { id: zoneId } };
-      console.log('Added zone relation:', zoneId);
-    }
-
-    // Connect to plant if provided
-    if (plantId) {
-      console.log('Checking plant ID:', plantId);
-      const plant = await prisma.plant.findUnique({
-        where: { id: plantId }
-      });
-
-      if (plant) {
-        console.log('Found Plant:', plant.id);
-        data.plant = { connect: { id: plantId } };
-      } else {
-        console.log('No plant found with ID:', plantId);
-      }
-    }
-
-    console.log('Final data object:', data);
-
-    // Create the log
+    // Create the log with the proper field names
     const log = await prisma.log.create({
-      data,
+      data: {
+        date: dateTime, // Using 'date' instead of 'actionDate'
+        type: data.type,
+        stage: data.stage,
+        notes: data.notes,
+        temperature: data.temperature,
+        humidity: data.humidity,
+        waterAmount: data.waterAmount,
+        waterTemperature: data.waterTemperature,
+        pH: data.waterPh, // Using 'pH' instead of 'waterPh'
+        runoff: data.runoffPh, // Using 'runoff' instead of 'runoffPh'
+        ec: data.waterPpm ? data.waterPpm / 2 : undefined, // Using 'ec' instead of 'waterEc'
+        nutrientPpm: data.runoffPpm ? data.runoffPpm / 2 : undefined, // Using 'nutrientPpm' for runoff
+        nutrients: data.partAPpm ? [`Part A: ${data.partAPpm}`, 
+                                  `Part B: ${data.partBPpm}`, 
+                                  `Part C: ${data.partCPpm}`,
+                                  `Booster: ${data.boosterPpm}`,
+                                  `Finish: ${data.finishPpm}`].filter(n => n) : undefined,
+        healthRating: data.healthRating,
+        user: data.user,
+        garden: data.garden,
+        room: data.room,
+        zone: data.zone,
+        plant: data.plant,
+      },
       include: {
         garden: true,
         room: true,
         zone: true,
-        plant: true,
-      },
+        plant: true
+      }
     });
 
     return NextResponse.json(log);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating log:', error);
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      meta: error.meta,
-      stack: error.stack
-    });
-    
-    // Handle Prisma errors more specifically
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'A log with these details already exists' },
-        { status: 400 }
-      );
-    }
-    
-    if (error.code === 'P2003') {
-      return NextResponse.json(
-        { error: 'Invalid garden, room, zone, or plant ID' },
-        { status: 400 }
-      );
-    }
-
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Required relation not found. Please check your selection.' },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
-      { error: `Failed to create log: ${error.message}` },
+      { error: `Failed to create log: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

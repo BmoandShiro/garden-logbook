@@ -57,6 +57,17 @@ enum PlantType {
   ZONE_PLANT
 }
 
+enum MeasurementType {
+  NUMBER
+  TEXT
+  BOOLEAN
+  DATE
+  TIME
+  DATETIME
+  ENUM
+  MULTI_ENUM
+}
+
 model User {
   id            String      @id @default(cuid())
   name          String?
@@ -157,66 +168,93 @@ model Strain {
   plants        Plant[]
 }
 
-model Log {
+model MeasurementUnit {
   id          String    @id @default(cuid())
-  date        DateTime  @default(now())
-  type        LogType
-  stage       Stage
-  // Environmental measurements
-  temperature Float?    // in Celsius
-  temperatureUnit String? @default("CELSIUS")
-  humidity    Float?    // percentage
-  pH          Float?
-  ec          Float?    // electrical conductivity
-  par         Float?    // Photosynthetically Active Radiation
-  co2         Float?    // CO2 levels in PPM
-  vpd         Float?    // Vapor Pressure Deficit
-  
-  // Water and nutrients
-  waterAmount Float?    // in milliliters
-  waterUnit   String?   @default("MILLILITERS")
-  runoff      Float?    // runoff pH/EC measurements
-  nutrients   String[]  // array of nutrient names
-  nutrientPpm Float?    // Total PPM of nutrient solution
-  
-  // Growth measurements
-  height      Float?    // plant height
-  heightUnit  String?   @default("CENTIMETERS")
-  width       Float?    // plant width/spread
-  widthUnit   String?   @default("CENTIMETERS")
-  nodeCount   Int?      // number of nodes
-  
-  // Health indicators
-  healthRating Int?     // 1-5 scale
-  symptoms    String[]  // array of observed symptoms
-  pestFound   String[]  // array of pests found
-  
-  // Actions taken
-  actions     String[]  // array of actions taken
-  materials   String[]  // materials used (nutrients, pesticides, etc)
-  
-  // General
-  notes       String?   @db.Text
-  imageUrls   String[]  // array of image URLs
-  userId      String
+  name        String    // e.g., "PPM (500 scale)", "Celsius", "Milliliters"
+  symbol      String    // e.g., "ppm", "°C", "mL"
+  type        String    // e.g., "temperature", "concentration", "volume"
+  conversion  Json?     // Conversion formulas/factors to other units
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  data        Json?     // Flexible field for additional measurements
+  fields      Field[]
+}
+
+model Field {
+  id            String          @id @default(cuid())
+  name          String          // Display name
+  key           String          // Database field name
+  description   String?
+  type          MeasurementType
+  required      Boolean         @default(false)
+  defaultValue  String?
+  unit          MeasurementUnit? @relation(fields: [unitId], references: [id])
+  unitId        String?
+  options       Json?           // For enum/multi-enum types
+  validation    Json?           // Min, max, pattern, etc.
+  category      String          // e.g., "environmental", "nutrients", "plant_metrics"
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  logType       LogType?        // If null, applies to all log types
+  order         Int             @default(0)
+  active        Boolean         @default(true)
+}
+
+model Log {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  logDate       DateTime  // When the action occurred
+  type          LogType
+  stage         Stage
+  notes         String?   @db.Text
+  imageUrls     String[]
+
+  // Environmental
+  temperature   Float?    // Celsius
+  humidity      Float?    // Percentage
+  co2          Float?    // PPM
+  vpd          Float?    // kPa
+  ppfd         Float?    // μmol/m²/s
   
-  // Location context
-  gardenId    String?
-  garden      Garden?   @relation(fields: [gardenId], references: [id])
-  roomId      String?
-  room        Room?     @relation(fields: [roomId], references: [id])
-  zoneId      String?
-  zone        Zone?     @relation(fields: [zoneId], references: [id])
+  // Water & Nutrients (all PPM values use 500 scale)
+  waterAmount   Float?    // mL
+  waterTemp     Float?    // Celsius
+  waterPh       Float?    // pH
+  runoffPh      Float?    // pH
+  waterPpm      Float?    // PPM (500)
+  runoffPpm     Float?    // PPM (500)
   
-  // Plant relations
-  plantId     String?
-  plant       Plant?    @relation(fields: [plantId], references: [id], onDelete: Cascade)
-  zonePlantId String?
-  zonePlant   ZonePlant? @relation(fields: [zonePlantId], references: [id], onDelete: Cascade)
+  // Jack's 321 PPM Measurements
+  partAPpm      Float?    // PPM (500)
+  partBPpm      Float?    // PPM (500)
+  partCPpm      Float?    // PPM (500)
+  boosterPpm    Float?    // PPM (500)
+  finishPpm     Float?    // PPM (500)
+
+  // Plant Metrics
+  height        Float?    // cm
+  width         Float?    // cm
+  nodeCount     Int?
+  healthRating  Int?      // 1-5
+
+  // Dynamic Data
+  data          Json?     // Store additional field values
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gardenId      String?
+  garden        Garden?   @relation(fields: [gardenId], references: [id])
+  roomId        String?
+  room          Room?     @relation(fields: [roomId], references: [id])
+  zoneId        String?
+  zone          Zone?     @relation(fields: [zoneId], references: [id])
+  plantId       String?
+  plant         Plant?    @relation(fields: [plantId], references: [id])
+
+  @@index([userId])
+  @@index([logDate])
+  @@index([type])
 }
 
 model Tag {
@@ -228,29 +266,28 @@ model Tag {
 }
 
 enum LogType {
-  WATERING          // Basic watering log
-  FEEDING           // Nutrient feeding
-  ENVIRONMENTAL     // Environmental conditions
-  PRUNING           // Plant maintenance
-  TRAINING          // Plant training techniques
-  DEFOLIATION       // Leaf removal
-  FLUSHING          // Pre-harvest flushing
-  HARVEST           // Harvest records
-  PEST_DISEASE      // Pest or disease issues
-  TRANSPLANT        // Moving to new container/location
-  GERMINATION       // Seed starting
-  CLONING           // Cloning activities
-  INSPECTION        // Regular plant checkups
-  TREATMENT         // Pest/disease treatments
-  STRESS           // Stress symptoms
-  GENERAL          // General observations
+  WATERING      // Combined with FEEDING
+  ENVIRONMENTAL
+  PRUNING       // Combined with DEFOLIATION
+  FLUSHING
+  HARVEST
+  PEST_DISEASE
+  TRANSPLANT
+  GERMINATION
+  CLONING
+  INSPECTION
+  TREATMENT
+  STRESS
+  GENERAL
+  CUSTOM
 }
 
 enum Stage {
   SEEDLING
   VEGETATIVE
   FLOWERING
-  HARVEST
+  MOTHER
+  CLONE
   DRYING
   CURING
 }
@@ -486,16 +523,74 @@ model Zone {
 model ZonePlant {
   id                  String    @id @default(cuid())
   name                String
-  species             String
-  variety             String?
-  plantedDate         DateTime?
-  expectedHarvestDate DateTime?
+  type                String?
+  strain              String?
   notes               String?   @db.Text
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  creatorId           String
   zoneId              String
   zone                Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  creatorId           String
   createdBy           User      @relation(fields: [creatorId], references: [id])
-  logs                Log[]
+  logs                Log[]     // This is now properly related to Log model
+}
+
+enum NutrientLine {
+  JACKS_321
+  CUSTOM
+}
+
+enum Jacks321Product {
+  PART_A_5_12_26
+  PART_B_15_0_0_CALCIUM_NITRATE
+  PART_C_EPSOM_SALT
+  BOOSTER
+  FINISH
+}
+
+enum WaterSource {
+  TAP
+  RO
+  WELL
+  FILTERED
+  COLLECTED
+  OTHER
+}
+
+enum PestType {
+  SPIDER_MITES
+  THRIPS
+  APHIDS
+  FUNGUS_GNATS
+  WHITEFLIES
+  ROOT_APHIDS
+  OTHER
+}
+
+enum DiseaseType {
+  POWDERY_MILDEW
+  BOTRYTIS
+  ROOT_ROT
+  LEAF_SEPTORIA
+  FUSARIUM_WILT
+  OTHER
+}
+
+enum TreatmentMethod {
+  FOLIAR_SPRAY
+  SOIL_DRENCH
+  BENEFICIAL_INSECTS
+  ENVIRONMENTAL_ADJUSTMENT
+  MANUAL_REMOVAL
+  OTHER
+}
+
+enum TrainingMethod {
+  TOP
+  FIM
+  LST
+  SCROG
+  SUPER_CROP
+  LOLLIPOP
+  OTHER
 }

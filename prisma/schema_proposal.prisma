@@ -1,0 +1,212 @@
+// This is a schema proposal for enhanced logging capabilities
+
+enum LogType {
+  WATERING
+  FEEDING
+  ENVIRONMENTAL
+  PRUNING
+  TRAINING
+  DEFOLIATION
+  FLUSHING
+  HARVEST
+  PEST_DISEASE
+  TRANSPLANT
+  GERMINATION
+  CLONING
+  INSPECTION
+  TREATMENT
+  STRESS
+  GENERAL
+  CUSTOM
+}
+
+// Growth stages
+enum Stage {
+  SEEDLING
+  VEGETATIVE
+  FLOWERING
+  MOTHER
+  CLONE
+  DRYING
+  CURING
+}
+
+// Nutrient lines - can be expanded
+enum NutrientLine {
+  JACKS_321
+  CUSTOM
+  // Add other common nutrient lines here
+}
+
+// Specific to Jack's 321
+enum Jacks321Product {
+  PART_A_5_12_26
+  PART_B_15_0_0_CALCIUM_NITRATE
+  PART_C_EPSOM_SALT
+  BOOSTER
+  FINISH
+}
+
+// Water sources
+enum WaterSource {
+  TAP
+  RO
+  WELL
+  FILTERED
+  COLLECTED
+  OTHER
+}
+
+// Common pest types
+enum PestType {
+  SPIDER_MITES
+  THRIPS
+  APHIDS
+  FUNGUS_GNATS
+  WHITEFLIES
+  ROOT_APHIDS
+  OTHER
+}
+
+// Common disease types
+enum DiseaseType {
+  POWDERY_MILDEW
+  BOTRYTIS
+  ROOT_ROT
+  LEAF_SEPTORIA
+  FUSARIUM_WILT
+  OTHER
+}
+
+// Treatment methods
+enum TreatmentMethod {
+  FOLIAR_SPRAY
+  SOIL_DRENCH
+  BENEFICIAL_INSECTS
+  ENVIRONMENTAL_ADJUSTMENT
+  MANUAL_REMOVAL
+  OTHER
+}
+
+// Training methods
+enum TrainingMethod {
+  TOP
+  FIM
+  LST
+  SCROG
+  SUPER_CROP
+  LOLLIPOP
+  OTHER
+}
+
+model Log {
+  id          String    @id @default(cuid())
+  date        DateTime  @default(now())
+  type        LogType
+  stage       Stage
+  
+  // Core fields (always available)
+  notes       String?   @db.Text
+  imageUrls   String[]
+  
+  // Environmental Measurements
+  temperature           Float?    // in Celsius
+  temperatureUnit      String?   @default("CELSIUS")
+  humidity            Float?    // percentage
+  co2                 Float?    // PPM
+  vpd                 Float?    // Vapor Pressure Deficit
+  lightIntensity      Float?    // PPFD
+  lightHeight         Float?    // Distance from canopy
+  lightHeightUnit     String?   @default("CENTIMETERS")
+  airflow             Boolean?  // Good airflow checkbox
+  
+  // Water & Feeding Related
+  waterSource         WaterSource?
+  waterAmount         Float?      // Volume
+  waterUnit           String?     @default("MILLILITERS")
+  waterTemperature    Float?      // in Celsius
+  waterPh             Float?      // pH before
+  runoffPh           Float?      // pH after
+  waterEc            Float?      // EC/PPM before
+  runoffEc           Float?      // EC/PPM after
+  nutrientLine       NutrientLine?
+  
+  // Jack's 321 Specific
+  jacks321Used       Jacks321Product[] // Array of products used
+  partAAmount        Float?      // Amount of Part A used
+  partBAmount        Float?      // Amount of Part B used
+  partCAmount        Float?      // Amount of Part C used
+  boosterAmount      Float?      // Amount of Booster used
+  finishAmount       Float?      // Amount of Finish used
+  
+  // Custom Nutrients
+  customNutrients    Json?       // Array of {name, amount, unit}
+  
+  // Plant Measurements
+  height             Float?
+  heightUnit         String?     @default("CENTIMETERS")
+  width              Float?      // Canopy spread
+  widthUnit          String?     @default("CENTIMETERS")
+  nodeCount          Int?
+  branchCount        Int?
+  estimatedYield     Float?
+  estimatedYieldUnit String?     @default("GRAMS")
+  
+  // Health & Issues
+  healthRating       Int?        // 1-5 scale
+  pestTypes          PestType[]
+  diseaseTypes       DiseaseType[]
+  deficiencies       String[]    // Array of observed deficiencies
+  leafColor          String?     // General leaf color
+  pestSeverity       Int?        // 1-5 scale
+  diseaseSeverity    Int?        // 1-5 scale
+  
+  // Treatment Related
+  treatmentMethods   TreatmentMethod[]
+  treatmentProducts  String[]    // Array of products used
+  treatmentDosage    Float?
+  treatmentDosageUnit String?
+  
+  // Training Related
+  trainingMethods    TrainingMethod[]
+  trimAmount         Float?      // Amount removed
+  trimAmountUnit     String?     @default("GRAMS")
+  
+  // Harvest Related
+  wetWeight         Float?
+  wetWeightUnit     String?     @default("GRAMS")
+  dryWeight         Float?
+  dryWeightUnit     String?     @default("GRAMS")
+  trimWeight        Float?      // Weight of trim
+  trimWeightUnit    String?     @default("GRAMS")
+  
+  // Drying & Curing
+  dryingTemp        Float?
+  dryingHumidity    Float?
+  dryingDays        Int?
+  curingDays        Int?
+  
+  // Soil/Medium Related
+  mediumMoisture    Float?      // Percentage
+  mediumTemp        Float?
+  mediumPh          Float?
+  
+  // Relationships
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gardenId          String?
+  garden            Garden?     @relation(fields: [gardenId], references: [id])
+  roomId            String?
+  room              Room?       @relation(fields: [roomId], references: [id])
+  zoneId            String?
+  zone              Zone?       @relation(fields: [zoneId], references: [id])
+  plantId           String?
+  plant             Plant?      @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  // Flexible field for additional data
+  customData        Json?       // For any additional measurements or data
+} 
