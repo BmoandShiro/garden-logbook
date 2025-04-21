@@ -212,45 +212,47 @@ model Log {
   // Environmental
   temperature   Float?    // Celsius
   humidity      Float?    // Percentage
-  co2          Float?    // PPM
-  vpd          Float?    // kPa
-  ppfd         Float?    // μmol/m²/s
+  co2           Float?    // PPM
+  vpd           Float?    // kPa
+  ppfd          Float?    // μmol/m²/s
   
   // Water & Nutrients (all PPM values use 500 scale)
   waterAmount   Float?    // mL
   waterTemp     Float?    // Celsius
   waterPh       Float?    // pH
   runoffPh      Float?    // pH
-  waterPpm      Float?    // PPM (500)
-  runoffPpm     Float?    // PPM (500)
+  waterPpm       Float?    // PPM (500)
+  runoffPpm      Float?    // PPM (500)
   
   // Jack's 321 PPM Measurements
-  partAPpm      Float?    // PPM (500)
-  partBPpm      Float?    // PPM (500)
-  partCPpm      Float?    // PPM (500)
-  boosterPpm    Float?    // PPM (500)
-  finishPpm     Float?    // PPM (500)
+  partAPpm        Float?    // PPM (500)
+  partBPpm        Float?    // PPM (500)
+  partCPpm        Float?    // PPM (500)
+  boosterPpm       Float?    // PPM (500)
+  finishPpm        Float?    // PPM (500)
 
   // Plant Metrics
-  height        Float?    // cm
-  width         Float?    // cm
-  nodeCount     Int?
-  healthRating  Int?      // 1-5
+  height          Float?    // cm
+  width           Float?    // cm
+  nodeCount       Int?
+  healthRating    Int?      // 1-5
 
   // Dynamic Data
-  data          Json?     // Store additional field values
+  data            Json?     // Store additional field values
 
   // Relations
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gardenId      String?
-  garden        Garden?   @relation(fields: [gardenId], references: [id])
-  roomId        String?
-  room          Room?     @relation(fields: [roomId], references: [id])
-  zoneId        String?
-  zone          Zone?     @relation(fields: [zoneId], references: [id])
-  plantId       String?
-  plant         Plant?    @relation(fields: [plantId], references: [id])
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gardenId        String?
+  garden          Garden?   @relation(fields: [gardenId], references: [id])
+  roomId          String?
+  room            Room?     @relation(fields: [roomId], references: [id])
+  zoneId          String?
+  zone            Zone?     @relation(fields: [zoneId], references: [id])
+  plantId         String?
+  plant           Plant?    @relation(fields: [plantId], references: [id])
+  zonePlant       ZonePlant? @relation(fields: [zonePlantId], references: [id], onDelete: Cascade)
+  zonePlantId     String?
 
   @@index([userId])
   @@index([logDate])

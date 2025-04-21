@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { LogType } from '@prisma/client';
 
 export async function GET(request: Request) {
@@ -42,12 +42,12 @@ export async function GET(request: Request) {
     }
 
     if (startDate || endDate) {
-      where.date = {};
+      where.logDate = {};
       if (startDate) {
-        where.date.gte = new Date(startDate);
+        where.logDate.gte = new Date(startDate);
       }
       if (endDate) {
-        where.date.lte = new Date(endDate);
+        where.logDate.lte = new Date(endDate);
       }
     }
 
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
 
     console.log('Fetching logs with query:', where);
 
-    const logs = await prisma.log.findMany({
+    const logs = await db.log.findMany({
       where,
       include: {
         plant: {
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
         },
       },
       orderBy: {
-        date: 'desc',
+        logDate: 'desc',
       },
       take: 50,
     });
@@ -127,7 +127,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('Session user ID:', session.user.id);
+    
+    // Verify the user exists
+    const user = await db.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!user) {
+      console.error('User not found in database:', session.user.id);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
     const data = await request.json();
+    console.log('Request data:', data);
     
     // Convert date and time to a proper DateTime
     const [year, month, day] = data.date.split('-').map(Number);
@@ -135,27 +148,27 @@ export async function POST(request: Request) {
     const dateTime = new Date(year, month - 1, day, hours, minutes);
 
     // Create the log with the proper field names
-    const log = await prisma.log.create({
+    const log = await db.log.create({
       data: {
-        date: dateTime, // Using 'date' instead of 'actionDate'
+        logDate: dateTime,
         type: data.type,
         stage: data.stage,
         notes: data.notes,
         temperature: data.temperature,
         humidity: data.humidity,
         waterAmount: data.waterAmount,
-        waterTemperature: data.waterTemperature,
-        pH: data.waterPh, // Using 'pH' instead of 'waterPh'
-        runoff: data.runoffPh, // Using 'runoff' instead of 'runoffPh'
-        ec: data.waterPpm ? data.waterPpm / 2 : undefined, // Using 'ec' instead of 'waterEc'
-        nutrientPpm: data.runoffPpm ? data.runoffPpm / 2 : undefined, // Using 'nutrientPpm' for runoff
-        nutrients: data.partAPpm ? [`Part A: ${data.partAPpm}`, 
-                                  `Part B: ${data.partBPpm}`, 
-                                  `Part C: ${data.partCPpm}`,
-                                  `Booster: ${data.boosterPpm}`,
-                                  `Finish: ${data.finishPpm}`].filter(n => n) : undefined,
+        waterTemp: data.waterTemperature,
+        waterPh: data.waterPh,
+        runoffPh: data.runoffPh,
+        waterPpm: data.waterPpm,
+        runoffPpm: data.runoffPpm,
+        partAPpm: data.partAPpm,
+        partBPpm: data.partBPpm,
+        partCPpm: data.partCPpm,
+        boosterPpm: data.boosterPpm,
+        finishPpm: data.finishPpm,
         healthRating: data.healthRating,
-        user: data.user,
+        userId: session.user.id,
         garden: data.garden,
         room: data.room,
         zone: data.zone,

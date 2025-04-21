@@ -47,7 +47,13 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create plant');
+        const errorData = await response.json();
+        console.error('Failed to create plant:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(`Failed to create plant: ${errorData.details || errorData.error || response.statusText}`);
       }
 
       toast.success('Plant created successfully');

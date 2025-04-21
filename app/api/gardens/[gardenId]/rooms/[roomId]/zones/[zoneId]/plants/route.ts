@@ -11,13 +11,20 @@ export async function POST(
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, species, variety, plantedDate, expectedHarvestDate, notes } = await request.json();
+    const body = await request.json();
+    console.log('Received plant creation request:', {
+      body,
+      params,
+      userId: session.user.id
+    });
 
-    if (!name || !species) {
-      return new NextResponse('Name and species are required', { status: 400 });
+    const { name, species, variety, plantedDate, expectedHarvestDate, notes } = body;
+
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     // Check if user has access to this garden
@@ -38,7 +45,11 @@ export async function POST(
     });
 
     if (!garden) {
-      return new NextResponse('Garden not found or access denied', { status: 404 });
+      console.error('Garden access denied:', {
+        gardenId: params.gardenId,
+        userId: session.user.id
+      });
+      return NextResponse.json({ error: 'Garden not found or access denied' }, { status: 404 });
     }
 
     // Check if zone exists and belongs to the garden
@@ -52,34 +63,70 @@ export async function POST(
     });
 
     if (!zone) {
-      return new NextResponse('Zone not found or access denied', { status: 404 });
+      console.error('Zone not found:', {
+        zoneId: params.zoneId,
+        gardenId: params.gardenId
+      });
+      return NextResponse.json({ error: 'Zone not found or access denied' }, { status: 404 });
     }
 
-    const plant = await prisma.zonePlant.create({
-      data: {
-        name,
-        species,
-        variety,
-        plantedDate: plantedDate ? new Date(plantedDate) : null,
-        expectedHarvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : null,
-        notes,
-        zone: {
-          connect: {
-            id: params.zoneId
+    try {
+      const plant = await prisma.plant.create({
+        data: {
+          name,
+          notes: notes || null,
+          // Use species as strain name if provided
+          strain: species ? {
+            create: {
+              name: species,
+              type: variety || null,
+              userId: session.user.id
+            }
+          } : undefined,
+          stage: 'VEGETATIVE',
+          startDate: new Date(),
+          type: 'ZONE_PLANT',
+          zone: {
+            connect: {
+              id: params.zoneId
+            }
+          },
+          user: {
+            connect: {
+              id: session.user.id
+            }
+          },
+          garden: {
+            connect: {
+              id: params.gardenId
+            }
           }
         },
-        createdBy: {
-          connect: {
-            id: session.user.id
-          }
+        include: {
+          zone: true,
+          garden: true,
+          user: true,
+          strain: true
         }
-      }
-    });
+      });
 
-    return NextResponse.json(plant);
+      console.log('Successfully created plant:', plant);
+      return NextResponse.json(plant);
+    } catch (error) {
+      console.error('[PLANTS_POST] Error creating plant:', error);
+      return NextResponse.json({ 
+        error: 'Internal Server Error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }, { status: 500 });
+    }
   } catch (error) {
-    console.error('[PLANTS_POST]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('[PLANTS_POST] Error creating plant:', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 
@@ -116,7 +163,7 @@ export async function DELETE(
     }
 
     // Check if plant exists and belongs to the zone
-    const plant = await prisma.zonePlant.findFirst({
+    const plant = await prisma.plant.findFirst({
       where: {
         id: params.plantId,
         zoneId: params.zoneId,
@@ -132,7 +179,7 @@ export async function DELETE(
       return new NextResponse('Plant not found or access denied', { status: 404 });
     }
 
-    await prisma.zonePlant.delete({
+    await prisma.plant.delete({
       where: {
         id: params.plantId
       }

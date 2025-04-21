@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     // Convert logs to CSV format
     const csvData = logs.map(log => ({
-      Date: new Date(log.date).toISOString(),
+      Date: new Date(log.logDate).toISOString(),
       Type: log.type,
       Stage: log.stage,
       Plant: log.plant?.name || 'Unknown',

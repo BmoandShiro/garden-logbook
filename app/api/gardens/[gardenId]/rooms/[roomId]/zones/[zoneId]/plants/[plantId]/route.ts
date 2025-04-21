@@ -11,7 +11,7 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user has access to this garden
@@ -32,11 +32,11 @@ export async function DELETE(
     });
 
     if (!garden) {
-      return new NextResponse('Garden not found or access denied', { status: 404 });
+      return NextResponse.json({ error: 'Garden not found or access denied' }, { status: 404 });
     }
 
     // Check if plant exists and belongs to the zone
-    const plant = await prisma.zonePlant.findFirst({
+    const plant = await prisma.plant.findFirst({
       where: {
         id: params.plantId,
         zoneId: params.zoneId,
@@ -49,10 +49,10 @@ export async function DELETE(
     });
 
     if (!plant) {
-      return new NextResponse('Plant not found or access denied', { status: 404 });
+      return NextResponse.json({ error: 'Plant not found or access denied' }, { status: 404 });
     }
 
-    await prisma.zonePlant.delete({
+    await prisma.plant.delete({
       where: {
         id: params.plantId
       }
@@ -60,7 +60,10 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error('[PLANTS_DELETE]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('[PLANTS_DELETE] Error deleting plant:', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 

@@ -41,7 +41,7 @@ export default async function ZonePage({ params }: PageProps) {
       },
       plants: {
         include: {
-          createdBy: true
+          user: true
         },
         orderBy: {
           createdAt: 'desc'

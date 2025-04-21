@@ -173,7 +173,7 @@ export default function Dashboard() {
                               <div className="min-w-0 flex-1">
                                 <div>
                                   <div className="text-sm text-gray-500">
-                                    {new Date(log.date).toLocaleDateString()}
+                                    {new Date(log.logDate).toLocaleDateString()}
                                   </div>
                                 </div>
                                 <div className="mt-1 text-sm text-gray-700">

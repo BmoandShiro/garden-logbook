@@ -111,7 +111,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                     </p>
                     <div className="flex items-center space-x-2">
                       <p className="text-sm text-dark-text-secondary">
-                        {format(new Date(log.date), 'MMM d, yyyy h:mm a')}
+                        {format(new Date(log.logDate), 'MMM d, yyyy h:mm a')}
                       </p>
                       <DeleteLogButton logId={log.id} onSuccess={onLogDeleted} />
                     </div>
