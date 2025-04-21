@@ -135,11 +135,35 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
       plantId: null,
     }));
 
-    // Set the appropriate location ID based on the type
     if (location) {
+      // Find parent locations in correct order based on path
+      const updates: Partial<FormData> = {};
+      
+      // Find locations for each level of the path
+      const gardenName = location.path[0];
+      const roomName = location.path[1];
+      const zoneName = location.path[2];
+      
+      const garden = locations.find(loc => loc.type === 'garden' && loc.name === gardenName);
+      const room = locations.find(loc => loc.type === 'room' && loc.name === roomName && loc.path[0] === gardenName);
+      const zone = locations.find(loc => loc.type === 'zone' && loc.name === zoneName && loc.path[0] === gardenName && loc.path[1] === roomName);
+
+      // Set IDs in hierarchical order
+      if (garden) updates.gardenId = garden.id;
+      if (room) updates.roomId = room.id;
+      if (zone) updates.zoneId = zone.id;
+
+      // Handle plant selection
+      if (location.type === 'plant') {
+        updates.plantId = location.id;
+      } else if (location.plants && location.plants.length > 0) {
+        updates.plantId = location.plants[0].id;
+      }
+
+      // Update all IDs at once
       setFormData(prev => ({
         ...prev,
-        [`${location.type}Id`]: location.id,
+        ...updates
       }));
     }
   };

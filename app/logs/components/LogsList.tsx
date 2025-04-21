@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { LogType } from '@prisma/client';
+import DeleteLogButton from './DeleteLogButton';
 
 interface LogWithLocation {
   id: string;
@@ -28,6 +29,7 @@ interface LogWithLocation {
 
 interface LogsListProps {
   logs: LogWithLocation[];
+  onLogDeleted: () => void;
 }
 
 const getLogIcon = (type: LogType) => {
@@ -61,7 +63,7 @@ const getLocationString = (log: LogWithLocation) => {
   return parts.join(' → ');
 };
 
-export default function LogsList({ logs }: LogsListProps) {
+export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
   return (
     <div className="bg-dark-bg-secondary rounded-lg shadow overflow-hidden">
       <div className="flow-root">
@@ -77,9 +79,12 @@ export default function LogsList({ logs }: LogsListProps) {
                     <p className="text-sm font-medium text-dark-text-primary truncate">
                       {log.type.replace(/_/g, ' ')}
                     </p>
-                    <p className="text-sm text-dark-text-secondary">
-                      {format(new Date(log.date), 'MMM d, yyyy h:mm a')}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm text-dark-text-secondary">
+                        {format(new Date(log.date), 'MMM d, yyyy h:mm a')}
+                      </p>
+                      <DeleteLogButton logId={log.id} onSuccess={onLogDeleted} />
+                    </div>
                   </div>
                   <p className="mt-1 text-sm text-dark-text-secondary">
                     {getLocationString(log)}

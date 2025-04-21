@@ -81,7 +81,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
         </button>
       </div>
       <LogFilters filters={filters} onFilterChange={setFilters} />
-      <LogsList logs={logs || []} />
+      <LogsList logs={logs || []} onLogDeleted={refetch} />
       <CreateLogModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
