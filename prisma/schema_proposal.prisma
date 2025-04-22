@@ -1,8 +1,7 @@
 // This is a schema proposal for enhanced logging capabilities
 
 enum LogType {
-  WATERING
-  FEEDING
+  WATERING/FEEDING
   ENVIRONMENTAL
   PRUNING
   TRAINING
@@ -20,7 +19,6 @@ enum LogType {
   CUSTOM
 }
 
-// Growth stages
 enum Stage {
   SEEDLING
   VEGETATIVE
@@ -31,23 +29,19 @@ enum Stage {
   CURING
 }
 
-// Nutrient lines - can be expanded
 enum NutrientLine {
   JACKS_321
   CUSTOM
-  // Add other common nutrient lines here
 }
 
-// Specific to Jack's 321
 enum Jacks321Product {
   PART_A_5_12_26
   PART_B_15_0_0_CALCIUM_NITRATE
   PART_C_EPSOM_SALT
-  BOOSTER
-  FINISH
+  BLOSSOMBOOST_10_30_20
+  FINISH_7_15_30
 }
 
-// Water sources
 enum WaterSource {
   TAP
   RO
@@ -57,7 +51,14 @@ enum WaterSource {
   OTHER
 }
 
-// Common pest types
+enum PestCategory {
+  INSECT
+  FUNGI
+  BACTERIA
+  VIRUS
+  OTHER
+}
+
 enum PestType {
   SPIDER_MITES
   THRIPS
@@ -65,10 +66,12 @@ enum PestType {
   FUNGUS_GNATS
   WHITEFLIES
   ROOT_APHIDS
+  ASIAN_LADY_BEETLES
+  BOX_ELDERS
+  STINK_BUGS
   OTHER
 }
 
-// Common disease types
 enum DiseaseType {
   POWDERY_MILDEW
   BOTRYTIS
@@ -78,7 +81,6 @@ enum DiseaseType {
   OTHER
 }
 
-// Treatment methods
 enum TreatmentMethod {
   FOLIAR_SPRAY
   SOIL_DRENCH
@@ -88,7 +90,6 @@ enum TreatmentMethod {
   OTHER
 }
 
-// Training methods
 enum TrainingMethod {
   TOP
   FIM
@@ -96,117 +97,204 @@ enum TrainingMethod {
   SCROG
   SUPER_CROP
   LOLLIPOP
+  TRELLIS
+  OTHER
+}
+
+enum VolumeUnit {
+  MILLILITERS
+  LITERS
+  GALLONS
+  FLUID_OUNCES
+}
+
+enum TemperatureUnit {
+  CELSIUS
+  FAHRENHEIT
+}
+
+enum DistanceUnit {
+  CENTIMETERS
+  INCHES
+  FEET
+  METERS
+  YARDS
+}
+
+enum WeightUnit {
+  GRAMS
+  OUNCES
+  POUNDS
+  KILOGRAMS
+}
+
+enum LightIntensityUnit {
+  UMOL_PER_M2_S
+  LUX
+  FOOTCANDLE
+}
+
+enum SuspectedStressCause {
+  HEAT
+  LIGHT_BURN
+  OVERWATERING
+  UNDERWATERING
+  PH_IMBALANCE
+  TOXICITY_ABUNDANCE
+  DEFICIENCY
+  PHYSICAL_DAMAGE
+  PEST
+  FUNGUS
+  BACTERIA
+  DISEASE
   OTHER
 }
 
 model Log {
-  id          String    @id @default(cuid())
-  date        DateTime  @default(now())
-  type        LogType
-  stage       Stage
-  
-  // Core fields (always available)
-  notes       String?   @db.Text
-  imageUrls   String[]
-  
+  id                  String              @id @default(cuid())
+  date                DateTime            @default(now())
+  type                LogType
+  stage               Stage
+  logTitle            String?
+  stressCause         SuspectedStressCause?
+
+  // Notes and media
+  notes               String?             @db.Text
+  imageUrls           String[]
+  logTypeImages       Json?               // {"WATERING": [...], "TRAINING": [...]} for per-type attachments
+
   // Environmental Measurements
-  temperature           Float?    // in Celsius
-  temperatureUnit      String?   @default("CELSIUS")
-  humidity            Float?    // percentage
-  co2                 Float?    // PPM
-  vpd                 Float?    // Vapor Pressure Deficit
-  lightIntensity      Float?    // PPFD
-  lightHeight         Float?    // Distance from canopy
-  lightHeightUnit     String?   @default("CENTIMETERS")
-  airflow             Boolean?  // Good airflow checkbox
-  
-  // Water & Feeding Related
+  temperature         Float?
+  temperatureUnit     TemperatureUnit?    @default(CELSIUS)
+  humidity            Float?
+  co2                 Float?
+  vpd                 Float?
+  par                 Float?
+  parUnit             LightIntensityUnit? @default(UMOL_PER_M2_S)
+  ppfd                Float?
+  lightIntensity      Float?
+  lightIntensityUnit  LightIntensityUnit? @default(UMOL_PER_M2_S)
+  lightHeight         Float?
+  lightHeightUnit     DistanceUnit?       @default(CENTIMETERS)
+  airflow             Boolean?
+
+  // Water & Feeding
   waterSource         WaterSource?
-  waterAmount         Float?      // Volume
-  waterUnit           String?     @default("MILLILITERS")
-  waterTemperature    Float?      // in Celsius
-  waterPh             Float?      // pH before
-  runoffPh           Float?      // pH after
-  waterEc            Float?      // EC/PPM before
-  runoffEc           Float?      // EC/PPM after
-  nutrientLine       NutrientLine?
-  
+  waterAmount         Float?
+  waterUnit           VolumeUnit?         @default(MILLILITERS)
+  waterTemperature    Float?
+  waterTemperatureUnit TemperatureUnit?   @default(CELSIUS)
+  waterPh             Float?
+  runoffPh            Float?
+  waterEc             Float?
+  runoffEc            Float?
+  nutrientLine        NutrientLine?
+
   // Jack's 321 Specific
-  jacks321Used       Jacks321Product[] // Array of products used
-  partAAmount        Float?      // Amount of Part A used
-  partBAmount        Float?      // Amount of Part B used
-  partCAmount        Float?      // Amount of Part C used
-  boosterAmount      Float?      // Amount of Booster used
-  finishAmount       Float?      // Amount of Finish used
-  
+  jacks321Used        Jacks321Product[]
+  partAAmount         Float?
+  partBAmount         Float?
+  partCAmount         Float?
+  boosterAmount       Float?
+  finishAmount        Float?
+
   // Custom Nutrients
-  customNutrients    Json?       // Array of {name, amount, unit}
-  
+  customNutrients     Json?
+
   // Plant Measurements
-  height             Float?
-  heightUnit         String?     @default("CENTIMETERS")
-  width              Float?      // Canopy spread
-  widthUnit          String?     @default("CENTIMETERS")
-  nodeCount          Int?
-  branchCount        Int?
-  estimatedYield     Float?
-  estimatedYieldUnit String?     @default("GRAMS")
-  
+  height              Float?
+  heightUnit          DistanceUnit?       @default(CENTIMETERS)
+  width               Float?
+  widthUnit           DistanceUnit?       @default(CENTIMETERS)
+  nodeCount           Int?
+  branchCount         Int?
+  estimatedYield      Float?
+  estimatedYieldUnit  WeightUnit?         @default(GRAMS)
+
   // Health & Issues
-  healthRating       Int?        // 1-5 scale
-  pestTypes          PestType[]
-  diseaseTypes       DiseaseType[]
-  deficiencies       String[]    // Array of observed deficiencies
-  leafColor          String?     // General leaf color
-  pestSeverity       Int?        // 1-5 scale
-  diseaseSeverity    Int?        // 1-5 scale
-  
+  healthRating        Int?
+  pestTypes           PestType[]
+  pestCategories      PestCategory[]      // Matches types to subcategory
+  diseaseTypes        DiseaseType[]
+  deficiencies        String[]
+  leafColor           String?
+  pestSeverity        Int?
+  diseaseSeverity     Int?
+
   // Treatment Related
-  treatmentMethods   TreatmentMethod[]
-  treatmentProducts  String[]    // Array of products used
-  treatmentDosage    Float?
+  treatmentMethods    TreatmentMethod[]
+  treatmentProducts   String[]
+  treatmentDosage     Float?
   treatmentDosageUnit String?
-  
+
   // Training Related
-  trainingMethods    TrainingMethod[]
-  trimAmount         Float?      // Amount removed
-  trimAmountUnit     String?     @default("GRAMS")
-  
+  trainingMethods     TrainingMethod[]
+  trimAmount          Float?
+  trimAmountUnit      WeightUnit?         @default(GRAMS)
+
   // Harvest Related
-  wetWeight         Float?
-  wetWeightUnit     String?     @default("GRAMS")
-  dryWeight         Float?
-  dryWeightUnit     String?     @default("GRAMS")
-  trimWeight        Float?      // Weight of trim
-  trimWeightUnit    String?     @default("GRAMS")
-  
+  wetWeight           Float?
+  wetWeightUnit       WeightUnit?         @default(GRAMS)
+  dryWeight           Float?
+  dryWeightUnit       WeightUnit?         @default(GRAMS)
+  trimWeight          Float?
+  trimWeightUnit      WeightUnit?         @default(GRAMS)
+
   // Drying & Curing
-  dryingTemp        Float?
-  dryingHumidity    Float?
-  dryingDays        Int?
-  curingDays        Int?
-  
+  dryingTemp          Float?
+  dryingHumidity      Float?
+  dryingDays          Int?
+  curingDays          Int?
+
   // Soil/Medium Related
-  mediumMoisture    Float?      // Percentage
-  mediumTemp        Float?
-  mediumPh          Float?
-  
+  mediumMoisture      Float?
+  mediumTemp          Float?
+  mediumPh            Float?
+
   // Relationships
-  userId            String
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gardenId          String?
-  garden            Garden?     @relation(fields: [gardenId], references: [id])
-  roomId            String?
-  room              Room?       @relation(fields: [roomId], references: [id])
-  zoneId            String?
-  zone              Zone?       @relation(fields: [zoneId], references: [id])
-  plantId           String?
-  plant             Plant?      @relation(fields: [plantId], references: [id], onDelete: Cascade)
-  
+  userId              String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gardenId            String?
+  garden              Garden?             @relation(fields: [gardenId], references: [id])
+  roomId              String?
+  room                Room?               @relation(fields: [roomId], references: [id])
+  zoneId              String?
+  zone                Zone?               @relation(fields: [zoneId], references: [id])
+  plantId             String?
+  plant               Plant?              @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  plants              Plant[]             @relation("LogPlants")
+
   // Metadata
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
-  // Flexible field for additional data
-  customData        Json?       // For any additional measurements or data
-} 
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Flexible field for extra metadata
+  customData          Json?
+}
+
+model Plant {
+  id          String     @id @default(cuid())
+  name        String
+  strainId    String?
+  stage       Stage      @default(VEGETATIVE)
+  location    String?
+  startDate   DateTime   @default(now())
+  harvestDate DateTime?
+  notes       String?
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  roomId      String?
+  gardenId    String?
+  type        PlantType  @default(REGULAR)
+  zoneId      String?
+  logs        Log[]      @relation("LogPlants")
+  garden      Garden?    @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  room        Room?      @relation(fields: [roomId], references: [id])
+  strain      Strain?    @relation(fields: [strainId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zone        Zone?      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  logEntries  LogEntry[] @relation("LogEntryToPlant")
+  tags        Tag[]      @relation("PlantToTag")
+}
