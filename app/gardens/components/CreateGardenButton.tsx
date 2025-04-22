@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
 
 export default function CreateGardenButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,11 +55,9 @@ export default function CreateGardenButton() {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="bg-garden-600 hover:bg-garden-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+        className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-        </svg>
+        <Plus className="h-5 w-5" />
         Create Garden
       </button>
 
@@ -82,7 +81,7 @@ export default function CreateGardenButton() {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
+                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     required
                   />
                 </div>
@@ -95,7 +94,7 @@ export default function CreateGardenButton() {
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
+                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     rows={3}
                   />
                 </div>
@@ -109,7 +108,7 @@ export default function CreateGardenButton() {
                     id="imageUrl"
                     value={formData.imageUrl}
                     onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
+                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
 
@@ -119,7 +118,7 @@ export default function CreateGardenButton() {
                     id="isPrivate"
                     checked={formData.isPrivate}
                     onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })}
-                    className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-garden-600 focus:ring-garden-500"
+                    className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-indigo-600 focus:ring-indigo-500"
                   />
                   <label htmlFor="isPrivate" className="ml-2 block text-sm text-dark-text-primary">
                     Make this garden private
@@ -131,14 +130,14 @@ export default function CreateGardenButton() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
+                  className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-garden-600 border border-transparent rounded-md hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Creating...' : 'Create Garden'}
                 </button>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 interface CreateRoomButtonProps {
   gardenId: string;
@@ -148,8 +149,9 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+        className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium"
       >
+        <Plus className="h-4 w-4 mr-2" />
         Create Room
       </button>
 
