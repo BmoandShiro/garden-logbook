@@ -631,7 +631,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         <DialogHeader>
           <DialogTitle>Create New Log</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="logType">Log Type</Label>
