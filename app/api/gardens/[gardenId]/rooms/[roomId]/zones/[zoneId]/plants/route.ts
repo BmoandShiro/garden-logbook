@@ -71,42 +71,28 @@ export async function POST(
     }
 
     try {
-      const plant = await prisma.plant.create({
+      const plant = await prisma.zonePlant.create({
         data: {
           name,
+          species,
+          variety: variety || null,
+          plantedDate: plantedDate ? new Date(plantedDate) : null,
+          expectedHarvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : null,
           notes: notes || null,
-          // Use species as strain name if provided
-          strain: species ? {
-            create: {
-              name: species,
-              type: variety || null,
-              userId: session.user.id
-            }
-          } : undefined,
-          stage: 'VEGETATIVE',
-          startDate: new Date(),
-          type: 'ZONE_PLANT',
           zone: {
             connect: {
               id: params.zoneId
             }
           },
-          user: {
+          createdBy: {
             connect: {
               id: session.user.id
-            }
-          },
-          garden: {
-            connect: {
-              id: params.gardenId
             }
           }
         },
         include: {
           zone: true,
-          garden: true,
-          user: true,
-          strain: true
+          createdBy: true
         }
       });
 
@@ -163,7 +149,7 @@ export async function DELETE(
     }
 
     // Check if plant exists and belongs to the zone
-    const plant = await prisma.plant.findFirst({
+    const plant = await prisma.zonePlant.findFirst({
       where: {
         id: params.plantId,
         zoneId: params.zoneId,
@@ -179,7 +165,7 @@ export async function DELETE(
       return new NextResponse('Plant not found or access denied', { status: 404 });
     }
 
-    await prisma.plant.delete({
+    await prisma.zonePlant.delete({
       where: {
         id: params.plantId
       }

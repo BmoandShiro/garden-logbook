@@ -11,11 +11,21 @@ export default async function Dashboard() {
   }
 
   // Fetch zone plants count
-  const plantCount = await prisma.zonePlant.count({
-    where: {
-      creatorId: session.user.id
-    }
-  });
+  const [zonePlantCount, regularPlantCount] = await Promise.all([
+    prisma.zonePlant.count({
+      where: {
+        creatorId: session.user.id
+      }
+    }),
+    prisma.plant.count({
+      where: {
+        userId: session.user.id,
+        type: 'ZONE_PLANT'
+      }
+    })
+  ]);
+
+  const totalPlantCount = zonePlantCount + regularPlantCount;
 
   return (
     <div className="py-10">
@@ -32,7 +42,7 @@ export default async function Dashboard() {
               {/* Quick Stats */}
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Plants</h3>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{plantCount}</p>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{totalPlantCount}</p>
                 <p className="mt-2 text-sm text-dark-text-secondary">Active plants in your garden</p>
               </div>
 
@@ -54,7 +64,7 @@ export default async function Dashboard() {
               <h2 className="text-xl font-semibold text-dark-text-primary mb-4">Recent Plants</h2>
               <div className="rounded-lg bg-dark-bg-secondary overflow-hidden shadow ring-1 ring-dark-border">
                 <div className="p-6">
-                  {plantCount > 0 ? (
+                  {totalPlantCount > 0 ? (
                     <div className="space-y-4">
                       {/* Plants will be listed here in the client component */}
                       <p className="text-dark-text-secondary">Loading plants...</p>
