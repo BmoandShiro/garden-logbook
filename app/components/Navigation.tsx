@@ -23,7 +23,7 @@ export function Navigation() {
   const { data: session } = useSession();
 
   return (
-    <Disclosure as="nav" className="bg-dark-bg-secondary shadow-lg ring-1 ring-dark-border">
+    <Disclosure as="nav" className="bg-dark-bg-secondary shadow-lg ring-1 ring-dark-border relative z-50">
       {({ open }) => (
         <>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -43,8 +43,9 @@ export function Navigation() {
                         pathname === item.href
                           ? 'border-garden-500 text-dark-text-primary'
                           : 'border-transparent text-dark-text-secondary hover:border-dark-text-secondary hover:text-dark-text-primary',
-                        'inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium'
+                        'inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium cursor-pointer relative'
                       )}
+                      style={{ zIndex: 60 }}
                     >
                       {item.name}
                     </Link>
