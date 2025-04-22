@@ -7,7 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "create-admin": "ts-node scripts/create-admin.ts"
+    "create-admin": "ts-node scripts/create-admin.ts",
+    "setup": "ts-node scripts/setup.ts",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed",
+    "db:backup": "prisma db pull > prisma/schema_backup_$(date +%Y%m%d).prisma",
+    "validate:prisma": "prisma validate",
+    "check:migrations": "ts-node scripts/check-migrations.ts",
+    "prepare": "husky",
+    "precommit": "ts-node scripts/check-migrations.ts && prisma validate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
@@ -51,6 +59,7 @@
     "autoprefixer": "^10.4.14",
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
+    "husky": "^9.1.7",
     "postcss": "^8.4.31",
     "prisma": "^6.6.0",
     "tailwindcss": "^3.3.0",

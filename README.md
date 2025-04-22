@@ -1,3 +1,251 @@
+# Garden Logbook 🌱
+
+A web application for tracking and managing garden activities. This guide will help you set up the application, even if you're new to web development or Arch Linux.
+
+## Table of Contents
+- [What You'll Need](#what-youll-need)
+- [Setting Up Arch Linux](#setting-up-arch-linux)
+- [Installing Required Software](#installing-required-software)
+- [Setting Up the Application](#setting-up-the-application)
+- [Running the Application](#running-the-application)
+- [Troubleshooting](#troubleshooting)
+- [Database Migration Workflow](#database-migration-workflow)
+
+## What You'll Need
+
+1. A computer running Arch Linux
+2. Basic knowledge of using a terminal
+3. An internet connection
+4. About 30 minutes of time
+
+## Setting Up Arch Linux
+
+If you're new to Arch Linux, here are the basic steps to get started:
+
+1. **Install Arch Linux**
+   - Follow the [official installation guide](https://wiki.archlinux.org/title/Installation_guide)
+   - Or use an installer like [archinstall](https://wiki.archlinux.org/title/Archinstall)
+
+2. **Update Your System**
+   ```bash
+   sudo pacman -Syu
+   ```
+
+3. **Install Basic Tools**
+   ```bash
+   sudo pacman -S git base-devel
+   ```
+
+## Installing Required Software
+
+1. **Install Node.js and npm**
+   ```bash
+   sudo pacman -S nodejs npm
+   ```
+
+2. **Install PostgreSQL**
+   ```bash
+   sudo pacman -S postgresql
+   ```
+
+3. **Start and Enable PostgreSQL**
+   ```bash
+   sudo systemctl start postgresql
+   sudo systemctl enable postgresql
+   ```
+
+4. **Set Up PostgreSQL User**
+   ```bash
+   sudo -u postgres psql
+   ```
+   In the PostgreSQL prompt:
+   ```sql
+   ALTER USER postgres WITH PASSWORD 'postgres';
+   \q
+   ```
+
+## Setting Up the Application
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/garden-logbook.git
+   cd garden-logbook
+   ```
+
+2. **Run the Setup Script**
+   ```bash
+   npm run setup
+   ```
+   This script will:
+   - Install all required software
+   - Set up the database
+   - Create necessary tables
+   - Create an admin user
+
+3. **Configure Environment Variables**
+   The setup script will create a `.env` file. You may need to edit it:
+   ```bash
+   nano .env
+   ```
+   Make sure these values are correct:
+   ```
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/garden_logbook"
+   ```
+
+## Running the Application
+
+1. **Start the Development Server**
+   ```bash
+   npm run dev
+   ```
+
+2. **Access the Application**
+   - Open your web browser
+   - Go to http://localhost:3000
+
+3. **Login**
+   - Email: admin@example.com
+   - Password: admin123
+   - ⚠️ Change these credentials immediately after first login!
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **PostgreSQL Connection Failed**
+   ```bash
+   # Check if PostgreSQL is running
+   sudo systemctl status postgresql
+   
+   # If not running, start it
+   sudo systemctl start postgresql
+   
+   # Create the database if it doesn't exist
+   sudo -u postgres createdb garden_logbook
+   ```
+
+2. **Node.js Version Issues**
+   ```bash
+   # Check your Node.js version
+   node --version
+   
+   # If it's too old, update it
+   sudo pacman -Syu nodejs
+   ```
+
+3. **Dependency Installation Failed**
+   ```bash
+   # Try installing with legacy peer deps
+   npm install --legacy-peer-deps
+   ```
+
+4. **Database Migration Failed**
+   ```bash
+   # Reset the database
+   npm run db:reset
+   ```
+
+### Getting Help
+
+If you encounter any issues:
+1. Check the error messages in the terminal
+2. Look for similar issues in the [GitHub Issues](https://github.com/yourusername/garden-logbook/issues)
+3. Ask for help in the project's discussion forum
+
+## Next Steps
+
+Once you have the application running:
+1. Explore the features
+2. Add your garden data
+3. Customize the application to your needs
+4. Consider contributing to the project
+
+## Need More Help?
+
+- Check out the [Arch Linux Wiki](https://wiki.archlinux.org/)
+- Visit the [Node.js documentation](https://nodejs.org/en/docs/)
+- Read the [PostgreSQL documentation](https://www.postgresql.org/docs/)
+- Join our community forum for support
+
+Happy gardening! 🌿
+
+## Prerequisites
+
+- Node.js (v18 or later)
+- PostgreSQL (v14 or later)
+- npm or yarn
+
+## Quick Start
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/garden-logbook.git
+   cd garden-logbook
+   ```
+
+2. Run the setup script:
+   ```bash
+   npm run setup
+   ```
+   This will:
+   - Install all dependencies
+   - Set up the database
+   - Create necessary tables
+   - Seed initial data
+   - Create an admin user
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Access the application at http://localhost:3000
+
+## Manual Setup (if needed)
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials and other settings
+   ```
+
+3. Initialize the database:
+   ```bash
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+4. Seed the database (optional):
+   ```bash
+   npm run db:seed
+   ```
+
+## Database Management
+
+- Reset database: `npm run db:reset`
+- Backup schema: `npm run db:backup`
+- Check migration status: `npm run check:migrations`
+- Validate Prisma schema: `npm run validate:prisma`
+
+## Development
+
+- Start development server: `npm run dev`
+- Build for production: `npm run build`
+- Start production server: `npm run start`
+- Lint code: `npm run lint`
+
+## Default Admin Credentials
+
+- Email: admin@example.com
+- Password: admin123
+
+**Note:** Change these credentials after first login for security.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -34,3 +282,476 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Database Migration Workflow
+
+### Before Committing Changes
+
+1. **Check Migration Status**
+   ```bash
+   npm run check:migrations
+   ```
+   This will ensure your database schema is up to date.
+
+2. **Create New Migrations**
+   If you've made changes to the database schema:
+   ```bash
+   npx prisma migrate dev --name your_migration_name
+   ```
+
+3. **Commit Process**
+   The pre-commit hook will automatically:
+   - Check migration status
+   - Validate the Prisma schema
+   - Prevent commits if migrations are pending
+
+### Best Practices
+
+1. **Always Create Migrations**
+   - Never modify the database schema without creating a migration
+   - Use descriptive names for migrations (e.g., `add_user_roles`)
+
+2. **Testing Migrations**
+   - Test migrations locally before pushing
+   - Use `npm run db:reset` to test from scratch
+
+3. **Backup Strategy**
+   - Regularly backup your schema:
+     ```bash
+     npm run db:backup
+     ```
+   - Keep migration files in version control
+   - Document any manual steps needed for migrations
+
+4. **Team Collaboration**
+   - Pull latest changes before creating new migrations
+   - Resolve any migration conflicts before pushing
+   - Communicate about database changes with the team
+
+### Troubleshooting Migrations
+
+1. **Migration Conflicts**
+   ```bash
+   # Reset the database
+   npm run db:reset
+   
+   # Apply all migrations
+   npx prisma migrate deploy
+   ```
+
+2. **Schema Validation Failed**
+   ```bash
+   # Validate the schema
+   npm run validate:prisma
+   
+   # Fix any issues in schema.prisma
+   ```
+
+3. **Pending Migrations**
+   ```bash
+   # Check status
+   npm run check:migrations
+   
+   # Apply pending migrations
+   npx prisma migrate dev
+   ```
+
+## Complete Workflow Walkthrough
+
+This section provides a step-by-step guide for the complete development cycle, from making changes to setting up on a fresh machine.
+
+### Scenario: Adding a New Feature with Database Changes
+
+#### 1. Starting Development (Current Machine)
+
+```bash
+# 1. Pull latest changes
+git pull origin main
+
+# 2. Start development server
+npm run dev
+```
+
+#### 2. Making Database Changes
+
+```bash
+# 1. Modify your schema in prisma/schema.prisma
+# For example, adding a new field to a model
+
+# 2. Create a new migration
+npx prisma migrate dev --name add_new_field
+
+# 3. The migration will:
+#    - Create a new migration file
+#    - Apply the migration to your local database
+#    - Regenerate the Prisma Client
+```
+
+#### 3. Testing Your Changes
+
+```bash
+# 1. Test your changes locally
+# 2. If needed, reset the database to test from scratch
+npm run db:reset
+```
+
+#### 4. Preparing to Commit
+
+```bash
+# 1. Check migration status
+npm run check:migrations
+
+# 2. Backup your schema (good practice)
+npm run db:backup
+
+# 3. Stage your changes
+git add .
+```
+
+#### 5. Committing Changes
+
+```bash
+# 1. Try to commit
+git commit -m "feat: add new field to model"
+
+# The pre-commit hook will automatically:
+# - Check migration status
+# - Validate Prisma schema
+# - Prevent commit if checks fail
+```
+
+#### 6. Pushing Changes
+
+```bash
+# 1. Push your changes
+git push origin your-branch
+
+# 2. Create a pull request if working in a team
+```
+
+### Scenario: Setting Up on a Fresh Machine
+
+#### 1. Initial Setup (Fresh Arch Linux Installation)
+
+```bash
+# 1. Install required system packages
+sudo pacman -Syu
+sudo pacman -S nodejs npm postgresql git
+
+# 2. Start and enable PostgreSQL
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# 3. Set up PostgreSQL user
+sudo -u postgres psql
+# In PostgreSQL prompt:
+ALTER USER postgres WITH PASSWORD 'postgres';
+\q
+```
+
+#### 2. Cloning and Setting Up the Project
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/garden-logbook.git
+cd garden-logbook
+
+# 2. Run the setup script
+npm run setup
+# This will:
+# - Install dependencies
+# - Set up the database
+# - Run all migrations
+# - Create an admin user
+```
+
+#### 3. Verifying the Setup
+
+```bash
+# 1. Check migration status
+npm run check:migrations
+# Should show: "Database schema is up to date"
+
+# 2. Start the development server
+npm run dev
+
+# 3. Access the application
+# Open http://localhost:3000 in your browser
+```
+
+### Common Scenarios and Solutions
+
+#### 1. Migration Conflicts
+
+```bash
+# If you get migration conflicts after pulling:
+npm run db:reset
+npx prisma migrate deploy
+```
+
+#### 2. Schema Validation Failed
+
+```bash
+# If the schema validation fails:
+npm run validate:prisma
+# Fix any issues in schema.prisma
+npx prisma generate
+```
+
+#### 3. Database Connection Issues
+
+```bash
+# Check PostgreSQL status
+sudo systemctl status postgresql
+
+# Verify database exists
+sudo -u postgres psql -l
+
+# Create database if missing
+sudo -u postgres createdb garden_logbook
+```
+
+#### 4. Pre-commit Hook Failing
+
+```bash
+# If the pre-commit hook fails:
+# 1. Check migration status
+npm run check:migrations
+
+# 2. Apply any pending migrations
+npx prisma migrate dev
+
+# 3. Validate schema
+npm run validate:prisma
+```
+
+### Best Practices Checklist
+
+Before committing:
+- [ ] Run `npm run check:migrations`
+- [ ] Test your changes locally
+- [ ] Backup your schema with `npm run db:backup`
+- [ ] Ensure all migrations are applied
+
+Before pushing:
+- [ ] Pull latest changes
+- [ ] Resolve any conflicts
+- [ ] Run the test suite (if available)
+- [ ] Verify the application works
+
+On a fresh machine:
+- [ ] Install all system prerequisites
+- [ ] Start PostgreSQL service
+- [ ] Run the setup script
+- [ ] Verify migration status
+- [ ] Test the application
+
+### Troubleshooting Guide
+
+#### Database Issues
+
+1. **Can't connect to database**
+   ```bash
+   # Check PostgreSQL service
+   sudo systemctl status postgresql
+   
+   # Verify database exists
+   sudo -u postgres psql -l
+   
+   # Check connection string in .env
+   cat .env | grep DATABASE_URL
+   ```
+
+2. **Migration failed**
+   ```bash
+   # Reset the database
+   npm run db:reset
+   
+   # Try applying migrations again
+   npx prisma migrate deploy
+   ```
+
+3. **Schema out of sync**
+   ```bash
+   # Pull latest schema
+   npx prisma db pull
+   
+   # Generate new migration
+   npx prisma migrate dev --name sync_schema
+   ```
+
+#### Development Environment Issues
+
+1. **Node.js version mismatch**
+   ```bash
+   # Check current version
+   node --version
+   
+   # Update Node.js
+   sudo pacman -Syu nodejs
+   ```
+
+2. **Dependencies issues**
+   ```bash
+   # Clean install
+   rm -rf node_modules
+   npm install
+   
+   # If still issues
+   npm install --legacy-peer-deps
+   ```
+
+3. **Git hooks not working**
+   ```bash
+   # Reinstall husky
+   npm uninstall husky
+   npm install --save-dev husky
+   npx husky init
+   ```
+
+Remember to:
+- Always create migrations for schema changes
+- Test migrations locally before pushing
+- Keep your schema backups up to date
+- Communicate database changes with your team
+
+## GitHub Desktop Workflow with Database Management
+
+### Before Using GitHub Desktop
+
+1. **Check Database Status**
+   ```bash
+   # Run this in your terminal before opening GitHub Desktop
+   npm run check:migrations
+   ```
+
+2. **Backup Current Database State**
+   ```bash
+   # Create a backup of your current schema
+   npm run db:backup
+   ```
+
+3. **Verify All Migrations Are Committed**
+   ```bash
+   # Check if all migration files are in git
+   git status prisma/migrations/
+   ```
+
+### Using GitHub Desktop
+
+1. **Before Committing**
+   - Open GitHub Desktop
+   - Review your changes
+   - Make sure `prisma/migrations/` folder is included in the changes
+   - Check that `.env` is NOT included (should be in .gitignore)
+
+2. **Commit Message Format**
+   ```
+   feat: your feature description
+   - Added new migration: prisma/migrations/YYYYMMDDHHMMSS_your_migration
+   - Updated schema.prisma
+   ```
+
+3. **After Committing**
+   ```bash
+   # Verify the commit was successful
+   git log -1
+   ```
+
+### Pulling Changes on Another Machine
+
+1. **Before Pulling**
+   ```bash
+   # Backup current database state
+   npm run db:backup
+   ```
+
+2. **Using GitHub Desktop to Pull**
+   - Pull the changes
+   - Watch for any merge conflicts in:
+     - `prisma/schema.prisma`
+     - `prisma/migrations/` folder
+
+3. **After Pulling**
+   ```bash
+   # Install any new dependencies
+   npm install
+
+   # Apply new migrations
+   npx prisma migrate deploy
+
+   # Verify database is up to date
+   npm run check:migrations
+   ```
+
+### Common Issues and Solutions
+
+1. **Migration Files Missing After Pull**
+   ```bash
+   # Check if migrations are in the commit
+   git log --name-status | grep migration
+
+   # If missing, you may need to:
+   git checkout origin/main -- prisma/migrations/
+   ```
+
+2. **Database Out of Sync**
+   ```bash
+   # Reset and reapply all migrations
+   npm run db:reset
+   npx prisma migrate deploy
+   ```
+
+3. **Schema Conflicts**
+   ```bash
+   # If you have local schema changes:
+   # 1. Backup your current schema
+   npm run db:backup
+
+   # 2. Reset to the pulled version
+   git checkout origin/main -- prisma/schema.prisma
+
+   # 3. Create a new migration for your changes
+   npx prisma migrate dev --name merge_changes
+   ```
+
+### Best Practices for GitHub Desktop Users
+
+1. **Always Check These Before Committing**:
+   - [ ] Migration files are included
+   - [ ] `.env` is NOT included
+   - [ ] Schema changes are properly migrated
+   - [ ] Database is up to date
+
+2. **Before Pulling**:
+   - [ ] Backup current database
+   - [ ] Check for local uncommitted changes
+   - [ ] Note any local schema changes
+
+3. **After Pulling**:
+   - [ ] Run database checks
+   - [ ] Apply new migrations
+   - [ ] Verify application works
+
+### Quick Reference for Terminal Commands
+
+```bash
+# Before committing
+npm run check:migrations
+npm run db:backup
+
+# After pulling
+npm install
+npx prisma migrate deploy
+npm run check:migrations
+
+# If something goes wrong
+npm run db:reset
+npx prisma migrate deploy
+```
+
+Remember:
+- Always keep migration files in sync with schema changes
+- Never commit `.env` file
+- Backup your database before major changes
+- Test the application after pulling changes

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,6 +5,398 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String            @id @default(cuid())
+  name              String?
+  email             String            @unique
+  emailVerified     DateTime?
+  image             String?
+  role              Role              @default(USER)
+  permissions       Permission[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  password          String?
+  accounts          Account[]
+  createdSOPs       CleaningSOP[]
+  createdEquipment  Equipment[]
+  ownedGardens      Garden[]          @relation("GardenCreator")
+  addedMembers      GardenMember[]    @relation("MemberAdder")
+  gardenMemberships GardenMember[]
+  logs              Log[]
+  logEntries        LogEntry[]
+  logTemplates      LogTemplate[]
+  createdTasks      MaintenanceTask[]
+  plants            Plant[]
+  createdRooms      Room[]            @relation("RoomCreator")
+  roomTemplates     RoomTemplate[]
+  sessions          Session[]
+  strains           Strain[]
+  createdZones      Zone[]
+  createdPlants     ZonePlant[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Plant {
+  id          String     @id @default(cuid())
+  name        String
+  strainId    String?
+  stage       Stage      @default(VEGETATIVE)
+  location    String?
+  startDate   DateTime   @default(now())
+  harvestDate DateTime?
+  notes       String?
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  roomId      String?
+  gardenId    String?
+  type        PlantType  @default(REGULAR)
+  zoneId      String?
+  logs        Log[]
+  garden      Garden?    @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  room        Room?      @relation(fields: [roomId], references: [id])
+  strain      Strain?    @relation(fields: [strainId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zone        Zone?      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  logEntries  LogEntry[] @relation("LogEntryToPlant")
+  tags        Tag[]      @relation("PlantToTag")
+}
+
+model Strain {
+  id            String   @id @default(cuid())
+  name          String
+  type          String?
+  floweringTime Int?
+  description   String?
+  imageUrl      String?
+  thcContent    Float?
+  cbdContent    Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String
+  plants        Plant[]
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MeasurementUnit {
+  id         String   @id @default(cuid())
+  name       String
+  symbol     String
+  type       String
+  conversion Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  fields     Field[]
+}
+
+model Field {
+  id           String           @id @default(cuid())
+  name         String
+  key          String
+  description  String?
+  type         MeasurementType
+  required     Boolean          @default(false)
+  defaultValue String?
+  unitId       String?
+  options      Json?
+  validation   Json?
+  category     String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  logType      LogType?
+  order        Int              @default(0)
+  active       Boolean          @default(true)
+  unit         MeasurementUnit? @relation(fields: [unitId], references: [id])
+}
+
+model Log {
+  id           String     @id @default(cuid())
+  type         LogType
+  stage        Stage
+  temperature  Float?
+  humidity     Float?
+  waterAmount  Float?
+  notes        String?
+  plantId      String?
+  userId       String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  co2          Float?
+  gardenId     String?
+  healthRating Int?
+  height       Float?
+  imageUrls    String[]
+  nodeCount    Int?
+  roomId       String?
+  vpd          Float?
+  width        Float?
+  zoneId       String?
+  zonePlantId  String?
+  ppfd         Float?
+  runoffPh     Float?
+  waterPh      Float?
+  boosterPpm   Float?
+  data         Json?
+  finishPpm    Float?
+  logDate      DateTime
+  partAPpm     Float?
+  partBPpm     Float?
+  partCPpm     Float?
+  runoffPpm    Float?
+  waterPpm     Float?
+  waterTemp    Float?
+  garden       Garden?    @relation(fields: [gardenId], references: [id])
+  plant        Plant?     @relation(fields: [plantId], references: [id])
+  room         Room?      @relation(fields: [roomId], references: [id])
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zone         Zone?      @relation(fields: [zoneId], references: [id])
+  zonePlant    ZonePlant? @relation(fields: [zonePlantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([logDate])
+  @@index([type])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+  plants    Plant[]  @relation("PlantToTag")
+}
+
+model LogTemplate {
+  id             String     @id @default(cuid())
+  name           String
+  description    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  userId         String
+  roomId         String?
+  fields         Json
+  isActive       Boolean    @default(true)
+  color          String?
+  defaultValues  Json?
+  gardenId       String?
+  icon           String?
+  isPublic       Boolean    @default(false)
+  layout         Json?
+  reminderBefore Int?
+  reminders      Boolean    @default(false)
+  required       String[]
+  scheduleConfig Json?
+  type           LogType
+  version        Int        @default(1)
+  entries        LogEntry[]
+  garden         Garden?    @relation(fields: [gardenId], references: [id])
+  room           Room?      @relation(fields: [roomId], references: [id])
+  createdBy      User       @relation(fields: [userId], references: [id])
+}
+
+model LogEntry {
+  id           String      @id @default(cuid())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  date         DateTime
+  templateId   String
+  userId       String
+  roomId       String?
+  data         Json
+  notes        String?
+  completedAt  DateTime?
+  duration     Int?
+  gardenId     String?
+  imageUrls    String[]
+  scheduledFor DateTime?
+  status       String      @default("completed")
+  tags         String[]
+  weather      Json?
+  zoneId       String?
+  garden       Garden?     @relation(fields: [gardenId], references: [id])
+  room         Room?       @relation(fields: [roomId], references: [id])
+  template     LogTemplate @relation(fields: [templateId], references: [id])
+  createdBy    User        @relation(fields: [userId], references: [id])
+  zone         Zone?       @relation(fields: [zoneId], references: [id])
+  plants       Plant[]     @relation("LogEntryToPlant")
+}
+
+model Room {
+  id               String            @id @default(cuid())
+  name             String
+  description      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  gardenId         String
+  blueprintUrl     String?
+  dimensions       String?
+  type             String?
+  creatorId        String
+  cleaningSOPs     CleaningSOP[]
+  equipment        Equipment[]
+  logs             Log[]
+  logEntries       LogEntry[]
+  logTemplates     LogTemplate[]
+  maintenanceTasks MaintenanceTask[]
+  plants           Plant[]
+  createdBy        User              @relation("RoomCreator", fields: [creatorId], references: [id])
+  garden           Garden            @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  zones            Zone[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Garden {
+  id           String         @id @default(cuid())
+  name         String
+  description  String?
+  isPrivate    Boolean        @default(true)
+  imageUrl     String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  creatorId    String
+  createdBy    User           @relation("GardenCreator", fields: [creatorId], references: [id])
+  members      GardenMember[]
+  logs         Log[]
+  logEntries   LogEntry[]
+  logTemplates LogTemplate[]
+  plants       Plant[]
+  rooms        Room[]
+}
+
+model GardenMember {
+  id          String               @id @default(cuid())
+  gardenId    String
+  userId      String
+  permissions ResourcePermission[]
+  addedById   String
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  addedBy     User                 @relation("MemberAdder", fields: [addedById], references: [id])
+  garden      Garden               @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id])
+
+  @@unique([gardenId, userId])
+}
+
+model Equipment {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  creatorId   String
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model CleaningSOP {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  frequency   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  creatorId   String
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model MaintenanceTask {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  frequency   String
+  nextDueDate DateTime
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roomId      String
+  creatorId   String
+  createdBy   User     @relation(fields: [creatorId], references: [id])
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model RoomTemplate {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  type               String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  userId             String
+  defaultEquipment   Json
+  defaultSOPs        Json
+  defaultMaintenance Json
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Zone {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  type        String?
+  dimensions  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  roomId      String
+  creatorId   String
+  logs        Log[]
+  logEntries  LogEntry[]
+  plants      Plant[]
+  createdBy   User        @relation(fields: [creatorId], references: [id])
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  zonePlants  ZonePlant[]
+}
+
+model ZonePlant {
+  id        String   @id @default(cuid())
+  name      String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  zoneId    String
+  creatorId String
+  strain    String?
+  type      String?
+  logs      Log[]
+  createdBy User     @relation(fields: [creatorId], references: [id])
+  zone      Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
@@ -32,24 +418,24 @@ enum Permission {
 }
 
 enum ResourcePermission {
-  VIEW        // Can view the resource
-  EDIT        // Can edit resource details
-  DELETE      // Can delete the resource
-  MANAGE      // Can manage resource settings
-  INVITE      // Can invite others
-  MANAGE_PERMS // Can manage others' permissions
+  VIEW
+  EDIT
+  DELETE
+  MANAGE
+  INVITE
+  MANAGE_PERMS
 }
 
 enum ScheduleFrequency {
   HOURLY
   DAILY
   WEEKLY
-  BIWEEKLY    // Every two weeks
+  BIWEEKLY
   MONTHLY
-  QUARTERLY   // Every three months
-  BIANNUAL    // Every six months
+  QUARTERLY
+  BIANNUAL
   YEARLY
-  CUSTOM      // For custom intervals
+  CUSTOM
 }
 
 enum PlantType {
@@ -68,209 +454,10 @@ enum MeasurementType {
   MULTI_ENUM
 }
 
-model User {
-  id            String      @id @default(cuid())
-  name          String?
-  email         String      @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?     // Optional to allow OAuth users without passwords
-  role          Role        @default(USER)
-  permissions   Permission[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  plants        Plant[]
-  logs          Log[]
-  strains       Strain[]
-  accounts      Account[]
-  sessions      Session[]
-  logTemplates  LogTemplate[]
-  logEntries    LogEntry[]
-  ownedGardens  Garden[]    @relation("GardenCreator")
-  gardenMemberships GardenMember[]
-  addedMembers  GardenMember[] @relation("MemberAdder")
-  roomTemplates RoomTemplate[]
-  createdRooms  Room[]      @relation("RoomCreator")
-  createdZones  Zone[]
-  createdEquipment Equipment[]
-  createdSOPs   CleaningSOP[]
-  createdTasks  MaintenanceTask[]
-  createdPlants ZonePlant[]
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Plant {
-  id          String   @id @default(cuid())
-  name        String
-  strainId    String?
-  strain      Strain?  @relation(fields: [strainId], references: [id])
-  stage       Stage    @default(VEGETATIVE)
-  location    String?
-  startDate   DateTime @default(now())
-  harvestDate DateTime?
-  notes       String?  @db.Text
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  logs        Log[]
-  tags        Tag[]    @relation("PlantToTag")
-  room        Room?    @relation(fields: [roomId], references: [id])
-  roomId      String?
-  logEntries  LogEntry[]
-  gardenId    String?
-  garden      Garden?  @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-  type        PlantType @default(REGULAR)
-  zoneId      String?
-  zone        Zone?    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-}
-
-model Strain {
-  id            String   @id @default(cuid())
-  name          String
-  type          String?  // indica, sativa, hybrid
-  floweringTime Int?     // in weeks
-  description   String?  @db.Text
-  imageUrl      String?
-  thcContent    Float?
-  cbdContent    Float?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plants        Plant[]
-}
-
-model MeasurementUnit {
-  id          String    @id @default(cuid())
-  name        String    // e.g., "PPM (500 scale)", "Celsius", "Milliliters"
-  symbol      String    // e.g., "ppm", "°C", "mL"
-  type        String    // e.g., "temperature", "concentration", "volume"
-  conversion  Json?     // Conversion formulas/factors to other units
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  fields      Field[]
-}
-
-model Field {
-  id            String          @id @default(cuid())
-  name          String          // Display name
-  key           String          // Database field name
-  description   String?
-  type          MeasurementType
-  required      Boolean         @default(false)
-  defaultValue  String?
-  unit          MeasurementUnit? @relation(fields: [unitId], references: [id])
-  unitId        String?
-  options       Json?           // For enum/multi-enum types
-  validation    Json?           // Min, max, pattern, etc.
-  category      String          // e.g., "environmental", "nutrients", "plant_metrics"
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  logType       LogType?        // If null, applies to all log types
-  order         Int             @default(0)
-  active        Boolean         @default(true)
-}
-
-model Log {
-  id            String    @id @default(cuid())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  logDate       DateTime  // When the action occurred
-  type          LogType
-  stage         Stage
-  notes         String?   @db.Text
-  imageUrls     String[]
-
-  // Environmental
-  temperature   Float?    // Celsius
-  humidity      Float?    // Percentage
-  co2           Float?    // PPM
-  vpd           Float?    // kPa
-  ppfd          Float?    // μmol/m²/s
-  
-  // Water & Nutrients (all PPM values use 500 scale)
-  waterAmount   Float?    // mL
-  waterTemp     Float?    // Celsius
-  waterPh       Float?    // pH
-  runoffPh      Float?    // pH
-  waterPpm       Float?    // PPM (500)
-  runoffPpm      Float?    // PPM (500)
-  
-  // Jack's 321 PPM Measurements
-  partAPpm        Float?    // PPM (500)
-  partBPpm        Float?    // PPM (500)
-  partCPpm        Float?    // PPM (500)
-  boosterPpm       Float?    // PPM (500)
-  finishPpm        Float?    // PPM (500)
-
-  // Plant Metrics
-  height          Float?    // cm
-  width           Float?    // cm
-  nodeCount       Int?
-  healthRating    Int?      // 1-5
-
-  // Dynamic Data
-  data            Json?     // Store additional field values
-
-  // Relations
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gardenId        String?
-  garden          Garden?   @relation(fields: [gardenId], references: [id])
-  roomId          String?
-  room            Room?     @relation(fields: [roomId], references: [id])
-  zoneId          String?
-  zone            Zone?     @relation(fields: [zoneId], references: [id])
-  plantId         String?
-  plant           Plant?    @relation(fields: [plantId], references: [id])
-  zonePlant       ZonePlant? @relation(fields: [zonePlantId], references: [id], onDelete: Cascade)
-  zonePlantId     String?
-
-  @@index([userId])
-  @@index([logDate])
-  @@index([type])
-}
-
-model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  color     String?
-  createdAt DateTime @default(now())
-  plants    Plant[]  @relation("PlantToTag")
-}
-
 enum LogType {
-  WATERING      // Combined with FEEDING
+  WATERING
   ENVIRONMENTAL
-  PRUNING       // Combined with DEFOLIATION
+  PRUNING
   FLUSHING
   HARVEST
   PEST_DISEASE
@@ -295,246 +482,22 @@ enum Stage {
 }
 
 enum FieldType {
-  TEXT        // Free text input
-  NUMBER      // Numeric input with optional units
-  BOOLEAN     // Yes/No checkbox
-  SELECT      // Dropdown selection
-  MULTI_SELECT // Multiple choice selection
-  DATE        // Date picker
-  TIME        // Time picker
-  DATETIME    // Date and time picker
-  RATING      // 1-5 or 1-10 rating
-  MEASUREMENT // Numeric with units (e.g., pH, EC, PPM)
-  TEMPERATURE // Temperature with unit conversion
-  HUMIDITY    // Humidity percentage
-  COUNTER     // Incrementing/decrementing counter
-  TIMER       // Duration/timer
-  MEDIA       // Image/video upload
-  LOCATION    // Location selection (Garden/Room/Zone)
-}
-
-model LogTemplate {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  type        LogType     // The primary type of log this template is for
-  icon        String?     // Icon identifier for the template
-  color       String?     // Color theme for the template
-  
-  // Template configuration
-  fields      Json        // Array of field definitions with validation rules
-  layout      Json?       // UI layout configuration
-  defaultValues Json?     // Default values for fields
-  required    String[]    // Array of required field IDs
-  
-  // Scheduling
-  scheduleConfig Json?    // { frequency: ScheduleFrequency, interval: number, times: string[], daysOfWeek: number[] }
-  reminders   Boolean     @default(false)
-  reminderBefore Int?     // Minutes before scheduled time to send reminder
-  
-  // Template metadata
-  isActive    Boolean     @default(true)
-  isPublic    Boolean     @default(false)
-  version     Int         @default(1)
-  
-  // Relations
-  createdBy   User        @relation(fields: [userId], references: [id])
-  userId      String
-  garden      Garden?     @relation(fields: [gardenId], references: [id])
-  gardenId    String?
-  room        Room?       @relation(fields: [roomId], references: [id])
-  roomId      String?
-  entries     LogEntry[]
-  
-  // Timestamps
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-model LogEntry {
-  id            String      @id @default(cuid())
-  template      LogTemplate @relation(fields: [templateId], references: [id])
-  templateId    String
-  
-  // Core data
-  data          Json        // The actual log data matching template fields
-  date          DateTime    // When the logged activity occurred
-  duration      Int?        // Duration in minutes (if applicable)
-  status        String      @default("completed") // drafted, completed, flagged, etc.
-  
-  // Relations
-  createdBy     User        @relation(fields: [userId], references: [id])
-  userId        String
-  plants        Plant[]     // Plants involved in this log entry
-  garden        Garden?     @relation(fields: [gardenId], references: [id])
-  gardenId      String?
-  room          Room?       @relation(fields: [roomId], references: [id])
-  roomId        String?
-  zone          Zone?       @relation(fields: [zoneId], references: [id])
-  zoneId        String?
-  
-  // Additional context
-  notes         String?     // Additional notes
-  tags          String[]    // Custom tags
-  imageUrls     String[]    // Associated images
-  weather       Json?       // Weather conditions (if outdoor)
-  
-  // Timestamps
-  scheduledFor  DateTime?   // When this log was scheduled for
-  completedAt   DateTime?   // When the log was marked as completed
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-}
-
-model Room {
-  id              String   @id @default(cuid())
-  name            String
-  description     String?
-  type            String?
-  dimensions      String?
-  blueprintUrl    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  gardenId        String
-  garden          Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-  createdBy       User     @relation("RoomCreator", fields: [creatorId], references: [id])
-  creatorId       String
-  equipment       Equipment[]
-  cleaningSOPs    CleaningSOP[]
-  maintenanceTasks MaintenanceTask[]
-  plants          Plant[]
-  logTemplates    LogTemplate[]
-  logEntries      LogEntry[]
-  logs            Log[]
-  zones           Zone[]
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-model Garden {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  imageUrl    String?
-  isPrivate   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  creatorId   String
-  createdBy   User     @relation("GardenCreator", fields: [creatorId], references: [id])
-  members     GardenMember[]
-  rooms       Room[]
-  plants      Plant[]
-  logTemplates LogTemplate[]
-  logEntries  LogEntry[]
-  logs        Log[]
-}
-
-model GardenMember {
-  id          String   @id @default(cuid())
-  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-  gardenId    String
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
-  addedBy     User     @relation("MemberAdder", fields: [addedById], references: [id])
-  addedById   String
-  permissions ResourcePermission[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([gardenId, userId])
-}
-
-model Equipment {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  roomId      String
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation(fields: [creatorId], references: [id])
-  creatorId   String
-}
-
-model CleaningSOP {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  frequency   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  roomId      String
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation(fields: [creatorId], references: [id])
-  creatorId   String
-}
-
-model MaintenanceTask {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  frequency   String
-  nextDueDate DateTime
-  completed   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  roomId      String
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation(fields: [creatorId], references: [id])
-  creatorId   String
-}
-
-model RoomTemplate {
-  id                String   @id @default(cuid())
-  name              String
-  description       String?
-  type              String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  defaultEquipment  Json
-  defaultSOPs       Json
-  defaultMaintenance Json
-}
-
-model Zone {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  type        String?
-  dimensions  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  roomId      String
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  creatorId   String
-  createdBy   User     @relation(fields: [creatorId], references: [id])
-  plants      Plant[]
-  logs        Log[]
-  logEntries  LogEntry[]
-  zonePlants  ZonePlant[]
-}
-
-model ZonePlant {
-  id                  String    @id @default(cuid())
-  name                String
-  type                String?
-  strain              String?
-  notes               String?   @db.Text
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  creatorId           String
-  zoneId              String
-  zone                Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  createdBy           User      @relation(fields: [creatorId], references: [id])
-  logs                Log[]     // This is now properly related to Log model
+  TEXT
+  NUMBER
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  DATE
+  TIME
+  DATETIME
+  RATING
+  MEASUREMENT
+  TEMPERATURE
+  HUMIDITY
+  COUNTER
+  TIMER
+  MEDIA
+  LOCATION
 }
 
 enum NutrientLine {

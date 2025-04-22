@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Check migration status
+npx ts-node scripts/check-migrations.ts
+
+# Validate Prisma schema
+npx prisma validate
+
+# If either check fails, the commit will be aborted
