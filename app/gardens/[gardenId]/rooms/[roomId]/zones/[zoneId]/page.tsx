@@ -39,9 +39,9 @@ export default async function ZonePage({ params }: PageProps) {
           }
         }
       },
-      plants: {
+      zonePlants: {
         include: {
-          user: true
+          createdBy: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -94,7 +94,7 @@ export default async function ZonePage({ params }: PageProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-emerald-300/70">Total Plants</p>
-                <p className="text-2xl font-semibold text-emerald-100">{zone.plants.length}</p>
+                <p className="text-2xl font-semibold text-emerald-100">{zone.zonePlants.length}</p>
               </div>
               {/* Add more statistics as needed */}
             </div>
@@ -103,7 +103,7 @@ export default async function ZonePage({ params }: PageProps) {
 
         <div className="space-y-4">
           <PlantList 
-            plants={zone.plants} 
+            plants={zone.zonePlants} 
             gardenId={params.gardenId} 
             roomId={params.roomId} 
             zoneId={params.zoneId} 

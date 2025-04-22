@@ -74,11 +74,9 @@ export async function POST(
       const plant = await prisma.zonePlant.create({
         data: {
           name,
-          species,
-          variety: variety || null,
-          plantedDate: plantedDate ? new Date(plantedDate) : null,
-          expectedHarvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : null,
           notes: notes || null,
+          strain: species || null,
+          type: variety || null,
           zone: {
             connect: {
               id: params.zoneId

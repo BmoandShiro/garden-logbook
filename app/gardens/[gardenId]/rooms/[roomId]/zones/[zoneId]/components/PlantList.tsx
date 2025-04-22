@@ -12,16 +12,14 @@ import { Trash } from 'lucide-react';
 interface Plant {
   id: string;
   name: string;
-  species: string;
-  variety: string | null;
-  plantedDate: Date | null;
-  expectedHarvestDate: Date | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
   zoneId: string;
   creatorId: string;
-  user: User;
+  strain: string | null;
+  type: string | null;
+  createdBy: User;
 }
 
 interface PlantListProps {
@@ -84,23 +82,11 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                 <h3 className="text-lg font-semibold text-emerald-100">{plant.name}</h3>
                 <div className="space-y-1">
                   <p className="text-sm text-emerald-300/70">
-                    <span className="font-medium text-emerald-200">Species:</span> {plant.species}
-                    {plant.variety && ` (${plant.variety})`}
+                    <span className="font-medium text-emerald-200">Species:</span> {plant.strain || 'Unknown'}
+                    {plant.type && ` (${plant.type})`}
                   </p>
-                  {plant.plantedDate && (
-                    <p className="text-sm text-emerald-300/70">
-                      <span className="font-medium text-emerald-200">Planted:</span>{' '}
-                      {new Date(plant.plantedDate).toLocaleDateString()}
-                    </p>
-                  )}
-                  {plant.expectedHarvestDate && (
-                    <p className="text-sm text-emerald-300/70">
-                      <span className="font-medium text-emerald-200">Expected Harvest:</span>{' '}
-                      {new Date(plant.expectedHarvestDate).toLocaleDateString()}
-                    </p>
-                  )}
                   <p className="text-sm text-emerald-300/70">
-                    Added by {plant.user.name || plant.user.email}
+                    Added by {plant.createdBy.name || plant.createdBy.email}
                   </p>
                 </div>
               </div>
