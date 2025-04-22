@@ -9,6 +9,15 @@ interface PlantInfo {
   name: string;
 }
 
+interface LocationNode {
+  id: string;
+  name: string;
+  type: 'garden' | 'room' | 'zone' | 'plant';
+  path: string[];
+  plants: PlantInfo[];
+  children: LocationNode[];
+}
+
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -52,76 +61,119 @@ export async function GET(request: Request) {
       }
     });
 
-    // Format the response to include path information
-    const locations = [];
+    // Format the response as a hierarchical structure
+    const locations: LocationNode[] = [];
 
     for (const garden of gardens) {
-      // Add garden
-      locations.push({
+      const gardenNode: LocationNode = {
         id: garden.id,
         name: garden.name,
         type: 'garden',
         path: [garden.name],
-        plants: garden.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name }))
-      });
+        plants: garden.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name })),
+        children: []
+      };
 
-      // Add rooms
+      // Add rooms as children of garden
       for (const room of garden.rooms) {
-        locations.push({
+        const roomNode: LocationNode = {
           id: room.id,
           name: room.name,
           type: 'room',
           path: [garden.name, room.name],
-          plants: room.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name }))
-        });
+          plants: room.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name })),
+          children: []
+        };
 
-        // Add zones
+        // Add zones as children of room
         for (const zone of room.zones) {
-          locations.push({
+          const zoneNode: LocationNode = {
             id: zone.id,
             name: zone.name,
             type: 'zone',
             path: [garden.name, room.name, zone.name],
-            plants: zone.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name }))
-          });
-
-          // Add plants in zones
-          for (const plant of zone.plants) {
-            locations.push({
+            plants: zone.plants.map((p: Plant): PlantInfo => ({ id: p.id, name: p.name })),
+            children: zone.plants.map((plant: Plant): LocationNode => ({
               id: plant.id,
               name: plant.name,
               type: 'plant',
               path: [garden.name, room.name, zone.name, plant.name],
-              plants: []
-            });
-          }
+              plants: [],
+              children: []
+            }))
+          };
+          roomNode.children.push(zoneNode);
         }
 
-        // Add plants in rooms
-        for (const plant of room.plants) {
-          locations.push({
-            id: plant.id,
-            name: plant.name,
-            type: 'plant',
-            path: [garden.name, room.name, plant.name],
-            plants: []
-          });
-        }
-      }
-
-      // Add plants in gardens
-      for (const plant of garden.plants) {
-        locations.push({
+        // Add room's direct plants as children
+        const roomPlantNodes = room.plants.map((plant: Plant): LocationNode => ({
           id: plant.id,
           name: plant.name,
           type: 'plant',
-          path: [garden.name, plant.name],
-          plants: []
-        });
+          path: [garden.name, room.name, plant.name],
+          plants: [],
+          children: []
+        }));
+        roomNode.children.push(...roomPlantNodes);
+
+        gardenNode.children.push(roomNode);
       }
+
+      // Add garden's direct plants as children
+      const gardenPlantNodes = garden.plants.map((plant: Plant): LocationNode => ({
+        id: plant.id,
+        name: plant.name,
+        type: 'plant',
+        path: [garden.name, plant.name],
+        plants: [],
+        children: []
+      }));
+      gardenNode.children.push(...gardenPlantNodes);
+
+      locations.push(gardenNode);
     }
 
-    return NextResponse.json(locations);
+    // Flatten the hierarchical structure for the frontend while preserving context
+    const flattenedLocations = locations.flatMap(garden => [
+      // Garden level
+      {
+        id: garden.id,
+        name: garden.name,
+        type: 'garden',
+        path: garden.path,
+        plants: garden.plants
+      },
+      // Room level
+      ...garden.children.flatMap(room => [
+        {
+          id: room.id,
+          name: room.name,
+          type: 'room',
+          path: room.path,
+          plants: room.plants
+        },
+        // Zone level
+        ...room.children.flatMap(zone => [
+          {
+            id: zone.id,
+            name: zone.name,
+            type: 'zone',
+            path: zone.path,
+            plants: zone.plants
+          },
+          // Plant level
+          ...zone.children.map(plant => ({
+            id: plant.id,
+            name: plant.name,
+            type: 'plant',
+            path: plant.path,
+            plants: []
+          }))
+        ])
+      ])
+    ]);
+
+    return NextResponse.json(flattenedLocations);
   } catch (error) {
     console.error('Error fetching locations:', error);
     return NextResponse.json(

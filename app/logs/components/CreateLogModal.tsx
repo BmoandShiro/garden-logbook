@@ -421,7 +421,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               >
                 <option value="">Select a location</option>
                 {locations?.map((loc: LocationOption) => (
-                  <option key={`${loc.type}:${loc.id}`} value={loc.id}>
+                  <option key={`${loc.type}:${loc.path.join('>')}:${loc.id}`} value={loc.id}>
                     {(loc.path || []).join(' → ')}
                   </option>
                 ))}

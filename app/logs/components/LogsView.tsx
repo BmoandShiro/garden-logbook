@@ -138,8 +138,8 @@ export default function LogsView({ userId }: LogsViewProps) {
     const matchesType = !filters.logType || log.type === filters.logType;
     const matchesStage = !filters.stage || log.stage === filters.stage;
     const matchesPlant = !filters.plantId || log.plantId === filters.plantId;
-    const matchesDate = (!filters.dateRange?.from || new Date(log.date) >= filters.dateRange.from) &&
-                       (!filters.dateRange?.to || new Date(log.date) <= filters.dateRange.to);
+    const matchesDate = (!filters.dateRange?.from || new Date(log.logDate) >= filters.dateRange.from) &&
+                       (!filters.dateRange?.to || new Date(log.logDate) <= filters.dateRange.to);
     
     return matchesSearch && matchesType && matchesStage && matchesPlant && matchesDate;
   });
@@ -210,7 +210,7 @@ export default function LogsView({ userId }: LogsViewProps) {
                 >
                   <option value="">Choose a plant</option>
                   {plants.map((plant) => (
-                    <option key={plant.id} value={plant.id}>
+                    <option key={`select-${plant.id}`} value={plant.id}>
                       {plant.name}
                     </option>
                   ))}
@@ -278,7 +278,7 @@ export default function LogsView({ userId }: LogsViewProps) {
             >
               <option value="">All Plants</option>
               {plants.map((plant) => (
-                <option key={plant.id} value={plant.id}>
+                <option key={`filter-${plant.id}`} value={plant.id}>
                   {plant.name}
                 </option>
               ))}
@@ -319,7 +319,7 @@ export default function LogsView({ userId }: LogsViewProps) {
             ) : (
               filteredLogs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell>{new Date(log.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(log.logDate).toLocaleDateString()}</TableCell>
                   <TableCell>{log.type.toLowerCase().replace('_', ' ')}</TableCell>
                   <TableCell>{log.stage.toLowerCase()}</TableCell>
                   <TableCell>{plants.find(p => p.id === log.plantId)?.name || 'Unknown'}</TableCell>
