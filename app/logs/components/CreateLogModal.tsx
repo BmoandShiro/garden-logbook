@@ -70,8 +70,10 @@ interface FormData {
   waterTemperatureUnit: TemperatureUnit;
   waterPh?: number;
   runoffPh?: number;
-  waterEc?: number;
-  runoffEc?: number;
+  sourceWaterPpm?: number;
+  waterPpm?: number;
+  runoffPpm?: number;
+  ppmScale: 'PPM_500' | 'PPM_700';
   nutrientLine?: NutrientLine;
 
   // Jack's 321
@@ -174,6 +176,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     wetWeightUnit: WeightUnit.GRAMS,
     dryWeightUnit: WeightUnit.GRAMS,
     trimWeightUnit: WeightUnit.GRAMS,
+    ppmScale: 'PPM_500',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -407,23 +410,45 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
+      <div className="col-span-2">
+        <Label htmlFor="ppmScale">PPM Scale</Label>
+        <select
+          id="ppmScale"
+          value={formData.ppmScale}
+          onChange={(e) => setFormData({ ...formData, ppmScale: e.target.value as 'PPM_500' | 'PPM_700' })}
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+        >
+          <option value="PPM_500">PPM 500 Scale (0.5 EC)</option>
+          <option value="PPM_700">PPM 700 Scale (0.7 EC)</option>
+        </select>
+      </div>
       <div>
-        <Label htmlFor="waterEc">Water EC</Label>
+        <Label htmlFor="sourceWaterPpm">Source Water PPM</Label>
         <Input
           type="number"
-          id="waterEc"
-          value={formData.waterEc || ''}
-          onChange={(e) => setFormData({ ...formData, waterEc: parseFloat(e.target.value) })}
+          id="sourceWaterPpm"
+          value={formData.sourceWaterPpm || ''}
+          onChange={(e) => setFormData({ ...formData, sourceWaterPpm: parseFloat(e.target.value) })}
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
       <div>
-        <Label htmlFor="runoffEc">Runoff EC</Label>
+        <Label htmlFor="waterPpm">Water PPM</Label>
         <Input
           type="number"
-          id="runoffEc"
-          value={formData.runoffEc || ''}
-          onChange={(e) => setFormData({ ...formData, runoffEc: parseFloat(e.target.value) })}
+          id="waterPpm"
+          value={formData.waterPpm || ''}
+          onChange={(e) => setFormData({ ...formData, waterPpm: parseFloat(e.target.value) })}
+          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        />
+      </div>
+      <div>
+        <Label htmlFor="runoffPpm">Runoff PPM</Label>
+        <Input
+          type="number"
+          id="runoffPpm"
+          value={formData.runoffPpm || ''}
+          onChange={(e) => setFormData({ ...formData, runoffPpm: parseFloat(e.target.value) })}
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
