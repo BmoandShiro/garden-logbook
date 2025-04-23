@@ -226,7 +226,6 @@ interface FormData {
   gardenId?: string;
   roomId?: string;
   zoneId?: string;
-  plantId?: string;
   selectedPlants: string[];
 
   // Environmental
@@ -354,6 +353,11 @@ interface FormData {
   transplantFromSize?: ContainerSize;
   transplantToSize?: ContainerSize;
   soilMoisture?: SoilMoisture;
+
+  // Transfer Fields
+  destinationGardenId?: string;
+  destinationRoomId?: string;
+  destinationZoneId?: string;
 }
 
 interface CreateLogModalProps {
@@ -400,6 +404,9 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     fungalSymptoms: [],
     stressSymptoms: [],
     ipmMethods: [],
+    destinationGardenId: '',
+    destinationRoomId: '',
+    destinationZoneId: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -414,6 +421,11 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
   const rooms = locations.filter(loc => loc.type === 'room' && (!formData.gardenId || loc.path[0] === gardens.find(g => g.id === formData.gardenId)?.name));
   const zones = locations.filter(loc => loc.type === 'zone' && (!formData.roomId || loc.path[1] === rooms.find(r => r.id === formData.roomId)?.name));
   const plants = locations.filter(loc => loc.type === 'plant' && (!formData.zoneId || loc.path[2] === zones.find(z => z.id === formData.zoneId)?.name));
+
+  // Filter locations for destination
+  const destinationGardens = locations.filter(loc => loc.type === 'garden');
+  const destinationRooms = locations.filter(loc => loc.type === 'room' && (!formData.destinationGardenId || loc.path[0] === destinationGardens.find(g => g.id === formData.destinationGardenId)?.name));
+  const destinationZones = locations.filter(loc => loc.type === 'zone' && (!formData.destinationRoomId || loc.path[1] === destinationRooms.find(r => r.id === formData.destinationRoomId)?.name));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1711,6 +1723,75 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderTransferFields = () => (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-dark-text-primary">Transfer To</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="destinationGarden">Garden</Label>
+            <select
+              id="destinationGarden"
+              value={formData.destinationGardenId || ''}
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  destinationGardenId: e.target.value,
+                  destinationRoomId: '',
+                  destinationZoneId: ''
+                });
+              }}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
+            >
+              <option value="">Select Garden</option>
+              {destinationGardens.map((garden) => (
+                <option key={garden.id} value={garden.id}>{garden.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="destinationRoom">Room</Label>
+            <select
+              id="destinationRoom"
+              value={formData.destinationRoomId || ''}
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  destinationRoomId: e.target.value,
+                  destinationZoneId: ''
+                });
+              }}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
+              disabled={!formData.destinationGardenId}
+            >
+              <option value="">Select Room</option>
+              {destinationRooms.map((room) => (
+                <option key={room.id} value={room.id}>{room.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="destinationZone">Zone</Label>
+            <select
+              id="destinationZone"
+              value={formData.destinationZoneId || ''}
+              onChange={(e) => setFormData({ ...formData, destinationZoneId: e.target.value })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
+              disabled={!formData.destinationRoomId}
+            >
+              <option value="">Select Zone</option>
+              {destinationZones.map((zone) => (
+                <option key={zone.id} value={zone.id}>{zone.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -1736,6 +1817,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderHealthFields();
       case 'TRANSPLANT':
         return renderTransplantFields();
+      case 'TRANSFER':
+        return renderTransferFields();
       default:
         return null;
     }
