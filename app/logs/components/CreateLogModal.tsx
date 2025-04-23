@@ -37,6 +37,28 @@ type Jacks321Unit = 'GRAMS' | 'PPM';
 type Intensity = 'LIGHT' | 'MODERATE' | 'INTENSE';
 type Shape = 'EVEN' | 'SLOPED' | 'SUPER_UNEVEN';
 
+type ContainerSize = 
+  | 'AERO_CLONER'
+  | 'SOLO_CUP'
+  | 'CLONE'
+  | 'HALF_GALLON'
+  | 'ONE_GALLON'
+  | 'TWO_GALLON'
+  | 'TWO_HALF_GALLON'
+  | 'THREE_GALLON'
+  | 'FIVE_GALLON'
+  | 'SEVEN_GALLON'
+  | 'TEN_GALLON'
+  | 'FIFTEEN_GALLON'
+  | 'TWENTY_GALLON'
+  | 'TWENTY_FIVE_GALLON'
+  | 'THIRTY_GALLON'
+  | 'FORTY_GALLON'
+  | 'FORTY_FIVE_GALLON'
+  | 'FIFTY_GALLON';
+
+type SoilMoisture = 'DRY' | 'WET';
+
 type HangMethod = 'ENTIRE_PLANT' | 'BRANCHES' | 'NUGS_ON_RACKS';
 type TrichomeColor = 'MOSTLY_CLEAR' | 'MOSTLY_MILKY' | 'MILKY_MIXED_AMBER' | 'MORE_THAN_30_AMBER';
 type TrimMoisture = 'WET' | 'DRY' | 'LIVE';
@@ -327,6 +349,11 @@ interface FormData {
 
   // IPM Methods
   ipmMethods: IPMMethod[];
+
+  // Transplant Fields
+  transplantFromSize?: ContainerSize;
+  transplantToSize?: ContainerSize;
+  soilMoisture?: SoilMoisture;
 }
 
 interface CreateLogModalProps {
@@ -1600,6 +1627,90 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderTransplantFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="transplantFromSize">Transplant From</Label>
+          <select
+            id="transplantFromSize"
+            value={formData.transplantFromSize || ''}
+            onChange={(e) => setFormData({ ...formData, transplantFromSize: e.target.value as ContainerSize })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Size</option>
+            {[
+              { value: 'AERO_CLONER', label: 'Aero Cloner' },
+              { value: 'SOLO_CUP', label: 'Solo Cup' },
+              { value: 'CLONE', label: 'Clone' },
+              { value: 'HALF_GALLON', label: '0.5 Gallon' },
+              { value: 'ONE_GALLON', label: '1 Gallon' },
+              { value: 'TWO_GALLON', label: '2 Gallon' },
+              { value: 'TWO_HALF_GALLON', label: '2.5 Gallon' },
+              { value: 'THREE_GALLON', label: '3 Gallon' },
+              { value: 'FIVE_GALLON', label: '5 Gallon' },
+              { value: 'SEVEN_GALLON', label: '7 Gallon' },
+              { value: 'TEN_GALLON', label: '10 Gallon' },
+              { value: 'FIFTEEN_GALLON', label: '15 Gallon' },
+              { value: 'TWENTY_GALLON', label: '20 Gallon' },
+              { value: 'TWENTY_FIVE_GALLON', label: '25 Gallon' },
+              { value: 'THIRTY_GALLON', label: '30 Gallon' }
+            ].map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="transplantToSize">Transplant To</Label>
+          <select
+            id="transplantToSize"
+            value={formData.transplantToSize || ''}
+            onChange={(e) => setFormData({ ...formData, transplantToSize: e.target.value as ContainerSize })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Size</option>
+            {[
+              { value: 'AERO_CLONER', label: 'Aero Cloner' },
+              { value: 'SOLO_CUP', label: 'Solo Cup' },
+              { value: 'HALF_GALLON', label: '0.5 Gallon' },
+              { value: 'ONE_GALLON', label: '1 Gallon' },
+              { value: 'TWO_GALLON', label: '2 Gallon' },
+              { value: 'TWO_HALF_GALLON', label: '2.5 Gallon' },
+              { value: 'THREE_GALLON', label: '3 Gallon' },
+              { value: 'FIVE_GALLON', label: '5 Gallon' },
+              { value: 'SEVEN_GALLON', label: '7 Gallon' },
+              { value: 'TEN_GALLON', label: '10 Gallon' },
+              { value: 'FIFTEEN_GALLON', label: '15 Gallon' },
+              { value: 'TWENTY_GALLON', label: '20 Gallon' },
+              { value: 'TWENTY_FIVE_GALLON', label: '25 Gallon' },
+              { value: 'THIRTY_GALLON', label: '30 Gallon' },
+              { value: 'FORTY_GALLON', label: '40 Gallon' },
+              { value: 'FORTY_FIVE_GALLON', label: '45 Gallon' },
+              { value: 'FIFTY_GALLON', label: '50 Gallon' }
+            ].map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="soilMoisture">Soil Moisture When Transplanting</Label>
+          <select
+            id="soilMoisture"
+            value={formData.soilMoisture || ''}
+            onChange={(e) => setFormData({ ...formData, soilMoisture: e.target.value as SoilMoisture })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Moisture</option>
+            <option value="DRY">Dry</option>
+            <option value="WET">Wet</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -1623,6 +1734,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderDryingFields();
       case 'PEST_DISEASE':
         return renderHealthFields();
+      case 'TRANSPLANT':
+        return renderTransplantFields();
       default:
         return null;
     }
