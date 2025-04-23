@@ -229,6 +229,47 @@ type GerminationStatus =
   | 'ADDED_MOISTURE'
   | 'SPROUTED';
 
+type CloningMethod = 
+  | 'AEROPONIC_CLONER'
+  | 'PLUGS'
+  | 'ROCKWOOL'
+  | 'MEDIUM_DIRECT'
+  | 'WATER_ONLY'
+  | 'OTHER';
+
+type CloningAdditive =
+  | 'ROOTING_GEL'
+  | 'ROOTING_POWDER'
+  | 'HONEY'
+  | 'ALOE'
+  | 'OTHER';
+
+type CutType =
+  | 'TOP_CUT'
+  | 'MID_CUT'
+  | 'LOWER_BRANCH'
+  | 'FAN_LEAF_NODE'
+  | 'MULTI_NODE_CUT'
+  | 'OTHER';
+
+type LightType =
+  | 'LED'
+  | 'HPS'
+  | 'CMH'
+  | 'MH'
+  | 'FLUORESCENT'
+  | 'OTHER';
+
+type SanitationMethod =
+  | 'FIRE'
+  | 'ALCOHOL'
+  | 'SOAP'
+  | 'BLEACH'
+  | 'AUTOCLAVE'
+  | 'PRESSURE_COOKER'
+  | 'BOILED_WATER'
+  | 'OTHER';
+
 interface FormData {
   // Basic Info
   logType: LogType;
@@ -383,6 +424,23 @@ interface FormData {
   germinationRh?: number;
   germinationTemp?: number;
   daysToSprout?: number;
+
+  // Cloning Fields
+  cloningMethod?: CloningMethod;
+  cloningAdditives: CloningAdditive[];
+  cutType?: CutType;
+  cloningRh?: number;
+  cloningTemp?: number;
+  lightHoursPerDay?: number;
+  lightType?: LightType;
+  domeUsed: boolean;
+  ventsOpened: boolean;
+  ventsClosed: boolean;
+  domeRemoved: boolean;
+  sanitationMethod?: SanitationMethod;
+  cloneGardenId?: string;
+  cloneRoomId?: string;
+  cloneZoneId?: string;
 }
 
 interface CreateLogModalProps {
@@ -401,7 +459,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     logTitle: '',
     notes: '',
     imageUrls: [],
-    selectedPlants: [],
+    selectedPlants: [], // This will be used for both regular plant selection and mother plants in cloning
     temperatureUnit: TemperatureUnit.CELSIUS,
     fanSpeed: 'MEDIUM',
     ventilationType: 'CLOSED_LOOP',
@@ -429,9 +487,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     fungalSymptoms: [],
     stressSymptoms: [],
     ipmMethods: [],
-    destinationGardenId: '',
-    destinationRoomId: '',
-    destinationZoneId: '',
+    cloningAdditives: [],
+    domeUsed: false,
+    ventsOpened: false,
+    ventsClosed: false,
+    domeRemoved: false,
+    cloneGardenId: '',
+    cloneRoomId: '',
+    cloneZoneId: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -451,6 +514,16 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
   const destinationGardens = locations.filter(loc => loc.type === 'garden');
   const destinationRooms = locations.filter(loc => loc.type === 'room' && (!formData.destinationGardenId || loc.path[0] === destinationGardens.find(g => g.id === formData.destinationGardenId)?.name));
   const destinationZones = locations.filter(loc => loc.type === 'zone' && (!formData.destinationRoomId || loc.path[1] === destinationRooms.find(r => r.id === formData.destinationRoomId)?.name));
+
+  // Add these filter functions for mother and clone locations
+  const motherGardens = locations.filter(loc => loc.type === 'garden');
+  const motherRooms = locations.filter(loc => loc.type === 'room' && (!formData.gardenId || loc.path[0] === motherGardens.find(g => g.id === formData.gardenId)?.name));
+  const motherZones = locations.filter(loc => loc.type === 'zone' && (!formData.roomId || loc.path[1] === motherRooms.find(r => r.id === formData.roomId)?.name));
+  const motherPlants = locations.filter(loc => loc.type === 'plant' && (!formData.zoneId || loc.path[2] === motherZones.find(z => z.id === formData.zoneId)?.name));
+
+  const cloneGardens = locations.filter(loc => loc.type === 'garden');
+  const cloneRooms = locations.filter(loc => loc.type === 'room' && (!formData.cloneGardenId || loc.path[0] === cloneGardens.find(g => g.id === formData.cloneGardenId)?.name));
+  const cloneZones = locations.filter(loc => loc.type === 'zone' && (!formData.cloneRoomId || loc.path[1] === cloneRooms.find(r => r.id === formData.cloneRoomId)?.name));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -493,43 +566,56 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
   };
 
   const renderLocationFields = () => (
-    <div className="grid grid-cols-2 gap-4">
-      <div>
-        <Label htmlFor="garden">Garden</Label>
-        <select
-          id="garden"
-          value={formData.gardenId || ''}
-          onChange={(e) => setFormData({ ...formData, gardenId: e.target.value })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
-        >
-          <option value="">Select Garden</option>
-          {/* TODO: Add garden options */}
-        </select>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="garden">Garden</Label>
+          <select
+            id="garden"
+            value={formData.gardenId || ''}
+            onChange={(e) => setFormData({ ...formData, gardenId: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
+          >
+            <option value="">Select Garden</option>
+            {gardens.map((garden) => (
+              <option key={garden.id} value={garden.id}>{garden.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="room">Room</Label>
+          <select
+            id="room"
+            value={formData.roomId || ''}
+            onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
+          >
+            <option value="">Select Room</option>
+            {rooms.map((room) => (
+              <option key={room.id} value={room.id}>{room.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="zone">Zone</Label>
+          <select
+            id="zone"
+            value={formData.zoneId || ''}
+            onChange={(e) => setFormData({ ...formData, zoneId: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
+          >
+            <option value="">Select Zone</option>
+            {zones.map((zone) => (
+              <option key={zone.id} value={zone.id}>{zone.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
-      <div>
-        <Label htmlFor="room">Room</Label>
-        <select
-          id="room"
-          value={formData.roomId || ''}
-          onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
-        >
-          <option value="">Select Room</option>
-          {/* TODO: Add room options */}
-        </select>
-      </div>
-      <div>
-        <Label htmlFor="zone">Zone</Label>
-        <select
-          id="zone"
-          value={formData.zoneId || ''}
-          onChange={(e) => setFormData({ ...formData, zoneId: e.target.value })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
-        >
-          <option value="">Select Zone</option>
-          {/* TODO: Add zone options */}
-        </select>
-      </div>
+      {formData.logType === 'CLONING' && (
+        <p className="text-sm text-dark-text-secondary italic">
+          ℹ️ Use these location fields to select the mother plant(s) you are taking cuttings from. Create one entry per mother plant.
+        </p>
+      )}
     </div>
   );
 
@@ -1910,6 +1996,289 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderCloningFields = () => (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-dark-text-primary">Clone Location</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="cloneGarden">Clone Garden</Label>
+            <select
+              id="cloneGarden"
+              value={formData.cloneGardenId || ''}
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  cloneGardenId: e.target.value,
+                  cloneRoomId: '',
+                  cloneZoneId: ''
+                });
+              }}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="">Select Garden</option>
+              {cloneGardens.map((garden) => (
+                <option key={garden.id} value={garden.id}>{garden.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="cloneRoom">Clone Room</Label>
+            <select
+              id="cloneRoom"
+              value={formData.cloneRoomId || ''}
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  cloneRoomId: e.target.value,
+                  cloneZoneId: ''
+                });
+              }}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              disabled={!formData.cloneGardenId}
+            >
+              <option value="">Select Room</option>
+              {cloneRooms.map((room) => (
+                <option key={room.id} value={room.id}>{room.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="cloneZone">Clone Zone</Label>
+            <select
+              id="cloneZone"
+              value={formData.cloneZoneId || ''}
+              onChange={(e) => setFormData({ ...formData, cloneZoneId: e.target.value })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              disabled={!formData.cloneRoomId}
+            >
+              <option value="">Select Zone</option>
+              {cloneZones.map((zone) => (
+                <option key={zone.id} value={zone.id}>{zone.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-dark-text-primary">Cloning Details</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="cloningMethod">Cloning Method</Label>
+            <select
+              id="cloningMethod"
+              value={formData.cloningMethod || ''}
+              onChange={(e) => setFormData({ ...formData, cloningMethod: e.target.value as CloningMethod })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="">Select Method</option>
+              <option value="AEROPONIC_CLONER">Aeroponic Cloner</option>
+              <option value="PLUGS">Plugs</option>
+              <option value="ROCKWOOL">Rockwool</option>
+              <option value="MEDIUM_DIRECT">Soil/Coco/Medium Direct</option>
+              <option value="WATER_ONLY">Water Only</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="cutType">Cut From</Label>
+            <select
+              id="cutType"
+              value={formData.cutType || ''}
+              onChange={(e) => setFormData({ ...formData, cutType: e.target.value as CutType })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="">Select Cut Type</option>
+              <option value="TOP_CUT">Top Cut</option>
+              <option value="MID_CUT">Mid Cut</option>
+              <option value="LOWER_BRANCH">Lower Branch</option>
+              <option value="FAN_LEAF_NODE">Fan Leaf Node</option>
+              <option value="MULTI_NODE_CUT">Multi Node Cut</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <Label>Additives Used</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {[
+                { value: 'ROOTING_GEL', label: 'Rooting Gel' },
+                { value: 'ROOTING_POWDER', label: 'Rooting Powder' },
+                { value: 'HONEY', label: 'Honey' },
+                { value: 'ALOE', label: 'Aloe' },
+                { value: 'OTHER', label: 'Other' }
+              ].map(({ value, label }) => (
+                <div key={value} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`additive-${value}`}
+                    checked={formData.cloningAdditives.includes(value as CloningAdditive)}
+                    onChange={(e) => {
+                      const additives = e.target.checked
+                        ? [...formData.cloningAdditives, value as CloningAdditive]
+                        : formData.cloningAdditives.filter(a => a !== value);
+                      setFormData({ ...formData, cloningAdditives: additives });
+                    }}
+                    className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+                  />
+                  <Label htmlFor={`additive-${value}`} className="text-sm font-normal">
+                    {label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="sanitationMethod">Sanitation Method</Label>
+            <select
+              id="sanitationMethod"
+              value={formData.sanitationMethod || ''}
+              onChange={(e) => setFormData({ ...formData, sanitationMethod: e.target.value as SanitationMethod })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="">Select Method</option>
+              <option value="FIRE">Fire</option>
+              <option value="ALCOHOL">Alcohol</option>
+              <option value="SOAP">Soap</option>
+              <option value="BLEACH">Bleach</option>
+              <option value="AUTOCLAVE">Autoclave</option>
+              <option value="PRESSURE_COOKER">Pressure Cooker</option>
+              <option value="BOILED_WATER">Boiled Water</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="cloningRh">RH (%)</Label>
+            <Input
+              type="number"
+              id="cloningRh"
+              min="1"
+              max="100"
+              value={formData.cloningRh || ''}
+              onChange={(e) => setFormData({ ...formData, cloningRh: parseInt(e.target.value) || undefined })}
+              className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="cloningTemp">Temperature</Label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                id="cloningTemp"
+                value={formData.cloningTemp || ''}
+                onChange={(e) => setFormData({ ...formData, cloningTemp: parseFloat(e.target.value) || undefined })}
+                className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+              />
+              <select
+                value={formData.temperatureUnit}
+                onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
+                className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+              >
+                {Object.values(TemperatureUnit).map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="lightHoursPerDay">Light Hours per Day</Label>
+            <select
+              id="lightHoursPerDay"
+              value={formData.lightHoursPerDay || ''}
+              onChange={(e) => setFormData({ ...formData, lightHoursPerDay: parseInt(e.target.value) || undefined })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="">Select Hours</option>
+              {[18, 19, 20, 21, 22, 23, 24].map(hours => (
+                <option key={hours} value={hours}>{hours}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="lightType">Light Type</Label>
+            <select
+              id="lightType"
+              value={formData.lightType || ''}
+              onChange={(e) => setFormData({ ...formData, lightType: e.target.value as LightType })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="">Select Type</option>
+              <option value="LED">LED</option>
+              <option value="HPS">HPS</option>
+              <option value="CMH">CMH</option>
+              <option value="MH">MH</option>
+              <option value="FLUORESCENT">Fluorescent</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="domeUsed"
+              checked={formData.domeUsed}
+              onChange={(e) => setFormData({ ...formData, domeUsed: e.target.checked })}
+              className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+            />
+            <Label htmlFor="domeUsed" className="text-sm font-normal">
+              Dome Used
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="ventsOpened"
+              checked={formData.ventsOpened}
+              onChange={(e) => setFormData({ ...formData, ventsOpened: e.target.checked })}
+              className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+            />
+            <Label htmlFor="ventsOpened" className="text-sm font-normal">
+              Vents Opened
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="ventsClosed"
+              checked={formData.ventsClosed}
+              onChange={(e) => setFormData({ ...formData, ventsClosed: e.target.checked })}
+              className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+            />
+            <Label htmlFor="ventsClosed" className="text-sm font-normal">
+              Vents Closed
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="domeRemoved"
+              checked={formData.domeRemoved}
+              onChange={(e) => setFormData({ ...formData, domeRemoved: e.target.checked })}
+              className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+            />
+            <Label htmlFor="domeRemoved" className="text-sm font-normal">
+              Dome Removed
+            </Label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -1939,6 +2308,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderTransferFields();
       case 'GERMINATION':
         return renderGerminationFields();
+      case 'CLONING':
+        return renderCloningFields();
       default:
         return null;
     }
