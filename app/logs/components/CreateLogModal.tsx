@@ -56,6 +56,98 @@ type TrainingGoal =
   | 'REMOVE_DAMAGED'
   | 'EXPERIMENTAL';
 
+type InspectionMethod = 'NAKED_EYE' | 'MICROSCOPE' | 'MAGNIFYING_GLASS' | 'STICKY_TRAPS';
+
+type AffectedArea = 
+  | 'TOP_OF_PLANTS'
+  | 'CANOPY_LAYER'
+  | 'LEAF_UNDERSIDES'
+  | 'UPPER_LEAVES'
+  | 'LOWER_LEAVES'
+  | 'NEW_GROWTH'
+  | 'FAN_LEAVES'
+  | 'SUGAR_LEAVES'
+  | 'STEMS'
+  | 'MAIN_STEM'
+  | 'NODE_SITES'
+  | 'MEDIUM_SURFACE'
+  | 'POT_RIM'
+  | 'ROOT_ZONE'
+  | 'DRAINAGE_HOLES'
+  | 'ENTIRE_PLANT'
+  | 'NEARBY_PLANTS'
+  | 'GROW_TENT_WALL'
+  | 'LIGHT_FIXTURES'
+  | 'HUMIDIFIER_DUCTS'
+  | 'CLONING_EQUIPMENT'
+  | 'WATER_RESERVOIR';
+
+type LeafSymptom =
+  | 'YELLOWING'
+  | 'BROWNING_TIPS'
+  | 'NECROTIC_SPOTS'
+  | 'LEAF_CURLING'
+  | 'WILTING'
+  | 'EDGE_BURN'
+  | 'LEAF_TWISTING'
+  | 'INTERVEINAL_CHLOROSIS'
+  | 'PURPLE_VEINS'
+  | 'VARIEGATION'
+  | 'LEAF_BLISTERING'
+  | 'MOTTLED_COLOR'
+  | 'LEAF_DROP'
+  | 'LEAF_CUPPING'
+  | 'GLOSSY_SURFACE'
+  | 'PALE_NEW_GROWTH';
+
+type PestIndicator =
+  | 'VISIBLE_ADULTS'
+  | 'EGGS_PRESENT'
+  | 'LARVAE_IN_MEDIUM'
+  | 'LEAF_MINING'
+  | 'CHEW_HOLES'
+  | 'FECAL_SPOTTING'
+  | 'WEBBING'
+  | 'SUDDEN_EXPLOSION'
+  | 'POT_RIM_ACTIVITY'
+  | 'LIGHT_HOVERING'
+  | 'ROOT_DAMAGE'
+  | 'HONEYDEW'
+  | 'FRASS'
+  | 'ANT_TRAILS';
+
+type FungalSymptom =
+  | 'POWDERY_MILDEW'
+  | 'GREY_FUZZ'
+  | 'WET_SPOTS'
+  | 'YELLOW_HALOS'
+  | 'SOFT_STEMS'
+  | 'ROOT_SLIME'
+  | 'RUST_SPOTS'
+  | 'SEPTORIA'
+  | 'LEAF_CANKERS'
+  | 'STEM_SPLITTING'
+  | 'BACTERIAL_OOZE'
+  | 'SLIMY_BASE'
+  | 'SUDDEN_COLLAPSE';
+
+type StressSymptom =
+  | 'STUNTED_GROWTH'
+  | 'SLOW_RECOVERY'
+  | 'PALE_COLOR'
+  | 'UNEVEN_GROWTH'
+  | 'ABNORMAL_SPACING'
+  | 'BRITTLE_STEMS'
+  | 'WEAK_BRANCHING'
+  | 'UNEXPLAINED_DROP'
+  | 'SCENT_CHANGE'
+  | 'HEAT_STRESS'
+  | 'LIGHT_BURN'
+  | 'STRETCHING'
+  | 'TIP_CURL'
+  | 'OVER_TRANSPIRATION'
+  | 'NUTRIENT_LOCKOUT';
+
 interface CustomNutrient {
   name: string;
   amount: number;
@@ -196,6 +288,14 @@ interface FormData {
   defoliationIntensity?: string;
   defoliationPercentage?: number;
   trainingGoals: TrainingGoal[];
+
+  // Pest & Disease Inspection
+  inspectionMethod?: InspectionMethod;
+  affectedAreas: AffectedArea[];
+  leafSymptoms: LeafSymptom[];
+  pestIndicators: PestIndicator[];
+  fungalSymptoms: FungalSymptom[];
+  stressSymptoms: StressSymptom[];
 }
 
 interface CreateLogModalProps {
@@ -236,6 +336,11 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     ppmScale: 'PPM_500',
     supportedPlants: [],
     trainingGoals: [],
+    affectedAreas: [],
+    leafSymptoms: [],
+    pestIndicators: [],
+    fungalSymptoms: [],
+    stressSymptoms: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -792,6 +897,233 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
+
+      <div>
+        <Label htmlFor="inspectionMethod">Method Inspected</Label>
+        <select
+          id="inspectionMethod"
+          value={formData.inspectionMethod || ''}
+          onChange={(e) => setFormData({ ...formData, inspectionMethod: e.target.value as InspectionMethod })}
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+        >
+          <option value="">Select Method</option>
+          <option value="NAKED_EYE">Naked Eye</option>
+          <option value="MICROSCOPE">Microscope</option>
+          <option value="MAGNIFYING_GLASS">Magnifying Glass</option>
+          <option value="STICKY_TRAPS">Sticky Traps</option>
+        </select>
+      </div>
+
+      <div>
+        <Label>Area of Plant Most Affected</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'TOP_OF_PLANTS', label: 'Top of Plants' },
+            { value: 'CANOPY_LAYER', label: 'Canopy Layer (General)' },
+            { value: 'LEAF_UNDERSIDES', label: 'Underside of Leaves' },
+            { value: 'UPPER_LEAVES', label: 'Upper Leaves' },
+            { value: 'LOWER_LEAVES', label: 'Lower Leaves' },
+            { value: 'NEW_GROWTH', label: 'New Growth / Shoots' },
+            { value: 'FAN_LEAVES', label: 'Fan Leaves' },
+            { value: 'SUGAR_LEAVES', label: 'Sugar Leaves' },
+            { value: 'STEMS', label: 'Stems' },
+            { value: 'MAIN_STEM', label: 'Main Stem / Trunk' },
+            { value: 'NODE_SITES', label: 'Node Sites' },
+            { value: 'MEDIUM_SURFACE', label: 'Medium / Soil Surface' },
+            { value: 'POT_RIM', label: 'Inside Pot Rim' },
+            { value: 'ROOT_ZONE', label: 'Root Zone' },
+            { value: 'DRAINAGE_HOLES', label: 'Drainage Holes' },
+            { value: 'ENTIRE_PLANT', label: 'Entire Plant (Systemic)' },
+            { value: 'NEARBY_PLANTS', label: 'Nearby Plants (Spread Potential)' },
+            { value: 'GROW_TENT_WALL', label: 'Grow Tent Wall / Surface' },
+            { value: 'LIGHT_FIXTURES', label: 'Light Fixtures / Hanging Gear' },
+            { value: 'HUMIDIFIER_DUCTS', label: 'Humidifier / Ducts' },
+            { value: 'CLONING_EQUIPMENT', label: 'Cloning Tray or Dome' },
+            { value: 'WATER_RESERVOIR', label: 'Water Reservoir (Hydro)' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`area-${value}`}
+                checked={formData.affectedAreas.includes(value as AffectedArea)}
+                onChange={(e) => {
+                  const areas = e.target.checked
+                    ? [...formData.affectedAreas, value as AffectedArea]
+                    : formData.affectedAreas.filter(a => a !== value);
+                  setFormData({ ...formData, affectedAreas: areas });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`area-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>🍃 Leaf Symptoms</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'YELLOWING', label: 'Yellowing (Chlorosis)' },
+            { value: 'BROWNING_TIPS', label: 'Browning tips (Nutrient burn)' },
+            { value: 'NECROTIC_SPOTS', label: 'Necrotic spots' },
+            { value: 'LEAF_CURLING', label: 'Leaf curling (upward or downward)' },
+            { value: 'WILTING', label: 'Wilting / Drooping' },
+            { value: 'EDGE_BURN', label: 'Edge burn / crisping' },
+            { value: 'LEAF_TWISTING', label: 'Leaf twisting' },
+            { value: 'INTERVEINAL_CHLOROSIS', label: 'Interveinal chlorosis' },
+            { value: 'PURPLE_VEINS', label: 'Purpling of veins or stems' },
+            { value: 'VARIEGATION', label: 'Variegation' },
+            { value: 'LEAF_BLISTERING', label: 'Leaf blistering' },
+            { value: 'MOTTLED_COLOR', label: 'Mottled leaf color' },
+            { value: 'LEAF_DROP', label: 'Leaf drop (early or aggressive)' },
+            { value: 'LEAF_CUPPING', label: 'Leaf cupping' },
+            { value: 'GLOSSY_SURFACE', label: 'Glossy leaf surface' },
+            { value: 'PALE_NEW_GROWTH', label: 'Pale new growth' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`leaf-${value}`}
+                checked={formData.leafSymptoms.includes(value as LeafSymptom)}
+                onChange={(e) => {
+                  const symptoms = e.target.checked
+                    ? [...formData.leafSymptoms, value as LeafSymptom]
+                    : formData.leafSymptoms.filter(s => s !== value);
+                  setFormData({ ...formData, leafSymptoms: symptoms });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`leaf-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>🪱 Pest Indicators</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'VISIBLE_ADULTS', label: 'Visible adults (flying or crawling)' },
+            { value: 'EGGS_PRESENT', label: 'Eggs on leaves or stems' },
+            { value: 'LARVAE_IN_MEDIUM', label: 'Larvae in medium' },
+            { value: 'LEAF_MINING', label: 'Leaf mining trails' },
+            { value: 'CHEW_HOLES', label: 'Chew holes' },
+            { value: 'FECAL_SPOTTING', label: 'Fecal spotting' },
+            { value: 'WEBBING', label: 'Webbing (silk threads)' },
+            { value: 'SUDDEN_EXPLOSION', label: 'Sudden pest explosion' },
+            { value: 'POT_RIM_ACTIVITY', label: 'Crawling on pot rim' },
+            { value: 'LIGHT_HOVERING', label: 'Hovering around lights' },
+            { value: 'ROOT_DAMAGE', label: 'Root damage signs' },
+            { value: 'HONEYDEW', label: 'Sticky residue (honeydew)' },
+            { value: 'FRASS', label: 'Frass (insect droppings)' },
+            { value: 'ANT_TRAILS', label: 'Ant trails (feeding on aphid honeydew)' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`pest-${value}`}
+                checked={formData.pestIndicators.includes(value as PestIndicator)}
+                onChange={(e) => {
+                  const indicators = e.target.checked
+                    ? [...formData.pestIndicators, value as PestIndicator]
+                    : formData.pestIndicators.filter(i => i !== value);
+                  setFormData({ ...formData, pestIndicators: indicators });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`pest-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>🍄 Fungal/Bacterial Symptoms</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'POWDERY_MILDEW', label: 'White powdery patches (mildew)' },
+            { value: 'GREY_FUZZ', label: 'Grey fuzz (botrytis)' },
+            { value: 'WET_SPOTS', label: 'Brown/black wet spots' },
+            { value: 'YELLOW_HALOS', label: 'Yellow concentric halos' },
+            { value: 'SOFT_STEMS', label: 'Soft stems (damping off)' },
+            { value: 'ROOT_SLIME', label: 'Root slime or smell' },
+            { value: 'RUST_SPOTS', label: 'Leaf rust spots' },
+            { value: 'SEPTORIA', label: 'Septoria (small yellow/black leaf spots)' },
+            { value: 'LEAF_CANKERS', label: 'Leaf cankers' },
+            { value: 'STEM_SPLITTING', label: 'Stem splitting' },
+            { value: 'BACTERIAL_OOZE', label: 'Bacterial ooze' },
+            { value: 'SLIMY_BASE', label: 'Slimy build-up at base' },
+            { value: 'SUDDEN_COLLAPSE', label: 'Sudden plant collapse' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`fungal-${value}`}
+                checked={formData.fungalSymptoms.includes(value as FungalSymptom)}
+                onChange={(e) => {
+                  const symptoms = e.target.checked
+                    ? [...formData.fungalSymptoms, value as FungalSymptom]
+                    : formData.fungalSymptoms.filter(s => s !== value);
+                  setFormData({ ...formData, fungalSymptoms: symptoms });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`fungal-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>🧪 General / Other Plant Stress Signs</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'STUNTED_GROWTH', label: 'Stunted growth' },
+            { value: 'SLOW_RECOVERY', label: 'Slow recovery after watering' },
+            { value: 'PALE_COLOR', label: 'Pale overall color' },
+            { value: 'UNEVEN_GROWTH', label: 'Uneven growth patterns' },
+            { value: 'ABNORMAL_SPACING', label: 'Abnormal internode spacing' },
+            { value: 'BRITTLE_STEMS', label: 'Brittle stems or snapping' },
+            { value: 'WEAK_BRANCHING', label: 'Weak branching' },
+            { value: 'UNEXPLAINED_DROP', label: 'Leaf drop with no pest visible' },
+            { value: 'SCENT_CHANGE', label: 'Scent change (e.g. sour or rot smell)' },
+            { value: 'HEAT_STRESS', label: 'Heat stress signs' },
+            { value: 'LIGHT_BURN', label: 'Light burn indicators' },
+            { value: 'STRETCHING', label: 'Stretching or lanky structure' },
+            { value: 'TIP_CURL', label: 'Tip curl (wind or VPD stress)' },
+            { value: 'OVER_TRANSPIRATION', label: 'Over-transpiration (leaf taco)' },
+            { value: 'NUTRIENT_LOCKOUT', label: 'Nutrient lockout mimicking disease' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`stress-${value}`}
+                checked={formData.stressSymptoms.includes(value as StressSymptom)}
+                onChange={(e) => {
+                  const symptoms = e.target.checked
+                    ? [...formData.stressSymptoms, value as StressSymptom]
+                    : formData.stressSymptoms.filter(s => s !== value);
+                  setFormData({ ...formData, stressSymptoms: symptoms });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`stress-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div>
         <Label>Pest Types</Label>
         <MultiSelect
@@ -804,6 +1136,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
+
       <div>
         <Label>Disease Types</Label>
         <MultiSelect
@@ -816,7 +1149,6 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
-      {/* Add fields for deficiencies, leaf color, pest severity, etc. */}
     </div>
   );
 
