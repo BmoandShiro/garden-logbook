@@ -11,7 +11,7 @@ export enum Stage {
 export enum LogType {
   WATERING = 'WATERING',
   ENVIRONMENTAL = 'ENVIRONMENTAL',
-  PRUNING = 'PRUNING',
+  LST = 'LST',
   FLUSHING = 'FLUSHING',
   HARVEST = 'HARVEST',
   PEST_DISEASE = 'PEST_DISEASE',
@@ -176,4 +176,16 @@ export enum PestCategory {
   VIRUSES = 'VIRUSES',
   NEMATODES = 'NEMATODES',
   OTHER = 'OTHER'
+}
+
+export enum LSTIntensity {
+  LIGHT = 'LIGHT',
+  MODERATE = 'MODERATE',
+  INTENSE = 'INTENSE'
+}
+
+export enum CanopyShape {
+  EVEN = 'EVEN',
+  SLOPED = 'SLOPED',
+  SUPER_UNEVEN = 'SUPER_UNEVEN'
 } 

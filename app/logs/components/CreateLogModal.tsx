@@ -10,24 +10,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
-import { 
-  LogType, 
+import {
+  LogType,
   Stage,
-  LightIntensityUnit, 
-  DistanceUnit, 
-  WeightUnit,
-  VolumeUnit,
-  TemperatureUnit,
   WaterSource,
   NutrientLine,
   Jacks321Product,
+  TemperatureUnit,
+  DistanceUnit,
+  VolumeUnit,
+  WeightUnit,
   PestType,
-  PestCategory,
   DiseaseType,
   TreatmentMethod,
   TrainingMethod,
-  SuspectedStressCause
-} from '@/types/enums';
+  SuspectedStressCause,
+  PestCategory,
+  LightIntensityUnit
+} from '@/src/types/enums';
+
+// Types for form data
+type PpmScale = 'PPM_500' | 'PPM_700';
+type FanSpeed = 'LOW' | 'MEDIUM' | 'HIGH';
+type VentilationType = 'CLOSED_LOOP' | 'EXHAUST_INTAKE';
+type Jacks321Unit = 'GRAMS' | 'PPM';
+type Intensity = 'LIGHT' | 'MODERATE' | 'INTENSE';
+type Shape = 'EVEN' | 'SLOPED' | 'SUPER_UNEVEN';
+
+interface CustomNutrient {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
+interface LocationNode {
+  id: string;
+  name: string;
+  type: 'garden' | 'room' | 'zone' | 'plant';
+  path: string[];
+  plants: { id: string; name: string; }[];
+  children: LocationNode[];
+}
 
 interface FormData {
   // Basic Info
@@ -53,14 +76,10 @@ interface FormData {
   humidity?: number;
   co2?: number;
   vpd?: number;
-  par?: number;
-  parUnit: LightIntensityUnit;
-  ppfd?: number;
-  lightIntensity?: number;
-  lightIntensityUnit: LightIntensityUnit;
-  lightHeight?: number;
-  lightHeightUnit: DistanceUnit;
-  airflow?: boolean;
+  dewPoint?: number;
+  averagePar?: number;
+  fanSpeed?: FanSpeed;
+  ventilationType?: VentilationType;
 
   // Water & Feeding
   waterSource?: WaterSource;
@@ -68,17 +87,16 @@ interface FormData {
   waterUnit: VolumeUnit;
   waterTemperature?: number;
   waterTemperatureUnit: TemperatureUnit;
-  waterPh?: number;
-  runoffPh?: number;
+  sourceWaterPh?: number;
+  nutrientWaterPh?: number;
   sourceWaterPpm?: number;
-  waterPpm?: number;
-  runoffPpm?: number;
-  ppmScale: 'PPM_500' | 'PPM_700';
+  nutrientWaterPpm?: number;
+  ppmScale: PpmScale;
   nutrientLine?: NutrientLine;
 
   // Jack's 321
   jacks321Used: Jacks321Product[];
-  jacks321Unit: 'GRAMS' | 'PPM';
+  jacks321Unit: Jacks321Unit;
   partAAmount?: number;
   partBAmount?: number;
   partCAmount?: number;
@@ -86,7 +104,7 @@ interface FormData {
   finishAmount?: number;
 
   // Custom Nutrients
-  customNutrients?: Record<string, any>;
+  customNutrients?: CustomNutrient[];
 
   // Plant Measurements
   height?: number;
@@ -137,6 +155,22 @@ interface FormData {
   mediumMoisture?: number;
   mediumTemp?: number;
   mediumPh?: number;
+
+  // Additives
+  aspirinAmount?: number;
+  nukemAmount?: number;
+  oxiphosAmount?: number;
+  seagreenAmount?: number;
+  teabrewerBatch?: string;
+  teabrewerVolume?: number;
+
+  // LST Fields
+  bendingIntensity?: string | null;
+  tieDownIntensity?: string | null;
+  supportedPlants: string[];
+  canopyShape?: string | null;
+  leafTuckingIntensity?: string | null;
+  lstIntensity?: string | null;
 }
 
 interface CreateLogModalProps {
@@ -157,9 +191,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     imageUrls: [],
     selectedPlants: [],
     temperatureUnit: TemperatureUnit.CELSIUS,
-    parUnit: LightIntensityUnit.UMOL_PER_M2_S,
-    lightIntensityUnit: LightIntensityUnit.UMOL_PER_M2_S,
-    lightHeightUnit: DistanceUnit.CENTIMETERS,
+    fanSpeed: 'MEDIUM',
+    ventilationType: 'CLOSED_LOOP',
     waterUnit: VolumeUnit.MILLILITERS,
     waterTemperatureUnit: TemperatureUnit.CELSIUS,
     heightUnit: DistanceUnit.CENTIMETERS,
@@ -179,11 +212,21 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     dryWeightUnit: WeightUnit.GRAMS,
     trimWeightUnit: WeightUnit.GRAMS,
     ppmScale: 'PPM_500',
+    supportedPlants: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  const [locations, setLocations] = useState<LocationNode[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+
+  // Filter locations by type
+  const gardens = locations.filter(loc => loc.type === 'garden');
+  const rooms = locations.filter(loc => loc.type === 'room' && (!formData.gardenId || loc.path[0] === gardens.find(g => g.id === formData.gardenId)?.name));
+  const zones = locations.filter(loc => loc.type === 'zone' && (!formData.roomId || loc.path[1] === rooms.find(r => r.id === formData.roomId)?.name));
+  const plants = locations.filter(loc => loc.type === 'plant' && (!formData.zoneId || loc.path[2] === zones.find(z => z.id === formData.zoneId)?.name));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,7 +353,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         />
       </div>
       <div>
-        <Label htmlFor="vpd">VPD</Label>
+        <Label htmlFor="vpd">VPD (kPa)</Label>
         <Input
           type="number"
           id="vpd"
@@ -320,36 +363,48 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         />
       </div>
       <div>
-        <Label htmlFor="lightIntensity">Light Intensity</Label>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            id="lightIntensity"
-            value={formData.lightIntensity || ''}
-            onChange={(e) => setFormData({ ...formData, lightIntensity: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
-          />
-          <select
-            value={formData.lightIntensityUnit}
-            onChange={(e) => setFormData({ ...formData, lightIntensityUnit: e.target.value as LightIntensityUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
-          >
-            {Object.values(LightIntensityUnit).map((unit) => (
-              <option key={unit} value={unit}>{unit}</option>
-            ))}
-          </select>
-        </div>
+        <Label htmlFor="dewPoint">Dew Point (°{formData.temperatureUnit === TemperatureUnit.CELSIUS ? 'C' : 'F'})</Label>
+        <Input
+          type="number"
+          id="dewPoint"
+          value={formData.dewPoint || ''}
+          onChange={(e) => setFormData({ ...formData, dewPoint: parseFloat(e.target.value) })}
+          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        />
       </div>
       <div>
-        <Label htmlFor="airflow">Airflow</Label>
+        <Label htmlFor="averagePar">Average PAR (μmol/m²/s)</Label>
+        <Input
+          type="number"
+          id="averagePar"
+          value={formData.averagePar || ''}
+          onChange={(e) => setFormData({ ...formData, averagePar: parseFloat(e.target.value) })}
+          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        />
+      </div>
+      <div>
+        <Label htmlFor="fanSpeed">Fan Speed</Label>
         <select
-          id="airflow"
-          value={formData.airflow ? 'true' : 'false'}
-          onChange={(e) => setFormData({ ...formData, airflow: e.target.value === 'true' })}
+          id="fanSpeed"
+          value={formData.fanSpeed || ''}
+          onChange={(e) => setFormData({ ...formData, fanSpeed: e.target.value as FanSpeed })}
           className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
         >
-          <option value="true">Yes</option>
-          <option value="false">No</option>
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+        </select>
+      </div>
+      <div>
+        <Label htmlFor="ventilationType">Air Exchange Type</Label>
+        <select
+          id="ventilationType"
+          value={formData.ventilationType || ''}
+          onChange={(e) => setFormData({ ...formData, ventilationType: e.target.value as VentilationType })}
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+        >
+          <option value="CLOSED_LOOP">Closed Loop Airflow</option>
+          <option value="EXHAUST_INTAKE">Exhaust/Intake Air Exchange</option>
         </select>
       </div>
     </div>
@@ -393,22 +448,22 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         </div>
       </div>
       <div>
-        <Label htmlFor="waterPh">Water pH</Label>
+        <Label htmlFor="sourceWaterPh">Source Water pH</Label>
         <Input
           type="number"
-          id="waterPh"
-          value={formData.waterPh || ''}
-          onChange={(e) => setFormData({ ...formData, waterPh: parseFloat(e.target.value) })}
+          id="sourceWaterPh"
+          value={formData.sourceWaterPh || ''}
+          onChange={(e) => setFormData({ ...formData, sourceWaterPh: parseFloat(e.target.value) })}
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
       <div>
-        <Label htmlFor="runoffPh">Runoff pH</Label>
+        <Label htmlFor="nutrientWaterPh">Nutrient Water pH</Label>
         <Input
           type="number"
-          id="runoffPh"
-          value={formData.runoffPh || ''}
-          onChange={(e) => setFormData({ ...formData, runoffPh: parseFloat(e.target.value) })}
+          id="nutrientWaterPh"
+          value={formData.nutrientWaterPh || ''}
+          onChange={(e) => setFormData({ ...formData, nutrientWaterPh: parseFloat(e.target.value) })}
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
@@ -417,7 +472,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         <select
           id="ppmScale"
           value={formData.ppmScale}
-          onChange={(e) => setFormData({ ...formData, ppmScale: e.target.value as 'PPM_500' | 'PPM_700' })}
+          onChange={(e) => setFormData({ ...formData, ppmScale: e.target.value as PpmScale })}
           className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
         >
           <option value="PPM_500">PPM 500 Scale (0.5 EC)</option>
@@ -435,22 +490,12 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         />
       </div>
       <div>
-        <Label htmlFor="waterPpm">Water PPM</Label>
+        <Label htmlFor="nutrientWaterPpm">Nutrient Water PPM</Label>
         <Input
           type="number"
-          id="waterPpm"
-          value={formData.waterPpm || ''}
-          onChange={(e) => setFormData({ ...formData, waterPpm: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-        />
-      </div>
-      <div>
-        <Label htmlFor="runoffPpm">Runoff PPM</Label>
-        <Input
-          type="number"
-          id="runoffPpm"
-          value={formData.runoffPpm || ''}
-          onChange={(e) => setFormData({ ...formData, runoffPpm: parseFloat(e.target.value) })}
+          id="nutrientWaterPpm"
+          value={formData.nutrientWaterPpm || ''}
+          onChange={(e) => setFormData({ ...formData, nutrientWaterPpm: parseFloat(e.target.value) })}
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
       </div>
@@ -481,7 +526,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             <select
               id="jacks321Unit"
               value={formData.jacks321Unit}
-              onChange={(e) => setFormData({ ...formData, jacks321Unit: e.target.value as 'GRAMS' | 'PPM' })}
+              onChange={(e) => setFormData({ ...formData, jacks321Unit: e.target.value as Jacks321Unit })}
               className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
             >
               <option value="GRAMS">Grams</option>
@@ -566,6 +611,80 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           />
         </div>
       )}
+    </div>
+  );
+
+  const renderAdditivesFields = () => (
+    <div className="space-y-4 mt-4">
+      <h3 className="text-lg font-medium text-dark-text-primary">Additives</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="aspirinAmount">Uncoated Aspirin (81-325mg/gal)</Label>
+          <Input
+            type="number"
+            id="aspirinAmount"
+            value={formData.aspirinAmount || ''}
+            onChange={(e) => setFormData({ ...formData, aspirinAmount: parseFloat(e.target.value) })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="mg per gallon"
+          />
+        </div>
+        <div>
+          <Label htmlFor="nukemAmount">Nukem Root Drench</Label>
+          <Input
+            type="number"
+            id="nukemAmount"
+            value={formData.nukemAmount || ''}
+            onChange={(e) => setFormData({ ...formData, nukemAmount: parseFloat(e.target.value) })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="ml"
+          />
+        </div>
+        <div>
+          <Label htmlFor="oxiphosAmount">Oxiphos</Label>
+          <Input
+            type="number"
+            id="oxiphosAmount"
+            value={formData.oxiphosAmount || ''}
+            onChange={(e) => setFormData({ ...formData, oxiphosAmount: parseFloat(e.target.value) })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="ml"
+          />
+        </div>
+        <div>
+          <Label htmlFor="seagreenAmount">SeaGreen</Label>
+          <Input
+            type="number"
+            id="seagreenAmount"
+            value={formData.seagreenAmount || ''}
+            onChange={(e) => setFormData({ ...formData, seagreenAmount: parseFloat(e.target.value) })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="ml"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teabrewerBatch">Teabrewer Batch</Label>
+          <Input
+            type="text"
+            id="teabrewerBatch"
+            value={formData.teabrewerBatch || ''}
+            onChange={(e) => setFormData({ ...formData, teabrewerBatch: e.target.value })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="Batch identifier"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teabrewerVolume">Teabrewer Volume</Label>
+          <Input
+            type="number"
+            id="teabrewerVolume"
+            value={formData.teabrewerVolume || ''}
+            onChange={(e) => setFormData({ ...formData, teabrewerVolume: parseFloat(e.target.value) })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="ml"
+          />
+        </div>
+      </div>
     </div>
   );
 
@@ -678,20 +797,99 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderLSTFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="bendingIntensity">Bending/Knuckling Intensity</Label>
+          <select
+            id="bendingIntensity"
+            value={formData.bendingIntensity || ''}
+            onChange={(e) => setFormData({ ...formData, bendingIntensity: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Intensity</option>
+            <option value="LIGHT">Light</option>
+            <option value="MODERATE">Moderate</option>
+            <option value="INTENSE">Intense</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="tieDownIntensity">Tie Down Intensity</Label>
+          <select
+            id="tieDownIntensity"
+            value={formData.tieDownIntensity || ''}
+            onChange={(e) => setFormData({ ...formData, tieDownIntensity: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Intensity</option>
+            <option value="LIGHT">Light</option>
+            <option value="MODERATE">Moderate</option>
+            <option value="INTENSE">Intense</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="canopyShape">Canopy Shape</Label>
+          <select
+            id="canopyShape"
+            value={formData.canopyShape || ''}
+            onChange={(e) => setFormData({ ...formData, canopyShape: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Shape</option>
+            <option value="EVEN">Even</option>
+            <option value="SLOPED">Sloped</option>
+            <option value="SUPER_UNEVEN">Super Uneven</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="leafTuckingIntensity">Leaf Tucking Intensity</Label>
+          <select
+            id="leafTuckingIntensity"
+            value={formData.leafTuckingIntensity || ''}
+            onChange={(e) => setFormData({ ...formData, leafTuckingIntensity: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Intensity</option>
+            <option value="LIGHT">Light</option>
+            <option value="MODERATE">Moderate</option>
+            <option value="INTENSE">Intense</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="supportedPlants">Trunk Supports</Label>
+        <MultiSelect
+          value={formData.supportedPlants}
+          onChange={(value) => setFormData({ ...formData, supportedPlants: value })}
+          options={plants.map(plant => ({
+            value: plant.id,
+            label: plant.name
+          }))}
+          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          placeholder="Select plants that received trunk support"
+        />
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
-    switch (formData.logType) {
-      case LogType.ENVIRONMENTAL:
+    const logType = formData.logType as string;
+    switch (logType) {
+      case 'ENVIRONMENTAL':
         return renderEnvironmentalFields();
-      case LogType.WATERING:
+      case 'WATERING':
         return (
           <>
             {renderWateringFields()}
             {renderNutrientFields()}
+            {renderAdditivesFields()}
           </>
         );
-      case LogType.PEST_DISEASE:
+      case 'LST':
+        return renderLSTFields();
+      case 'PEST_DISEASE':
         return renderHealthFields();
-      // Add cases for other log types
       default:
         return null;
     }

@@ -457,7 +457,7 @@ enum MeasurementType {
 enum LogType {
   WATERING
   ENVIRONMENTAL
-  PRUNING
+  LST
   FLUSHING
   HARVEST
   PEST_DISEASE
@@ -469,6 +469,18 @@ enum LogType {
   STRESS
   GENERAL
   CUSTOM
+}
+
+enum LSTIntensity {
+  LIGHT
+  MODERATE
+  INTENSE
+}
+
+enum CanopyShape {
+  EVEN
+  SLOPED
+  SUPER_UNEVEN
 }
 
 enum Stage {
