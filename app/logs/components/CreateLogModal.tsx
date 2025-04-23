@@ -27,7 +27,7 @@ import {
   SuspectedStressCause,
   PestCategory,
   LightIntensityUnit
-} from '@/src/types/enums';
+} from '@/types/enums';
 
 // Types for form data
 type PpmScale = 'PPM_500' | 'PPM_700';
