@@ -78,6 +78,7 @@ interface FormData {
 
   // Jack's 321
   jacks321Used: Jacks321Product[];
+  jacks321Unit: 'GRAMS' | 'PPM';
   partAAmount?: number;
   partBAmount?: number;
   partCAmount?: number;
@@ -165,6 +166,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     widthUnit: DistanceUnit.CENTIMETERS,
     estimatedYieldUnit: WeightUnit.GRAMS,
     jacks321Used: [],
+    jacks321Unit: 'GRAMS',
     pestTypes: [],
     pestCategories: [],
     diseaseTypes: [],
@@ -473,33 +475,78 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
       </div>
 
       {formData.nutrientLine === NutrientLine.JACKS_321 && (
-        <div className="grid grid-cols-2 gap-4">
+        <>
           <div>
-            <Label>Products Used</Label>
-            <MultiSelect
-              value={formData.jacks321Used}
-              onChange={(value) => setFormData({ ...formData, jacks321Used: value as Jacks321Product[] })}
-              options={Object.values(Jacks321Product).map(product => ({
-                value: product,
-                label: product.replace(/_/g, ' ')
-              }))}
-              className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-            />
+            <Label htmlFor="jacks321Unit">Measurement Unit</Label>
+            <select
+              id="jacks321Unit"
+              value={formData.jacks321Unit}
+              onChange={(e) => setFormData({ ...formData, jacks321Unit: e.target.value as 'GRAMS' | 'PPM' })}
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            >
+              <option value="GRAMS">Grams</option>
+              <option value="PPM">PPM</option>
+            </select>
           </div>
-          {formData.jacks321Used.includes(Jacks321Product.PART_A_5_12_26) && (
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="partAAmount">Part A Amount (g)</Label>
+              <Label htmlFor="partAAmount">Part A (5-12-26) {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
               <Input
                 type="number"
                 id="partAAmount"
                 value={formData.partAAmount || ''}
                 onChange={(e) => setFormData({ ...formData, partAAmount: parseFloat(e.target.value) })}
                 className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
               />
             </div>
-          )}
-          {/* Add similar fields for Part B, C, Booster, and Finish */}
-        </div>
+            <div>
+              <Label htmlFor="partBAmount">Part B (Calcium Nitrate) {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
+              <Input
+                type="number"
+                id="partBAmount"
+                value={formData.partBAmount || ''}
+                onChange={(e) => setFormData({ ...formData, partBAmount: parseFloat(e.target.value) })}
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              />
+            </div>
+            <div>
+              <Label htmlFor="partCAmount">Part C (Epsom Salt) {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
+              <Input
+                type="number"
+                id="partCAmount"
+                value={formData.partCAmount || ''}
+                onChange={(e) => setFormData({ ...formData, partCAmount: parseFloat(e.target.value) })}
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              />
+            </div>
+            <div>
+              <Label htmlFor="boosterAmount">Bloom Booster {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
+              <Input
+                type="number"
+                id="boosterAmount"
+                value={formData.boosterAmount || ''}
+                onChange={(e) => setFormData({ ...formData, boosterAmount: parseFloat(e.target.value) })}
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              />
+            </div>
+            <div>
+              <Label htmlFor="finishAmount">Finish {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
+              <Input
+                type="number"
+                id="finishAmount"
+                value={formData.finishAmount || ''}
+                onChange={(e) => setFormData({ ...formData, finishAmount: parseFloat(e.target.value) })}
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       {formData.nutrientLine === NutrientLine.CUSTOM && (
