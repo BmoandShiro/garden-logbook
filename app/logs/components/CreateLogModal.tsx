@@ -148,6 +148,32 @@ type StressSymptom =
   | 'OVER_TRANSPIRATION'
   | 'NUTRIENT_LOCKOUT';
 
+type PestIdentificationStatus = 'SUSPECTED' | 'VERIFIED';
+
+type IPMMethod = 
+  | 'PHYTOSEIULUS_PERSIMILIS'
+  | 'NEOSEIULUS_CALIFORNICUS'
+  | 'AMBLYSEIUS_SWIRSKII'
+  | 'AMBLYSEIUS_CUCUMERIS'
+  | 'AMBLYSEIUS_ANDERSONI'
+  | 'STRATIOLAELAPS_SCIMITUS'
+  | 'ORIUS_INSIDIOSUS'
+  | 'DALOTIA_CORIARIA'
+  | 'CHRYSOPERLA_CARNEA'
+  | 'APHIDIUS_COLEMANI'
+  | 'LADYBUGS'
+  | 'PRAYING_MANTIS'
+  | 'BENEFICIAL_NEMATODES'
+  | 'STICKY_TRAPS'
+  | 'DIATOMACEOUS_EARTH'
+  | 'NEEM_OIL'
+  | 'INSECTICIDAL_SOAP'
+  | 'COMPANION_PLANTING'
+  | 'ENVIRONMENTAL_ADJUSTMENTS'
+  | 'PHYSICAL_BARRIERS'
+  | 'PRUNING_REMOVAL'
+  | 'QUARANTINE_MEASURES';
+
 interface CustomNutrient {
   name: string;
   amount: number;
@@ -296,6 +322,11 @@ interface FormData {
   pestIndicators: PestIndicator[];
   fungalSymptoms: FungalSymptom[];
   stressSymptoms: StressSymptom[];
+  pestIdentificationStatus?: PestIdentificationStatus;
+  pestConfidenceLevel?: number;
+
+  // IPM Methods
+  ipmMethods: IPMMethod[];
 }
 
 interface CreateLogModalProps {
@@ -341,6 +372,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     pestIndicators: [],
     fungalSymptoms: [],
     stressSymptoms: [],
+    ipmMethods: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1125,29 +1157,128 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
       </div>
 
       <div>
+        <Label>Pest Identification Status</Label>
+        <select
+          value={formData.pestIdentificationStatus || ''}
+          onChange={(e) => setFormData({ ...formData, pestIdentificationStatus: e.target.value as PestIdentificationStatus })}
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+        >
+          <option value="">Select Status</option>
+          <option value="SUSPECTED">Suspected</option>
+          <option value="VERIFIED">Verified</option>
+        </select>
+      </div>
+
+      <div>
+        <Label>Confidence Level (1-5)</Label>
+        <select
+          value={formData.pestConfidenceLevel || ''}
+          onChange={(e) => setFormData({ ...formData, pestConfidenceLevel: parseInt(e.target.value) || undefined })}
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+        >
+          <option value="">Select Level</option>
+          {[1, 2, 3, 4, 5].map(level => (
+            <option key={level} value={level}>{level}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
         <Label>Pest Types</Label>
-        <MultiSelect
-          value={formData.pestTypes}
-          onChange={(value) => setFormData({ ...formData, pestTypes: value as PestType[] })}
-          options={Object.values(PestType).map(type => ({
-            value: type,
-            label: type.replace(/_/g, ' ')
-          }))}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-        />
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {Object.values(PestType).map((type) => (
+            <div key={type} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`pest-type-${type}`}
+                checked={formData.pestTypes.includes(type)}
+                onChange={(e) => {
+                  const types = e.target.checked
+                    ? [...formData.pestTypes, type]
+                    : formData.pestTypes.filter(t => t !== type);
+                  setFormData({ ...formData, pestTypes: types });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`pest-type-${type}`} className="text-sm font-normal">
+                {type.replace(/_/g, ' ')}
+              </Label>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>
         <Label>Disease Types</Label>
-        <MultiSelect
-          value={formData.diseaseTypes}
-          onChange={(value) => setFormData({ ...formData, diseaseTypes: value as DiseaseType[] })}
-          options={Object.values(DiseaseType).map(type => ({
-            value: type,
-            label: type.replace(/_/g, ' ')
-          }))}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-        />
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {Object.values(DiseaseType).map((type) => (
+            <div key={type} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`disease-type-${type}`}
+                checked={formData.diseaseTypes.includes(type)}
+                onChange={(e) => {
+                  const types = e.target.checked
+                    ? [...formData.diseaseTypes, type]
+                    : formData.diseaseTypes.filter(t => t !== type);
+                  setFormData({ ...formData, diseaseTypes: types });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`disease-type-${type}`} className="text-sm font-normal">
+                {type.replace(/_/g, ' ')}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>🦋 IPM Methods & Beneficial Organisms</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'PHYTOSEIULUS_PERSIMILIS', label: 'Phytoseiulus persimilis (Spider Mite Predator)' },
+            { value: 'NEOSEIULUS_CALIFORNICUS', label: 'Neoseiulus californicus (Spider Mite Predator)' },
+            { value: 'AMBLYSEIUS_SWIRSKII', label: 'Amblyseius swirskii (Thrips/Whitefly Predator)' },
+            { value: 'AMBLYSEIUS_CUCUMERIS', label: 'Amblyseius cucumeris (Thrips Predator)' },
+            { value: 'AMBLYSEIUS_ANDERSONI', label: 'Amblyseius andersoni (Broad/Russet Mite Predator)' },
+            { value: 'STRATIOLAELAPS_SCIMITUS', label: 'Stratiolaelaps scimitus (Fungus Gnat Predator)' },
+            { value: 'ORIUS_INSIDIOSUS', label: 'Orius insidiosus (Minute Pirate Bug)' },
+            { value: 'DALOTIA_CORIARIA', label: 'Dalotia coriaria (Rove Beetle)' },
+            { value: 'CHRYSOPERLA_CARNEA', label: 'Chrysoperla carnea (Green Lacewing)' },
+            { value: 'APHIDIUS_COLEMANI', label: 'Aphidius colemani (Aphid Parasitoid)' },
+            { value: 'LADYBUGS', label: 'Ladybugs' },
+            { value: 'PRAYING_MANTIS', label: 'Praying Mantis' },
+            { value: 'BENEFICIAL_NEMATODES', label: 'Beneficial Nematodes' },
+            { value: 'STICKY_TRAPS', label: 'Sticky Traps' },
+            { value: 'DIATOMACEOUS_EARTH', label: 'Diatomaceous Earth' },
+            { value: 'NEEM_OIL', label: 'Neem Oil' },
+            { value: 'INSECTICIDAL_SOAP', label: 'Insecticidal Soap' },
+            { value: 'COMPANION_PLANTING', label: 'Companion Planting' },
+            { value: 'ENVIRONMENTAL_ADJUSTMENTS', label: 'Environmental Adjustments' },
+            { value: 'PHYSICAL_BARRIERS', label: 'Physical Barriers' },
+            { value: 'PRUNING_REMOVAL', label: 'Pruning & Removal of Affected Areas' },
+            { value: 'QUARANTINE_MEASURES', label: 'Quarantine Measures' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`ipm-${value}`}
+                checked={formData.ipmMethods.includes(value as IPMMethod)}
+                onChange={(e) => {
+                  const methods = e.target.checked
+                    ? [...formData.ipmMethods, value as IPMMethod]
+                    : formData.ipmMethods.filter(m => m !== value);
+                  setFormData({ ...formData, ipmMethods: methods });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`ipm-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
