@@ -37,6 +37,20 @@ type Jacks321Unit = 'GRAMS' | 'PPM';
 type Intensity = 'LIGHT' | 'MODERATE' | 'INTENSE';
 type Shape = 'EVEN' | 'SLOPED' | 'SUPER_UNEVEN';
 
+type TrainingGoal = 
+  | 'HEIGHT_CONTROL'
+  | 'WIDEN_PLANT'
+  | 'EXTRA_COLAS'
+  | 'STEM_STRENGTH'
+  | 'CANOPY_CONTROL'
+  | 'AIRFLOW'
+  | 'LIGHT_PENETRATION'
+  | 'NODE_EXPOSURE'
+  | 'SYMMETRY'
+  | 'REMOVE_LOWER_GROWTH'
+  | 'REMOVE_DAMAGED'
+  | 'EXPERIMENTAL';
+
 interface CustomNutrient {
   name: string;
   amount: number;
@@ -171,6 +185,13 @@ interface FormData {
   canopyShape?: string | null;
   leafTuckingIntensity?: string | null;
   lstIntensity?: string | null;
+
+  // HST Fields
+  toppedNode?: number;
+  fimNode?: number;
+  defoliationIntensity?: string;
+  defoliationPercentage?: number;
+  trainingGoals: TrainingGoal[];
 }
 
 interface CreateLogModalProps {
@@ -213,6 +234,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     trimWeightUnit: WeightUnit.GRAMS,
     ppmScale: 'PPM_500',
     supportedPlants: [],
+    trainingGoals: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -801,7 +823,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="bendingIntensity">Bending/Knuckling Intensity</Label>
+          <Label htmlFor="bendingIntensity">Supercropping Intensity</Label>
           <select
             id="bendingIntensity"
             value={formData.bendingIntensity || ''}
@@ -873,6 +895,104 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderHSTFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="toppedNode">Topped at Node</Label>
+          <select
+            id="toppedNode"
+            value={formData.toppedNode || ''}
+            onChange={(e) => setFormData({ ...formData, toppedNode: parseInt(e.target.value) || undefined })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Node</option>
+            {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="fimNode">FIM at Node</Label>
+          <select
+            id="fimNode"
+            value={formData.fimNode || ''}
+            onChange={(e) => setFormData({ ...formData, fimNode: parseInt(e.target.value) || undefined })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Node</option>
+            {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="defoliationIntensity">Defoliation Intensity</Label>
+          <select
+            id="defoliationIntensity"
+            value={formData.defoliationIntensity || ''}
+            onChange={(e) => setFormData({ ...formData, defoliationIntensity: e.target.value })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Intensity</option>
+            <option value="LIGHT">Light</option>
+            <option value="MODERATE">Moderate</option>
+            <option value="INTENSE">Intense</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="defoliationPercentage">Portion of Plant Defoliated (%)</Label>
+          <Input
+            type="number"
+            id="defoliationPercentage"
+            min="1"
+            max="100"
+            value={formData.defoliationPercentage || ''}
+            onChange={(e) => setFormData({ ...formData, defoliationPercentage: parseInt(e.target.value) || undefined })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+        </div>
+      </div>
+      <div>
+        <Label>Training Goals</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            { value: 'HEIGHT_CONTROL', label: 'Height Control' },
+            { value: 'WIDEN_PLANT', label: 'Widen Plant' },
+            { value: 'EXTRA_COLAS', label: 'Extra Colas' },
+            { value: 'STEM_STRENGTH', label: 'Stem Strength' },
+            { value: 'CANOPY_CONTROL', label: 'Canopy Control' },
+            { value: 'AIRFLOW', label: 'Airflow' },
+            { value: 'LIGHT_PENETRATION', label: 'Light Penetration' },
+            { value: 'NODE_EXPOSURE', label: 'Node Exposure' },
+            { value: 'SYMMETRY', label: 'Symmetry' },
+            { value: 'REMOVE_LOWER_GROWTH', label: 'Remove Lower Growth' },
+            { value: 'REMOVE_DAMAGED', label: 'Remove Diseased/Damaged' },
+            { value: 'EXPERIMENTAL', label: 'Experimental' }
+          ].map(({ value, label }) => (
+            <div key={value} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`goal-${value}`}
+                checked={formData.trainingGoals.includes(value as TrainingGoal)}
+                onChange={(e) => {
+                  const goals = e.target.checked
+                    ? [...formData.trainingGoals, value as TrainingGoal]
+                    : formData.trainingGoals.filter(g => g !== value);
+                  setFormData({ ...formData, trainingGoals: goals });
+                }}
+                className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+              />
+              <Label htmlFor={`goal-${value}`} className="text-sm font-normal">
+                {label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -888,6 +1008,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         );
       case 'LST':
         return renderLSTFields();
+      case 'HST':
+        return renderHSTFields();
       case 'PEST_DISEASE':
         return renderHealthFields();
       default:
