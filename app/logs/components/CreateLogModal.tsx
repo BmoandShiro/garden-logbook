@@ -211,6 +211,24 @@ interface LocationNode {
   children: LocationNode[];
 }
 
+// Add these types near the other type definitions at the top
+type GerminationMethod = 
+  | 'PAPER_TOWEL'
+  | 'DIRECT_SOIL'
+  | 'SOAK_THEN_SOIL'
+  | 'PLUGS_OR_CUBES'
+  | 'ROCKWOOL'
+  | 'PROPAGATOR'
+  | 'OTHER';
+
+type GerminationStatus = 
+  | 'NOT_STARTED'
+  | 'PENDING'
+  | 'TAPROOTED'
+  | 'FAILED'
+  | 'ADDED_MOISTURE'
+  | 'SPROUTED';
+
 interface FormData {
   // Basic Info
   logType: LogType;
@@ -358,6 +376,13 @@ interface FormData {
   destinationGardenId?: string;
   destinationRoomId?: string;
   destinationZoneId?: string;
+
+  // Germination Fields
+  germinationMethod?: GerminationMethod;
+  germinationStatus?: GerminationStatus;
+  germinationRh?: number;
+  germinationTemp?: number;
+  daysToSprout?: number;
 }
 
 interface CreateLogModalProps {
@@ -1792,6 +1817,99 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderGerminationFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="germinationMethod">Germination Method</Label>
+          <select
+            id="germinationMethod"
+            value={formData.germinationMethod || ''}
+            onChange={(e) => setFormData({ ...formData, germinationMethod: e.target.value as GerminationMethod })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Method</option>
+            <option value="PAPER_TOWEL">Paper Towel</option>
+            <option value="DIRECT_SOIL">Direct Soil</option>
+            <option value="SOAK_THEN_SOIL">Soak then Soil</option>
+            <option value="PLUGS_OR_CUBES">Plugs or Cubes</option>
+            <option value="ROCKWOOL">Rockwool</option>
+            <option value="PROPAGATOR">Propagator</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="germinationStatus">Germination Status</Label>
+          <select
+            id="germinationStatus"
+            value={formData.germinationStatus || ''}
+            onChange={(e) => setFormData({ ...formData, germinationStatus: e.target.value as GerminationStatus })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Status</option>
+            <option value="NOT_STARTED">Not Started</option>
+            <option value="PENDING">Pending</option>
+            <option value="TAPROOTED">Taprooted</option>
+            <option value="FAILED">Failed</option>
+            <option value="ADDED_MOISTURE">Added Moisture</option>
+            <option value="SPROUTED">Sprouted</option>
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="germinationRh">RH (%)</Label>
+          <Input
+            type="number"
+            id="germinationRh"
+            min="1"
+            max="100"
+            value={formData.germinationRh || ''}
+            onChange={(e) => setFormData({ ...formData, germinationRh: parseInt(e.target.value) || undefined })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="germinationTemp">Temperature</Label>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              id="germinationTemp"
+              value={formData.germinationTemp || ''}
+              onChange={(e) => setFormData({ ...formData, germinationTemp: parseFloat(e.target.value) || undefined })}
+              className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            />
+            <select
+              value={formData.temperatureUnit}
+              onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
+              className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            >
+              {Object.values(TemperatureUnit).map((unit) => (
+                <option key={unit} value={unit}>{unit}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="daysToSprout">Days to Sprout</Label>
+          <select
+            id="daysToSprout"
+            value={formData.daysToSprout || ''}
+            onChange={(e) => setFormData({ ...formData, daysToSprout: parseInt(e.target.value) || undefined })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Days</option>
+            {Array.from({ length: 22 }, (_, i) => i).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -1819,6 +1937,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderTransplantFields();
       case 'TRANSFER':
         return renderTransferFields();
+      case 'GERMINATION':
+        return renderGerminationFields();
       default:
         return null;
     }
