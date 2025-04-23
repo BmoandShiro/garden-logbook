@@ -37,6 +37,11 @@ type Jacks321Unit = 'GRAMS' | 'PPM';
 type Intensity = 'LIGHT' | 'MODERATE' | 'INTENSE';
 type Shape = 'EVEN' | 'SLOPED' | 'SUPER_UNEVEN';
 
+type HangMethod = 'ENTIRE_PLANT' | 'BRANCHES' | 'NUGS_ON_RACKS';
+type TrichomeColor = 'MOSTLY_CLEAR' | 'MOSTLY_MILKY' | 'MILKY_MIXED_AMBER' | 'MORE_THAN_30_AMBER';
+type TrimMoisture = 'WET' | 'DRY' | 'LIVE';
+type TrimMethod = 'HAND' | 'MACHINE';
+
 type TrainingGoal = 
   | 'HEIGHT_CONTROL'
   | 'WIDEN_PLANT'
@@ -152,18 +157,17 @@ interface FormData {
   trimAmountUnit: WeightUnit;
 
   // Harvest
-  wetWeight?: number;
-  wetWeightUnit: WeightUnit;
-  dryWeight?: number;
-  dryWeightUnit: WeightUnit;
-  trimWeight?: number;
-  trimWeightUnit: WeightUnit;
+  hangMethod?: HangMethod;
+  forLiveUse?: boolean;
+  trichomeColor?: TrichomeColor;
 
   // Drying & Curing
+  trimMoisture?: TrimMoisture;
+  nugMoisturePercent?: number;
+  trimMethod?: TrimMethod;
+  dryingRh?: number;
   dryingTemp?: number;
-  dryingHumidity?: number;
-  dryingDays?: number;
-  curingDays?: number;
+  estimatedDaysLeft?: number;
 
   // Soil/Medium
   mediumMoisture?: number;
@@ -229,9 +233,6 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     treatmentProducts: [],
     trainingMethods: [],
     trimAmountUnit: WeightUnit.GRAMS,
-    wetWeightUnit: WeightUnit.GRAMS,
-    dryWeightUnit: WeightUnit.GRAMS,
-    trimWeightUnit: WeightUnit.GRAMS,
     ppmScale: 'PPM_500',
     supportedPlants: [],
     trainingGoals: [],
@@ -993,6 +994,149 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderHarvestFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="hangMethod">Hang Method</Label>
+          <select
+            id="hangMethod"
+            value={formData.hangMethod || ''}
+            onChange={(e) => setFormData({ ...formData, hangMethod: e.target.value as HangMethod })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Method</option>
+            <option value="ENTIRE_PLANT">Entire Plant</option>
+            <option value="BRANCHES">Branches</option>
+            <option value="NUGS_ON_RACKS">Nugs on Racks</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="trichomeColor">Trichome Coloration</Label>
+          <select
+            id="trichomeColor"
+            value={formData.trichomeColor || ''}
+            onChange={(e) => setFormData({ ...formData, trichomeColor: e.target.value as TrichomeColor })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Coloration</option>
+            <option value="MOSTLY_CLEAR">Mostly Clear</option>
+            <option value="MOSTLY_MILKY">Mostly Milky</option>
+            <option value="MILKY_MIXED_AMBER">Milky Mixed Amber</option>
+            <option value="MORE_THAN_30_AMBER">More than 30% Amber</option>
+          </select>
+        </div>
+        <div className="col-span-2">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="forLiveUse"
+              checked={formData.forLiveUse || false}
+              onChange={(e) => setFormData({ ...formData, forLiveUse: e.target.checked })}
+              className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+            />
+            <Label htmlFor="forLiveUse" className="text-sm font-normal">
+              Harvest to be used live
+            </Label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDryingFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="trimMoisture">Trim Moisture</Label>
+          <select
+            id="trimMoisture"
+            value={formData.trimMoisture || ''}
+            onChange={(e) => setFormData({ ...formData, trimMoisture: e.target.value as TrimMoisture })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Moisture</option>
+            <option value="WET">Wet</option>
+            <option value="DRY">Dry</option>
+            <option value="LIVE">Live</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="nugMoisturePercent">Nug Moisture When Trimmed (%)</Label>
+          <Input
+            type="number"
+            id="nugMoisturePercent"
+            min="1"
+            max="100"
+            value={formData.nugMoisturePercent || ''}
+            onChange={(e) => setFormData({ ...formData, nugMoisturePercent: parseInt(e.target.value) || undefined })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+        </div>
+        <div>
+          <Label htmlFor="trimMethod">Trim Method</Label>
+          <select
+            id="trimMethod"
+            value={formData.trimMethod || ''}
+            onChange={(e) => setFormData({ ...formData, trimMethod: e.target.value as TrimMethod })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Method</option>
+            <option value="HAND">Hand</option>
+            <option value="MACHINE">Machine</option>
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="dryingRh">RH (%)</Label>
+          <Input
+            type="number"
+            id="dryingRh"
+            min="1"
+            max="100"
+            value={formData.dryingRh || ''}
+            onChange={(e) => setFormData({ ...formData, dryingRh: parseInt(e.target.value) || undefined })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+        </div>
+        <div>
+          <Label htmlFor="dryingTemp">Temperature</Label>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              id="dryingTemp"
+              value={formData.dryingTemp || ''}
+              onChange={(e) => setFormData({ ...formData, dryingTemp: parseFloat(e.target.value) || undefined })}
+              className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            />
+            <select
+              value={formData.temperatureUnit}
+              onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
+              className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            >
+              {Object.values(TemperatureUnit).map((unit) => (
+                <option key={unit} value={unit}>{unit}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="estimatedDaysLeft">Estimated Days Left Till Dry</Label>
+          <select
+            id="estimatedDaysLeft"
+            value={formData.estimatedDaysLeft || ''}
+            onChange={(e) => setFormData({ ...formData, estimatedDaysLeft: parseInt(e.target.value) || undefined })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Days</option>
+            {Array.from({ length: 16 }, (_, i) => i).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -1010,6 +1154,10 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderLSTFields();
       case 'HST':
         return renderHSTFields();
+      case 'HARVEST':
+        return renderHarvestFields();
+      case 'DRYING':
+        return renderDryingFields();
       case 'PEST_DISEASE':
         return renderHealthFields();
       default:
