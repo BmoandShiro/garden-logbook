@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { User, Permission } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
-import { Permission, hasPermission } from '@/types/auth';
-import prisma from '@/lib/prisma';
+import { hasPermission } from '@/types/auth';
+
+// Extend the NextRequest type to include user
+interface AuthenticatedRequest extends NextRequest {
+  user: User | null;
+}
 
 export async function withAuth(
   request: NextRequest,
@@ -46,7 +51,8 @@ export async function withAuth(
     }
 
     // Add user to request for use in handler
-    (request as any).user = user;
+    const req = request as AuthenticatedRequest;
+    req.user = user;
 
     return handler();
   } catch (error) {

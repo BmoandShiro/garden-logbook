@@ -24,11 +24,10 @@ export async function hasPermission(permission: Permission): Promise<boolean> {
   if (!user) return false;
 
   // Admin role has all permissions
-  if (user.roles.some(role => role === Role.ADMIN)) {
+  if (user.role === Role.ADMIN) {
     return true;
   }
 
-  // Check specific permissions based on roles
-  // Add more role-based permission checks here as needed
-  return false;
+  // Check if user has the specific permission
+  return user.permissions.includes(permission);
 } 
