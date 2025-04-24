@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { variety, strain, batch, breeder, quantity, dateAcquired, dateHarvested } = body;
+    const { variety, strain, batch, breeder, quantity, dateAcquired, dateHarvested, feminized } = body;
 
     const seed = await prisma.seed.create({
       data: {
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
         quantity,
         dateAcquired,
         dateHarvested,
+        feminized,
         userId: session.user.id,
       },
     });

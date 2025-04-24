@@ -409,6 +409,7 @@ model Seed {
   quantity      Int
   dateAcquired  DateTime
   dateHarvested DateTime?
+  feminized     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   userId        String
