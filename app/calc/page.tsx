@@ -1,22 +1,33 @@
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Calculator | Garden Logbook',
-  description: 'Garden calculator tools',
-};
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CFMCalculator from './components/CFMCalculator';
+import Jacks321Calculator from './components/Jacks321Calculator';
 
 export default function CalculatorPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-dark-text-primary">Calculator</h1>
-      </div>
-      <div className="flex flex-col items-center justify-center h-40 p-8 border border-dark-border rounded-lg bg-dark-bg-secondary">
-        <p className="text-xl font-semibold mb-2 text-garden-400">Coming Soon</p>
-        <p className="text-dark-text-secondary text-center">
-          Garden calculator tools will be available here.
+      <div className="space-y-4 mb-8">
+        <h1 className="text-3xl font-semibold text-dark-text-primary">
+          Grow Calculators
+        </h1>
+        <p className="text-dark-text-secondary">
+          Quick tools to calculate airflow, nutrients, and more
         </p>
       </div>
+
+      <Tabs defaultValue="cfm" className="space-y-6">
+        <TabsList className="bg-dark-bg-secondary border-dark-border">
+          <TabsTrigger value="cfm">CFM Calculator</TabsTrigger>
+          <TabsTrigger value="jacks">Jacks 3-2-1 Calculator</TabsTrigger>
+        </TabsList>
+        <TabsContent value="cfm" className="mt-6">
+          <CFMCalculator />
+        </TabsContent>
+        <TabsContent value="jacks" className="mt-6">
+          <Jacks321Calculator />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 
