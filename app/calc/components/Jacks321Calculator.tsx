@@ -110,6 +110,10 @@ interface StageData {
   ppm700: number;
   nutrients: string[];
   co2Max?: number;
+  ratios?: {
+    nutrient: string;
+    ratio: number;
+  }[];
 }
 
 const STAGE_DATA: Record<GrowStage, StageData> = {
@@ -120,6 +124,7 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
     ppm700: 1085,
     nutrients: ['Clone formula'],
     co2Max: 1000,
+    ratios: [] // Optional, low PPM
   },
   vegetative: {
     name: 'Vegetative',
@@ -128,6 +133,11 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
     ppm700: 1680,
     nutrients: ['Part A', 'Part B', 'Epsom'],
     co2Max: 1600,
+    ratios: [
+      { nutrient: 'Part A', ratio: 3 },
+      { nutrient: 'Part B', ratio: 2 },
+      { nutrient: 'Epsom', ratio: 1 }
+    ]
   },
   budset: {
     name: 'Bud Set',
@@ -136,6 +146,10 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
     ppm700: 1470,
     nutrients: ['Bloom', 'Epsom'],
     co2Max: 1400,
+    ratios: [
+      { nutrient: 'Bloom', ratio: 6 },
+      { nutrient: 'Epsom', ratio: 1 }
+    ]
   },
   flower: {
     name: 'Flower',
@@ -144,6 +158,11 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
     ppm700: 1680,
     nutrients: ['Part A', 'Part B', 'Epsom'],
     co2Max: 1600,
+    ratios: [
+      { nutrient: 'Part A', ratio: 3 },
+      { nutrient: 'Part B', ratio: 2 },
+      { nutrient: 'Epsom', ratio: 1 }
+    ]
   },
   lateflower: {
     name: 'Late Flower',
@@ -152,6 +171,10 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
     ppm700: 1470,
     nutrients: ['Finish', 'Epsom'],
     co2Max: 1400,
+    ratios: [
+      { nutrient: 'Finish', ratio: 6 },
+      { nutrient: 'Epsom', ratio: 1 }
+    ]
   },
   flush: {
     name: 'Flush',
@@ -159,6 +182,7 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
     ppm500: 0,
     ppm700: 0,
     nutrients: ['Clear water'],
+    ratios: [] // Water only
   },
 };
 
@@ -170,6 +194,7 @@ const BASE_GRAMS_PER_GALLON = {
   finish: 5.05,
 };
 
+// PPM contribution per gram per gallon
 const PPM_CONTRIBUTION = {
   partA: 13.2,
   partB: 39.7,
@@ -206,6 +231,15 @@ interface NutrientCalculation {
   epsom?: NutrientAmount;
   totalPPM: number;
   finalPPM: number;
+}
+
+// Helper type for PPM allocations
+interface PPMAllocation {
+  partA?: number;
+  partB?: number;
+  epsom?: number;
+  bloom?: number;
+  finish?: number;
 }
 
 export default function Jacks321Calculator() {
@@ -287,7 +321,7 @@ export default function Jacks321Calculator() {
     return modifiers;
   };
 
-  // Update calculateNutrients to use modifiers
+  // Calculate nutrient amounts based on stage, volume, and modifiers
   const calculateNutrients = (): NutrientCalculation => {
     if (selectedStage === 'flush') {
       return {
@@ -298,60 +332,82 @@ export default function Jacks321Calculator() {
 
     const stageData = STAGE_DATA[selectedStage];
     const volumeNum = parseFloat(volume);
+    const targetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    const sourcePPMNum = parseInt(sourceWaterPPM);
+    const nutrientPPM = targetPPM - sourcePPMNum;
     const modifiers = calculateModifiers();
 
+    // Calculate weighted PPM total and shares
+    let weightedPPM = 0;
+    const ppmShares: PPMAllocation = {};
+
+    if (stageData.ratios) {
+      // Calculate total weighted PPM
+      weightedPPM = stageData.ratios.reduce((total, { nutrient, ratio }) => {
+        const ppmPerGram = getPPMPerGram(nutrient);
+        return total + (ratio * ppmPerGram);
+      }, 0);
+
+      // Calculate PPM shares
+      stageData.ratios.forEach(({ nutrient, ratio }) => {
+        const ppmPerGram = getPPMPerGram(nutrient);
+        const share = (ratio * ppmPerGram) / weightedPPM;
+        const nutrientKey = getNutrientKey(nutrient);
+        if (nutrientKey) {
+          ppmShares[nutrientKey] = share;
+        }
+      });
+    }
+
+    // Initialize calculation result
     const calc: NutrientCalculation = {
       totalPPM: 0,
-      finalPPM: parseInt(sourceWaterPPM)
+      finalPPM: sourcePPMNum
     };
 
-    if (stageData.nutrients.includes('Part A')) {
-      const modifier = 1 + (modifiers.partA || 0);
-      calc.partA = {
-        grams: BASE_GRAMS_PER_GALLON.partA * volumeNum * modifier,
-        ppmContribution: PPM_CONTRIBUTION.partA * modifier
+    // Calculate grams and PPM for each nutrient
+    Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
+      const allocatedPPM = nutrientPPM * share;
+      const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
+      const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
+      const modifier = 1 + (modifiers[nutrientKey as keyof SymptomModifier] || 0);
+      const adjustedGrams = baseGrams * modifier;
+      const nutrientAmount: NutrientAmount = {
+        grams: adjustedGrams,
+        ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
       };
-      calc.totalPPM += calc.partA.ppmContribution;
-    }
 
-    if (stageData.nutrients.includes('Part B')) {
-      const modifier = 1 + (modifiers.partB || 0);
-      calc.partB = {
-        grams: BASE_GRAMS_PER_GALLON.partB * volumeNum * modifier,
-        ppmContribution: PPM_CONTRIBUTION.partB * modifier
-      };
-      calc.totalPPM += calc.partB.ppmContribution;
-    }
+      // Type assertion to handle the dynamic property assignment
+      (calc as any)[nutrientKey] = nutrientAmount;
+      calc.totalPPM += nutrientAmount.ppmContribution;
+    });
 
-    if (stageData.nutrients.includes('Bloom')) {
-      const modifier = 1 + (modifiers.bloom || 0);
-      calc.bloom = {
-        grams: BASE_GRAMS_PER_GALLON.bloom * volumeNum * modifier,
-        ppmContribution: PPM_CONTRIBUTION.bloom * modifier
-      };
-      calc.totalPPM += calc.bloom.ppmContribution;
-    }
-
-    if (stageData.nutrients.includes('Finish')) {
-      const modifier = 1 + (modifiers.finish || 0);
-      calc.finish = {
-        grams: BASE_GRAMS_PER_GALLON.finish * volumeNum * modifier,
-        ppmContribution: PPM_CONTRIBUTION.finish * modifier
-      };
-      calc.totalPPM += calc.finish.ppmContribution;
-    }
-
-    if (stageData.nutrients.includes('Epsom')) {
-      const modifier = 1 + (modifiers.epsom || 0);
-      calc.epsom = {
-        grams: BASE_GRAMS_PER_GALLON.epsom * volumeNum * modifier,
-        ppmContribution: PPM_CONTRIBUTION.epsom * modifier
-      };
-      calc.totalPPM += calc.epsom.ppmContribution;
-    }
-
-    calc.finalPPM = calc.totalPPM + parseInt(sourceWaterPPM);
+    calc.finalPPM = calc.totalPPM + sourcePPMNum;
     return calc;
+  };
+
+  // Helper function to get PPM per gram for a nutrient
+  const getPPMPerGram = (nutrient: string): number => {
+    switch (nutrient) {
+      case 'Part A': return PPM_CONTRIBUTION.partA;
+      case 'Part B': return PPM_CONTRIBUTION.partB;
+      case 'Epsom': return PPM_CONTRIBUTION.epsom;
+      case 'Bloom': return PPM_CONTRIBUTION.bloom;
+      case 'Finish': return PPM_CONTRIBUTION.finish;
+      default: return 0;
+    }
+  };
+
+  // Helper function to get nutrient key for calculations
+  const getNutrientKey = (nutrient: string): keyof PPMAllocation | null => {
+    switch (nutrient) {
+      case 'Part A': return 'partA';
+      case 'Part B': return 'partB';
+      case 'Epsom': return 'epsom';
+      case 'Bloom': return 'bloom';
+      case 'Finish': return 'finish';
+      default: return null;
+    }
   };
 
   // Calculate runoff warning based on PPM values
@@ -394,6 +450,7 @@ export default function Jacks321Calculator() {
               <TableHead>EC</TableHead>
               <TableHead>PPM ({isPPM700 ? '700' : '500'})</TableHead>
               <TableHead>Nutrients</TableHead>
+              <TableHead>PPM Ratio</TableHead>
               {isCO2Enriched && <TableHead>CO₂ PPM Max</TableHead>}
             </TableRow>
           </TableHeader>
@@ -410,6 +467,13 @@ export default function Jacks321Calculator() {
                 <TableCell>{data.ec}</TableCell>
                 <TableCell>{isPPM700 ? data.ppm700 : data.ppm500}</TableCell>
                 <TableCell>{data.nutrients.join(', ')}</TableCell>
+                <TableCell>
+                  {data.ratios && data.ratios.length > 0 ? (
+                    data.ratios.map(r => `${r.ratio}`).join(' : ')
+                  ) : (
+                    '—'
+                  )}
+                </TableCell>
                 {isCO2Enriched && <TableCell>{data.co2Max || '—'}</TableCell>}
               </TableRow>
             ))}
