@@ -17,6 +17,7 @@ interface Seed {
   quantity: number;
   dateAcquired: Date;
   dateHarvested: Date | null;
+  feminized: boolean;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -93,6 +94,9 @@ export default function SeedList({ seeds }: SeedListProps) {
                     Harvested: {seed.dateHarvested.toLocaleDateString()}
                   </p>
                 )}
+                <p className="text-sm text-emerald-300/70">
+                  Type: {seed.feminized ? 'Feminized' : 'Regular'}
+                </p>
               </div>
               <p className="text-sm text-emerald-300/70">
                 Added by {seed.createdBy.name || seed.createdBy.email}

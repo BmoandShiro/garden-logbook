@@ -13,6 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function CreateSeedButton() {
   const router = useRouter();
@@ -25,9 +26,16 @@ export default function CreateSeedButton() {
   const [quantity, setQuantity] = useState('');
   const [dateAcquired, setDateAcquired] = useState<Date>();
   const [dateHarvested, setDateHarvested] = useState<Date>();
+  const [feminized, setFeminized] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!dateAcquired) {
+      toast.error('Date acquired is required');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const response = await fetch('/api/seeds', {
@@ -41,13 +49,15 @@ export default function CreateSeedButton() {
           batch,
           breeder,
           quantity: parseInt(quantity),
-          dateAcquired,
-          dateHarvested,
+          dateAcquired: dateAcquired.toISOString(),
+          dateHarvested: dateHarvested ? dateHarvested.toISOString() : null,
+          feminized,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create seed');
+        const error = await response.text();
+        throw new Error(error || 'Failed to create seed');
       }
 
       toast.success('Seed added successfully');
@@ -60,9 +70,10 @@ export default function CreateSeedButton() {
       setQuantity('');
       setDateAcquired(undefined);
       setDateHarvested(undefined);
+      setFeminized(false);
     } catch (error) {
-      toast.error('Error adding seed');
-      console.error(error);
+      console.error('Error creating seed:', error);
+      toast.error(error instanceof Error ? error.message : 'Error adding seed');
     } finally {
       setIsSubmitting(false);
     }
@@ -93,6 +104,7 @@ export default function CreateSeedButton() {
                 onChange={(e) => setVariety(e.target.value)}
                 placeholder="Enter seed variety"
                 required
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               />
             </div>
 
@@ -104,7 +116,17 @@ export default function CreateSeedButton() {
                 onChange={(e) => setStrain(e.target.value)}
                 placeholder="Enter strain"
                 required
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="feminized"
+                checked={feminized}
+                onCheckedChange={(checked: boolean | 'indeterminate') => setFeminized(checked as boolean)}
+              />
+              <Label htmlFor="feminized">Feminized Seeds</Label>
             </div>
 
             <div className="space-y-2">
@@ -115,6 +137,7 @@ export default function CreateSeedButton() {
                 onChange={(e) => setBatch(e.target.value)}
                 placeholder="Enter batch number/identifier"
                 required
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               />
             </div>
 
@@ -126,6 +149,7 @@ export default function CreateSeedButton() {
                 onChange={(e) => setBreeder(e.target.value)}
                 placeholder="Enter breeder name"
                 required
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               />
             </div>
 
@@ -140,6 +164,7 @@ export default function CreateSeedButton() {
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="Enter quantity"
                 required
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               />
             </div>
 
@@ -150,7 +175,7 @@ export default function CreateSeedButton() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal bg-dark-bg-primary text-dark-text-primary border-dark-border",
                       !dateAcquired && "text-muted-foreground"
                     )}
                   >
@@ -164,6 +189,7 @@ export default function CreateSeedButton() {
                     selected={dateAcquired}
                     onSelect={setDateAcquired}
                     initialFocus
+                    required
                   />
                 </PopoverContent>
               </Popover>
@@ -176,7 +202,7 @@ export default function CreateSeedButton() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal bg-dark-bg-primary text-dark-text-primary border-dark-border",
                       !dateHarvested && "text-muted-foreground"
                     )}
                   >
@@ -201,6 +227,7 @@ export default function CreateSeedButton() {
                 variant="outline"
                 onClick={() => setIsOpen(false)}
                 disabled={isSubmitting}
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               >
                 Cancel
               </Button>
