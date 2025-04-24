@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import PlantList from './components/PlantList';
 import CreatePlantButton from './components/CreatePlantButton';
+import CreateEquipmentButton from './components/CreateEquipmentButton';
 
 interface PageProps {
   params: {
@@ -67,7 +68,10 @@ export default async function ZonePage({ params }: PageProps) {
     <div className="h-full p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-emerald-100">{zone.name}</h1>
-        <CreatePlantButton zoneId={params.zoneId} roomId={params.roomId} gardenId={params.gardenId} />
+        <div className="flex items-center space-x-2">
+          <CreatePlantButton zoneId={params.zoneId} roomId={params.roomId} gardenId={params.gardenId} />
+          <CreateEquipmentButton zoneId={params.zoneId} roomId={params.roomId} gardenId={params.gardenId} />
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
