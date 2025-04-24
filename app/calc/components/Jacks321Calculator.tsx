@@ -45,10 +45,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
 
 enum RootSize {
-  SEEDLING = 'SEEDLING',
-  ONE_GAL = 'ONE_GAL',
-  TWO_THREE_GAL = 'TWO_THREE_GAL',
-  FIVE_PLUS_GAL = 'FIVE_PLUS_GAL'
+  SMALL = 'SMALL',
+  NORMAL = 'NORMAL'
 }
 
 // pH ranges for nutrient uptake
@@ -218,18 +216,14 @@ const PPM_CONTRIBUTION = {
 
 // Root size options
 const ROOT_SIZE_OPTIONS = [
-  { value: RootSize.SEEDLING, label: 'Seedling / Solo Cup', modifier: 0.8 },
-  { value: RootSize.ONE_GAL, label: '1 Gal', modifier: 0.85 },
-  { value: RootSize.TWO_THREE_GAL, label: '2-3 Gal', modifier: 0.95 },
-  { value: RootSize.FIVE_PLUS_GAL, label: '5+ Gal', modifier: 1.0 }
+  { value: RootSize.SMALL, label: 'Small Root Ball' },
+  { value: RootSize.NORMAL, label: 'Normal Root Ball' }
 ];
 
 // Root size modifiers (percentage of base amount)
 const ROOT_SIZE_MODIFIERS: { [key in RootSize]: number } = {
-  [RootSize.SEEDLING]: 0.8,
-  [RootSize.ONE_GAL]: 0.85,
-  [RootSize.TWO_THREE_GAL]: 0.95,
-  [RootSize.FIVE_PLUS_GAL]: 1.0
+  [RootSize.SMALL]: 0.85,
+  [RootSize.NORMAL]: 1.0
 };
 
 // Types for nutrient calculations
@@ -265,7 +259,7 @@ export default function Jacks321Calculator() {
   const [volume, setVolume] = useState('5');
   const [sourceWaterPPM, setSourceWaterPPM] = useState('150');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [rootSize, setRootSize] = useState<RootSize>(RootSize.FIVE_PLUS_GAL);
+  const [isSmallRoots, setIsSmallRoots] = useState(false);
   const [lastFeedPPM, setLastFeedPPM] = useState('');
   const [runoffPPM, setRunoffPPM] = useState('');
   const [feedPH, setFeedPH] = useState('6.0');
@@ -387,17 +381,18 @@ export default function Jacks321Calculator() {
     };
 
     // Apply root size modifier first
-    const rootSizeModifier = ROOT_SIZE_MODIFIERS[rootSize] - 1; // Convert to percentage modifier
-    Object.keys(modifiers).forEach(key => {
-      modifiers[key as keyof SymptomModifier] = rootSizeModifier;
-    });
+    if (isSmallRoots) {
+      const rootSizeModifier = ROOT_SIZE_MODIFIERS[RootSize.SMALL] - 1; // Convert to percentage modifier
+      Object.keys(modifiers).forEach(key => {
+        modifiers[key as keyof SymptomModifier] = rootSizeModifier;
+      });
+    }
 
     // Apply symptom modifiers
     selectedSymptoms.forEach(symptom => {
       const symptomMod = SYMPTOM_MODIFIERS[symptom];
       Object.entries(symptomMod).forEach(([key, value]) => {
         const nutrientKey = key as keyof SymptomModifier;
-        // Ensure we don't exceed limits
         modifiers[nutrientKey] = Math.min(0.25, Math.max(-0.3, 
           (modifiers[nutrientKey] || 0) + (value || 0)
         ));
@@ -521,7 +516,7 @@ export default function Jacks321Calculator() {
   const nutrientCalc = useMemo(() => calculateNutrients(), [
     selectedStage,
     volume,
-    rootSize,
+    isSmallRoots,
     sourceWaterPPM,
     isPPM700,
     targetPPM,
@@ -820,28 +815,22 @@ export default function Jacks321Calculator() {
               <div className="space-y-4">
                 {/* Root Ball Size */}
                 <div className="space-y-2">
-                  <Label>Root Ball Size</Label>
-                  <Select
-                    value={rootSize}
-                    onValueChange={(value) => setRootSize(value as RootSize)}
-                  >
-                    <SelectTrigger className="w-full bg-dark-bg-secondary border-dark-border text-dark-text-primary">
-                      <SelectValue>
-                        {ROOT_SIZE_OPTIONS.find(opt => opt.value === rootSize)?.label}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="bg-dark-bg-secondary border-dark-border">
-                      {ROOT_SIZE_OPTIONS.map(option => (
-                        <SelectItem
-                          key={option.value}
-                          value={option.value}
-                          className="text-dark-text-primary hover:bg-dark-bg-primary focus:bg-dark-bg-primary"
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="smallRoots"
+                      checked={isSmallRoots}
+                      onCheckedChange={(checked) => setIsSmallRoots(checked as boolean)}
+                      className="bg-dark-bg-secondary border-dark-border"
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                      <Label htmlFor="smallRoots">
+                        Small Root Ball
+                      </Label>
+                      <p className="text-sm text-dark-text-secondary">
+                        Reduces nutrient strength to {ROOT_SIZE_MODIFIERS[RootSize.SMALL] * 100}% for seedlings, clones, or small plants
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -979,6 +968,14 @@ export default function Jacks321Calculator() {
                 {lastFeedPPM && runoffPPM && (
                   <div className="p-3 rounded bg-dark-bg-primary border border-dark-border">
                     <p className="text-sm">{getRunoffWarning()}</p>
+                  </div>
+                )}
+
+                {isSmallRoots && (
+                  <div className="mt-4 p-3 rounded bg-dark-bg-secondary border border-dark-border">
+                    <p className="text-sm">
+                      ℹ️ Amounts reduced to {ROOT_SIZE_MODIFIERS[RootSize.SMALL] * 100}% for small root ball
+                    </p>
                   </div>
                 )}
               </div>
@@ -1145,14 +1142,6 @@ export default function Jacks321Calculator() {
                   <span className="text-emerald-400">{nutrientCalc.finalPPM.toFixed(1)}</span>
                 </div>
               </div>
-
-              {rootSize !== RootSize.FIVE_PLUS_GAL && (
-                <div className="mt-4 p-3 rounded bg-dark-bg-secondary border border-dark-border">
-                  <p className="text-sm">
-                    ℹ️ Amounts adjusted for {ROOT_SIZE_OPTIONS.find(opt => opt.value === rootSize)?.label}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
