@@ -5,7 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, ChevronDown } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Table,
   TableBody,
@@ -106,6 +111,7 @@ export default function Jacks321Calculator() {
   const [isPPM700, setIsPPM700] = useState(false);
   const [volume, setVolume] = useState('5');
   const [sourceWaterPPM, setSourceWaterPPM] = useState('150');
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
@@ -155,6 +161,60 @@ export default function Jacks321Calculator() {
             </TableBody>
           </Table>
         </div>
+
+        {/* CO₂ Optimization Note */}
+        <Collapsible
+          open={isAdvancedOpen}
+          onOpenChange={setIsAdvancedOpen}
+          className="border border-dark-border rounded-lg overflow-hidden"
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-dark-bg-primary hover:bg-dark-bg-secondary transition-colors">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💡</span>
+              <span className="font-medium">Extreme CO₂ Optimization Mode (Advanced Growers Only)</span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${
+                isAdvancedOpen ? 'transform rotate-180' : ''
+              }`}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="p-4 space-y-4 text-sm bg-dark-bg-secondary/50">
+              <p>
+                Some advanced cultivators operate successfully with feed and CO₂ levels up to <strong>2400 PPM</strong> — 
+                well above standard recommendations — under exceptionally controlled conditions.
+              </p>
+
+              <div className="space-y-2">
+                <p className="font-medium">📈 Verified parameters from real-world results:</p>
+                <ul className="list-disc list-inside space-y-1 pl-4">
+                  <li><strong>CO₂ Levels</strong>: ~2400 PPM (supplemented + monitored)</li>
+                  <li><strong>Feed PPM</strong>: Up to 2400 (500 scale)</li>
+                  <li><strong>Light Intensity (PPFD)</strong>: 1000–1300 µmol/m²/s</li>
+                  <li><strong>pH</strong>: 5.7–6.4 (buffered coco substrate)</li>
+                  <li><strong>Root Zone</strong>: Coco coir with beneficial microbes</li>
+                  <li><strong>Irrigation</strong>: Precision drip system</li>
+                  <li><strong>Water Source</strong>: Ozone-treated &amp; tested at less than 25 PPM</li>
+                  <li><strong>Water Temperature</strong>: Actively maintained in optimal range (typically 65–68°F / 18–20°C)</li>
+                  <li><strong>VPD</strong>: Monitored and adjusted for phase</li>
+                  <li><strong>Real-Time Monitoring</strong>: pH, EC, DO, runoff, and canopy/environmental conditions</li>
+                </ul>
+              </div>
+
+              <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-900/30 rounded-lg">
+                <p className="flex items-center gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <strong>Warning:</strong>
+                </p>
+                <p>
+                  Exceeding 1600 PPM should only be attempted in environments with <strong>automated systems and full-spectrum environmental control</strong>. 
+                  For most grow operations, exceeding this threshold risks lockouts, microbial collapse, or reduced efficiency without tangible yield gains.
+                </p>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Core Settings */}
         <div className="space-y-4">
