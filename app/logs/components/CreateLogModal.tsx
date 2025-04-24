@@ -196,6 +196,100 @@ type IPMMethod =
   | 'PRUNING_REMOVAL'
   | 'QUARANTINE_MEASURES';
 
+type TreatmentProduct = 
+  | 'NEEM_OIL'
+  | 'INSECTICIDAL_SOAP'
+  | 'SULFUR_SPRAY'
+  | 'COPPER_FUNGICIDE'
+  | 'BACILLUS_THURINGIENSIS'
+  | 'SPINOSAD'
+  | 'AZAMAX'
+  | 'GREEN_CLEANER'
+  | 'REGALIA'
+  | 'PLANT_THERAPY'
+  | 'LOST_COAST'
+  | 'MONTEREY_BT'
+  | 'TRIFECTA'
+  | 'DR_ZYMES'
+  | 'ATHENA_IPM'
+  | 'OTHER';
+
+type ApplicationMethod =
+  | 'FOLIAR_SPRAY'
+  | 'ROOT_DRENCH'
+  | 'SOIL_APPLICATION'
+  | 'SPOT_TREATMENT'
+  | 'SYSTEMIC_APPLICATION'
+  | 'BARRIER_APPLICATION'
+  | 'BENEFICIAL_RELEASE'
+  | 'ENVIRONMENTAL_CONTROL';
+
+type ApplicationTiming =
+  | 'LIGHTS_ON'
+  | 'LIGHTS_OFF'
+  | 'BEFORE_LIGHTS_ON'
+  | 'AFTER_LIGHTS_OFF'
+  | 'DURING_DARK_PERIOD'
+  | 'DURING_LIGHT_PERIOD';
+
+type Coverage =
+  | 'FULL_PLANT'
+  | 'TOP_CANOPY'
+  | 'LOWER_CANOPY'
+  | 'LEAF_UNDERSIDES'
+  | 'GROWING_TIPS'
+  | 'PROBLEM_AREAS'
+  | 'ROOT_ZONE'
+  | 'GROWING_MEDIUM';
+
+type TreatmentType = 
+  | 'FOLIAR_SPRAY'
+  | 'DUNK'
+  | 'SYSTEMIC_APPLICATION'
+  | 'PREDATOR_RELEASE'
+  | 'SOIL_AMENDMENT'
+  | 'ROOT_DRENCH'
+  | 'OTHER';
+
+type FoliarSprayProduct =
+  | 'NUKEM'
+  | 'NEEM_OIL'
+  | 'INSECTICIDAL_SOAP'
+  | 'ESSENTIAL_OILS'
+  | 'LOST_COAST'
+  | 'CAPTAIN_JACKS'
+  | 'H2O2_SOLUTIONS'
+  | 'BAKING_SODA'
+  | 'OTHER';
+
+type BCAPredatorType =
+  | 'PERSIMILIS'
+  | 'CALIFORNICUS'
+  | 'PIRATE_BUG'
+  | 'SWIRSKII'
+  | 'CUCUMERIS'
+  | 'NEMATODES'
+  | 'LADY_BEETLES'
+  | 'GREEN_LACEWING'
+  | 'ROVE_BEETLES'
+  | 'HYPOSASPIS_MILES'
+  | 'OTHER';
+
+type CoverageMethod =
+  | 'HAND_PUMP_SPRAYER'
+  | 'FOGGER'
+  | 'ATOMIZER_SPRAYER'
+  | 'SPRAY_BOTTLE'
+  | 'DUNK'
+  | 'ROOT_DRENCH'
+  | 'OTHER';
+
+type TreatmentAdditive =
+  | 'INSECTICIDAL_SOAP'
+  | 'EMULSIFIER_SOAP'
+  | 'PH_UP'
+  | 'PH_DOWN';
+
 interface CustomNutrient {
   name: string;
   amount: number;
@@ -345,9 +439,23 @@ interface FormData {
 
   // Treatment
   treatmentMethods: TreatmentMethod[];
-  treatmentProducts: string[];
+  treatmentProducts: TreatmentProduct[];
+  applicationMethod?: ApplicationMethod;
+  applicationTiming?: ApplicationTiming;
+  coverage?: Coverage;
   treatmentDosage?: number;
   treatmentDosageUnit?: string;
+  sprayPressure?: number;
+  sprayDistance?: number;
+  sprayDistanceUnit?: DistanceUnit;
+  mixingRatio?: string;
+  phAdjusted?: boolean;
+  finalSprayPh?: number;
+  waterTemp?: number;
+  waterTempUnit?: TemperatureUnit;
+  reentry?: number; // Hours until safe reentry
+  repeatIn?: number; // Days until next application
+  tankMixProducts?: string[];
 
   // Training
   trainingMethods: TrainingMethod[];
@@ -441,6 +549,17 @@ interface FormData {
   cloneGardenId?: string;
   cloneRoomId?: string;
   cloneZoneId?: string;
+
+  // Treatment Fields
+  treatmentType?: TreatmentType;
+  foliarSprayProducts: FoliarSprayProduct[];
+  bcaPredatorTypes: BCAPredatorType[];
+  releaseCount?: number;
+  bcaAcclimation: boolean;
+  targetPests: PestType[];
+  coverageMethod?: CoverageMethod;
+  treatmentPh?: number;
+  treatmentAdditives: TreatmentAdditive[];
 }
 
 interface CreateLogModalProps {
@@ -494,7 +613,15 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     domeRemoved: false,
     cloneGardenId: '',
     cloneRoomId: '',
-    cloneZoneId: ''
+    cloneZoneId: '',
+    treatmentType: 'FOLIAR_SPRAY',
+    foliarSprayProducts: [],
+    bcaPredatorTypes: [],
+    bcaAcclimation: false,
+    targetPests: [],
+    coverageMethod: 'HAND_PUMP_SPRAYER',
+    treatmentPh: 7.0,
+    treatmentAdditives: []
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -2279,6 +2406,233 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  const renderTreatmentFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="treatmentType">Treatment Type</Label>
+          <select
+            id="treatmentType"
+            value={formData.treatmentType || ''}
+            onChange={(e) => setFormData({ ...formData, treatmentType: e.target.value as TreatmentType })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Type</option>
+            <option value="FOLIAR_SPRAY">Foliar Spray</option>
+            <option value="DUNK">Dunk</option>
+            <option value="SYSTEMIC_APPLICATION">Systemic Application</option>
+            <option value="PREDATOR_RELEASE">Predator Release</option>
+            <option value="SOIL_AMENDMENT">Soil Amendment</option>
+            <option value="ROOT_DRENCH">Root Drench</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <Label>Foliar Spray Products</Label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {[
+              { value: 'NUKEM', label: 'NUKEM' },
+              { value: 'NEEM_OIL', label: 'Neem Oil' },
+              { value: 'INSECTICIDAL_SOAP', label: 'Insecticidal Soap' },
+              { value: 'ESSENTIAL_OILS', label: 'Essential Oils' },
+              { value: 'LOST_COAST', label: 'Lost Coast' },
+              { value: 'CAPTAIN_JACKS', label: 'Captain Jacks' },
+              { value: 'H2O2_SOLUTIONS', label: 'H2O2 Solutions' },
+              { value: 'BAKING_SODA', label: 'Baking Soda' },
+              { value: 'OTHER', label: 'Other' }
+            ].map(({ value, label }) => (
+              <div key={value} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`spray-${value}`}
+                  checked={formData.foliarSprayProducts.includes(value as FoliarSprayProduct)}
+                  onChange={(e) => {
+                    const products = e.target.checked
+                      ? [...formData.foliarSprayProducts, value as FoliarSprayProduct]
+                      : formData.foliarSprayProducts.filter(p => p !== value);
+                    setFormData({ ...formData, foliarSprayProducts: products });
+                  }}
+                  className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+                />
+                <Label htmlFor={`spray-${value}`} className="text-sm font-normal">
+                  {label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>BCA Predator Types</Label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {[
+              { value: 'PERSIMILIS', label: 'Persimilis' },
+              { value: 'CALIFORNICUS', label: 'Californicus' },
+              { value: 'PIRATE_BUG', label: 'Pirate Bug' },
+              { value: 'SWIRSKII', label: 'Swirskii' },
+              { value: 'CUCUMERIS', label: 'Cucumeris' },
+              { value: 'NEMATODES', label: 'Nematodes' },
+              { value: 'LADY_BEETLES', label: 'Lady Beetles' },
+              { value: 'GREEN_LACEWING', label: 'Green Lacewing' },
+              { value: 'ROVE_BEETLES', label: 'Rove Beetles' },
+              { value: 'HYPOSASPIS_MILES', label: 'Hyposaspis Miles' },
+              { value: 'OTHER', label: 'Other' }
+            ].map(({ value, label }) => (
+              <div key={value} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`predator-${value}`}
+                  checked={formData.bcaPredatorTypes.includes(value as BCAPredatorType)}
+                  onChange={(e) => {
+                    const types = e.target.checked
+                      ? [...formData.bcaPredatorTypes, value as BCAPredatorType]
+                      : formData.bcaPredatorTypes.filter(t => t !== value);
+                    setFormData({ ...formData, bcaPredatorTypes: types });
+                  }}
+                  className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+                />
+                <Label htmlFor={`predator-${value}`} className="text-sm font-normal">
+                  {label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="releaseCount">Release Count</Label>
+          <Input
+            type="number"
+            id="releaseCount"
+            value={formData.releaseCount || ''}
+            onChange={(e) => setFormData({ ...formData, releaseCount: parseInt(e.target.value) || undefined })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="applicationMethod">Application Method</Label>
+          <select
+            id="applicationMethod"
+            value={formData.applicationMethod || ''}
+            onChange={(e) => setFormData({ ...formData, applicationMethod: e.target.value as ApplicationMethod })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Method</option>
+            <option value="SPRINKLED">Sprinkled</option>
+            <option value="SACHETS">Sachets</option>
+            <option value="CARRIER_DUST">Carrier Dust</option>
+            <option value="OPEN_BOTTLE_LAZY_RELEASE">Open Bottle Lazy Release</option>
+          </select>
+        </div>
+
+        <div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="bcaAcclimation"
+              checked={formData.bcaAcclimation}
+              onChange={(e) => setFormData({ ...formData, bcaAcclimation: e.target.checked })}
+              className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+            />
+            <Label htmlFor="bcaAcclimation" className="text-sm font-normal">
+              BCA Acclimation Prior to Release
+            </Label>
+          </div>
+        </div>
+
+        <div>
+          <Label>Target Pests</Label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {Object.values(PestType).map((type) => (
+              <div key={type} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`target-${type}`}
+                  checked={formData.targetPests.includes(type)}
+                  onChange={(e) => {
+                    const pests = e.target.checked
+                      ? [...formData.targetPests, type]
+                      : formData.targetPests.filter(p => p !== type);
+                    setFormData({ ...formData, targetPests: pests });
+                  }}
+                  className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+                />
+                <Label htmlFor={`target-${type}`} className="text-sm font-normal">
+                  {type.replace(/_/g, ' ')}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="coverageMethod">Coverage Method</Label>
+          <select
+            id="coverageMethod"
+            value={formData.coverageMethod || ''}
+            onChange={(e) => setFormData({ ...formData, coverageMethod: e.target.value as CoverageMethod })}
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          >
+            <option value="">Select Method</option>
+            <option value="HAND_PUMP_SPRAYER">Hand Pump Sprayer</option>
+            <option value="FOGGER">Fogger</option>
+            <option value="ATOMIZER_SPRAYER">Atomizer Sprayer</option>
+            <option value="SPRAY_BOTTLE">Spray Bottle</option>
+            <option value="DUNK">Dunk</option>
+            <option value="ROOT_DRENCH">Root Drench</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="treatmentPh">pH of Treatment Solution</Label>
+          <Input
+            type="number"
+            id="treatmentPh"
+            min="0"
+            max="14"
+            step="0.1"
+            value={formData.treatmentPh || ''}
+            onChange={(e) => setFormData({ ...formData, treatmentPh: parseFloat(e.target.value) || undefined })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+        </div>
+
+        <div>
+          <Label>Additives</Label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {[
+              { value: 'INSECTICIDAL_SOAP', label: 'Insecticidal Soap' },
+              { value: 'EMULSIFIER_SOAP', label: 'Emulsifier Soap' },
+              { value: 'PH_UP', label: 'pH Up' },
+              { value: 'PH_DOWN', label: 'pH Down' }
+            ].map(({ value, label }) => (
+              <div key={value} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`additive-${value}`}
+                  checked={formData.treatmentAdditives.includes(value as TreatmentAdditive)}
+                  onChange={(e) => {
+                    const additives = e.target.checked
+                      ? [...formData.treatmentAdditives, value as TreatmentAdditive]
+                      : formData.treatmentAdditives.filter(a => a !== value);
+                    setFormData({ ...formData, treatmentAdditives: additives });
+                  }}
+                  className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+                />
+                <Label htmlFor={`additive-${value}`} className="text-sm font-normal">
+                  {label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTypeSpecificFields = () => {
     const logType = formData.logType as string;
     switch (logType) {
@@ -2310,6 +2664,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderGerminationFields();
       case 'CLONING':
         return renderCloningFields();
+      case 'TREATMENT':
+        return renderTreatmentFields();
       default:
         return null;
     }
