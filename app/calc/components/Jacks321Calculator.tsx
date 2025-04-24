@@ -43,6 +43,12 @@ import {
 // Types and Enums
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
 
+enum RootSize {
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE'
+}
+
 interface StageData {
   name: string;
   ec: number;
@@ -120,16 +126,16 @@ const PPM_CONTRIBUTION = {
 
 // Root size options
 const ROOT_SIZE_OPTIONS = [
-  { value: '1', label: 'Small (1-2 gal)' },
-  { value: '3', label: 'Medium (3-4 gal)' },
-  { value: '5', label: 'Large (5+ gal)' },
+  { value: RootSize.SMALL, label: 'Small (1-2 gal)' },
+  { value: RootSize.MEDIUM, label: 'Medium (3-4 gal)' },
+  { value: RootSize.LARGE, label: 'Large (5+ gal)' },
 ];
 
 // Root size modifiers (percentage of base amount)
-const ROOT_SIZE_MODIFIERS: { [key: string]: number } = {
-  '1': 0.7, // 70% of base amount for small roots
-  '3': 0.85, // 85% of base amount for medium roots
-  '5': 1.0, // 100% of base amount for large roots (base)
+const ROOT_SIZE_MODIFIERS: { [key in RootSize]: number } = {
+  [RootSize.SMALL]: 0.7, // 70% of base amount for small roots
+  [RootSize.MEDIUM]: 0.85, // 85% of base amount for medium roots
+  [RootSize.LARGE]: 1.0, // 100% of base amount for large roots (base)
 };
 
 // Types for nutrient calculations
@@ -156,7 +162,7 @@ export default function Jacks321Calculator() {
   const [volume, setVolume] = useState('5');
   const [sourceWaterPPM, setSourceWaterPPM] = useState('150');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [rootSize, setRootSize] = useState('5');
+  const [rootSize, setRootSize] = useState<RootSize>(RootSize.LARGE);
   const [lastFeedPPM, setLastFeedPPM] = useState('');
   const [runoffPPM, setRunoffPPM] = useState('');
   
@@ -432,13 +438,20 @@ export default function Jacks321Calculator() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Root Ball Size</Label>
-                  <Select value={rootSize} onValueChange={setRootSize}>
-                    <SelectTrigger className="bg-dark-bg-primary border-dark-border">
+                  <Select 
+                    value={rootSize} 
+                    onValueChange={(value: string) => setRootSize(value as RootSize)}
+                  >
+                    <SelectTrigger className="w-full bg-dark-bg-secondary border-dark-border text-dark-text-primary">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-dark-bg-secondary border-dark-border">
                       {ROOT_SIZE_OPTIONS.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem 
+                          key={option.value} 
+                          value={option.value}
+                          className="text-dark-text-primary hover:bg-dark-bg-primary focus:bg-dark-bg-primary"
+                        >
                           {option.label}
                         </SelectItem>
                       ))}
@@ -588,7 +601,7 @@ export default function Jacks321Calculator() {
                 </div>
               </div>
 
-              {rootSize !== '5' && (
+              {rootSize !== RootSize.LARGE && (
                 <div className="mt-4 p-3 rounded bg-dark-bg-secondary border border-dark-border">
                   <p className="text-sm">
                     ℹ️ Amounts adjusted for {ROOT_SIZE_OPTIONS.find(opt => opt.value === rootSize)?.label}
