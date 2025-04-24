@@ -1034,7 +1034,7 @@ export default function Jacks321Calculator() {
                       <p className="font-medium">{nutrientCalc.partA.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.partA * parseFloat(volume)).toFixed(2)}g | 
-                        Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM
+                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1056,7 +1056,7 @@ export default function Jacks321Calculator() {
                       <p className="font-medium">{nutrientCalc.partB.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.partB * parseFloat(volume)).toFixed(2)}g | 
-                        Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM
+                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1078,7 +1078,7 @@ export default function Jacks321Calculator() {
                       <p className="font-medium">{nutrientCalc.bloom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.bloom * parseFloat(volume)).toFixed(2)}g | 
-                        Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM
+                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1100,7 +1100,7 @@ export default function Jacks321Calculator() {
                       <p className="font-medium">{nutrientCalc.finish.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
-                        Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM
+                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1122,7 +1122,7 @@ export default function Jacks321Calculator() {
                       <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
-                        Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM
+                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1138,11 +1138,11 @@ export default function Jacks321Calculator() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Nutrient PPM Added</span>
-                  <span>{nutrientCalc.totalPPM.toFixed(1)}</span>
+                  <span className="font-medium text-emerald-400">{nutrientCalc.totalPPM.toFixed(1)}</span>
                 </div>
                 <div className="flex justify-between items-center font-medium">
                   <span>Final Solution PPM</span>
-                  <span>{nutrientCalc.finalPPM.toFixed(1)}</span>
+                  <span className="text-emerald-400">{nutrientCalc.finalPPM.toFixed(1)}</span>
                 </div>
               </div>
 
