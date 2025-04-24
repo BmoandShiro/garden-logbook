@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -45,9 +45,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
 
 enum RootSize {
-  SMALL = 'SMALL',
-  MEDIUM = 'MEDIUM',
-  LARGE = 'LARGE'
+  SEEDLING = 'SEEDLING',
+  ONE_GAL = 'ONE_GAL',
+  TWO_THREE_GAL = 'TWO_THREE_GAL',
+  FIVE_PLUS_GAL = 'FIVE_PLUS_GAL'
 }
 
 // pH ranges for nutrient uptake
@@ -56,12 +57,24 @@ interface NutrientPHRange {
   min: number;
   max: number;
   optimal: number;
+  category: 'macro' | 'micro' | 'stage';
+  description?: string;
 }
 
 const PH_RANGES: NutrientPHRange[] = [
-  { nutrient: 'N, K', min: 5.5, max: 6.5, optimal: 6.0 },
-  { nutrient: 'Ca, Mg, S', min: 5.8, max: 6.5, optimal: 6.2 },
-  { nutrient: 'Fe, Mn, Zn, Cu', min: 5.5, max: 6.2, optimal: 5.8 }
+  // Macronutrients
+  { nutrient: 'N, K', min: 5.5, max: 6.5, optimal: 6.0, category: 'macro' },
+  { nutrient: 'Ca, Mg, S', min: 5.8, max: 6.5, optimal: 6.2, category: 'macro' },
+  { nutrient: 'P', min: 5.8, max: 6.2, optimal: 6.0, category: 'macro' },
+  // Micronutrients
+  { nutrient: 'Fe, Mn, Zn, Cu', min: 5.5, max: 6.2, optimal: 5.8, category: 'micro' },
+  { nutrient: 'Boron (B)', min: 5.0, max: 6.4, optimal: 5.7, category: 'micro' },
+  { nutrient: 'Molybdenum (Mo)', min: 6.0, max: 7.0, optimal: 6.5, category: 'micro' },
+  // Growth Stages
+  { nutrient: 'Seedling', min: 5.5, max: 5.8, optimal: 5.6, category: 'stage', description: 'Root initiation' },
+  { nutrient: 'Veg', min: 5.7, max: 6.1, optimal: 5.9, category: 'stage', description: 'N, Ca, Mg uptake' },
+  { nutrient: 'Early Flower', min: 5.8, max: 6.2, optimal: 6.0, category: 'stage', description: 'P and micros' },
+  { nutrient: 'Late Flower', min: 6.0, max: 6.3, optimal: 6.1, category: 'stage', description: 'K and Mo uptake' }
 ];
 
 // Nutrient deficiency/toxicity symptoms
@@ -205,16 +218,18 @@ const PPM_CONTRIBUTION = {
 
 // Root size options
 const ROOT_SIZE_OPTIONS = [
-  { value: RootSize.SMALL, label: 'Small (1-2 gal)' },
-  { value: RootSize.MEDIUM, label: 'Medium (3-4 gal)' },
-  { value: RootSize.LARGE, label: 'Large (5+ gal)' },
+  { value: RootSize.SEEDLING, label: 'Seedling / Solo Cup', modifier: 0.8 },
+  { value: RootSize.ONE_GAL, label: '1 Gal', modifier: 0.85 },
+  { value: RootSize.TWO_THREE_GAL, label: '2-3 Gal', modifier: 0.95 },
+  { value: RootSize.FIVE_PLUS_GAL, label: '5+ Gal', modifier: 1.0 }
 ];
 
 // Root size modifiers (percentage of base amount)
 const ROOT_SIZE_MODIFIERS: { [key in RootSize]: number } = {
-  [RootSize.SMALL]: 0.7, // 70% of base amount for small roots
-  [RootSize.MEDIUM]: 0.85, // 85% of base amount for medium roots
-  [RootSize.LARGE]: 1.0, // 100% of base amount for large roots (base)
+  [RootSize.SEEDLING]: 0.8,
+  [RootSize.ONE_GAL]: 0.85,
+  [RootSize.TWO_THREE_GAL]: 0.95,
+  [RootSize.FIVE_PLUS_GAL]: 1.0
 };
 
 // Types for nutrient calculations
@@ -250,12 +265,13 @@ export default function Jacks321Calculator() {
   const [volume, setVolume] = useState('5');
   const [sourceWaterPPM, setSourceWaterPPM] = useState('150');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [rootSize, setRootSize] = useState<RootSize>(RootSize.LARGE);
+  const [rootSize, setRootSize] = useState<RootSize>(RootSize.FIVE_PLUS_GAL);
   const [lastFeedPPM, setLastFeedPPM] = useState('');
   const [runoffPPM, setRunoffPPM] = useState('');
   const [feedPH, setFeedPH] = useState('6.0');
   const [runoffPH, setRunoffPH] = useState('');
   const [selectedSymptoms, setSelectedSymptoms] = useState<NutrientSymptom[]>([]);
+  const [targetPPM, setTargetPPM] = useState('');
   
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
@@ -271,20 +287,90 @@ export default function Jacks321Calculator() {
     </TooltipProvider>
   );
 
+  // Update target PPM when stage changes
+  useEffect(() => {
+    const newTargetPPM = isPPM700 ? 
+      STAGE_DATA[selectedStage].ppm700.toString() : 
+      STAGE_DATA[selectedStage].ppm500.toString();
+    setTargetPPM(newTargetPPM);
+  }, [selectedStage, isPPM700]);
+
+  // Update target PPM when scale changes
+  useEffect(() => {
+    const newTargetPPM = isPPM700 ? 
+      STAGE_DATA[selectedStage].ppm700.toString() : 
+      STAGE_DATA[selectedStage].ppm500.toString();
+    setTargetPPM(newTargetPPM);
+  }, [isPPM700]);
+
   // Calculate pH warnings
   const getPHWarnings = (): string[] => {
     const warnings: string[] = [];
     const feedPHNum = parseFloat(feedPH);
     const runoffPHNum = runoffPH ? parseFloat(runoffPH) : null;
 
-    if (feedPHNum < 5.6) {
-      warnings.push('⚠️ Risk of Mg/Ca/P lockout');
+    // Check current growth stage
+    const stageRanges = PH_RANGES.filter(range => range.category === 'stage');
+    const currentStageRange = stageRanges.find(range => {
+      switch (selectedStage) {
+        case 'propagation':
+          return range.nutrient === 'Seedling';
+        case 'vegetative':
+          return range.nutrient === 'Veg';
+        case 'budset':
+        case 'flower':
+          return range.nutrient === 'Early Flower';
+        case 'lateflower':
+          return range.nutrient === 'Late Flower';
+        default:
+          return false;
+      }
+    });
+
+    if (currentStageRange && feedPHNum) {
+      if (feedPHNum < currentStageRange.min) {
+        warnings.push(`⚠️ pH too low for ${currentStageRange.nutrient} stage (${currentStageRange.description})`);
+      } else if (feedPHNum > currentStageRange.max) {
+        warnings.push(`⚠️ pH too high for ${currentStageRange.nutrient} stage (${currentStageRange.description})`);
+      }
     }
-    if (feedPHNum > 6.5) {
-      warnings.push('⚠️ Micronutrient uptake may drop');
+
+    // Check nutrient availability
+    if (feedPHNum) {
+      const affectedMacros = PH_RANGES
+        .filter(range => range.category === 'macro' && (feedPHNum < range.min || feedPHNum > range.max))
+        .map(range => range.nutrient);
+
+      const affectedMicros = PH_RANGES
+        .filter(range => range.category === 'micro' && (feedPHNum < range.min || feedPHNum > range.max))
+        .map(range => range.nutrient);
+
+      if (affectedMacros.length > 0) {
+        warnings.push(`⚠️ pH may limit availability of: ${affectedMacros.join(', ')}`);
+      }
+      if (affectedMicros.length > 0) {
+        warnings.push(`⚠️ pH may limit micronutrient availability: ${affectedMicros.join(', ')}`);
+      }
+
+      // Specific lockout warnings
+      if (feedPHNum < 5.5) {
+        warnings.push('⚠️ Risk of calcium and magnesium deficiency at this pH');
+      } else if (feedPHNum > 6.5) {
+        warnings.push('⚠️ Risk of iron and manganese lockout at this pH');
+      }
     }
-    if (runoffPHNum && Math.abs(runoffPHNum - feedPHNum) > 0.5) {
-      warnings.push('⚠️ Runoff drift detected – check root health');
+
+    // Runoff drift warning
+    if (runoffPHNum && feedPHNum) {
+      const drift = Math.abs(runoffPHNum - feedPHNum);
+      if (drift > 0.5) {
+        warnings.push(`⚠️ Significant pH drift detected (${drift.toFixed(1)} difference) – check root health`);
+        if (runoffPHNum > feedPHNum) {
+          warnings.push('📈 Rising runoff pH may indicate salt buildup');
+        } else {
+          warnings.push('📉 Falling runoff pH may indicate root zone acidification');
+        }
+      }
     }
 
     return warnings;
@@ -332,16 +418,16 @@ export default function Jacks321Calculator() {
 
     const stageData = STAGE_DATA[selectedStage];
     const volumeNum = parseFloat(volume);
-    const targetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    const targetPPMNum = parseInt(targetPPM || '0');
     const sourcePPMNum = parseInt(sourceWaterPPM);
-    const nutrientPPM = targetPPM - sourcePPMNum;
+    const nutrientPPM = targetPPMNum - sourcePPMNum;
     const modifiers = calculateModifiers();
 
     // Calculate weighted PPM total and shares
     let weightedPPM = 0;
     const ppmShares: PPMAllocation = {};
 
-    if (stageData.ratios) {
+    if (stageData.ratios && stageData.ratios.length > 0) {
       // Calculate total weighted PPM
       weightedPPM = stageData.ratios.reduce((total, { nutrient, ratio }) => {
         const ppmPerGram = getPPMPerGram(nutrient);
@@ -367,19 +453,20 @@ export default function Jacks321Calculator() {
 
     // Calculate grams and PPM for each nutrient
     Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
-      const allocatedPPM = nutrientPPM * share;
-      const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
-      const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
-      const modifier = 1 + (modifiers[nutrientKey as keyof SymptomModifier] || 0);
-      const adjustedGrams = baseGrams * modifier;
-      const nutrientAmount: NutrientAmount = {
-        grams: adjustedGrams,
-        ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
-      };
+      if (share && share > 0) {
+        const allocatedPPM = nutrientPPM * share;
+        const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
+        const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
+        const modifier = 1 + (modifiers[nutrientKey as keyof SymptomModifier] || 0);
+        const adjustedGrams = baseGrams * modifier;
+        const nutrientAmount: NutrientAmount = {
+          grams: adjustedGrams,
+          ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
+        };
 
-      // Type assertion to handle the dynamic property assignment
-      (calc as any)[nutrientKey] = nutrientAmount;
-      calc.totalPPM += nutrientAmount.ppmContribution;
+        (calc as any)[nutrientKey] = nutrientAmount;
+        calc.totalPPM += nutrientAmount.ppmContribution;
+      }
     });
 
     calc.finalPPM = calc.totalPPM + sourcePPMNum;
@@ -458,8 +545,10 @@ export default function Jacks321Calculator() {
             {Object.entries(STAGE_DATA).map(([stage, data]) => (
               <TableRow 
                 key={stage}
-                className={`cursor-pointer hover:bg-dark-bg-primary ${
-                  selectedStage === stage ? 'bg-dark-bg-primary' : ''
+                className={`cursor-pointer transition-colors ${
+                  selectedStage === stage 
+                    ? 'bg-dark-bg-secondary border-l-2 border-l-primary' 
+                    : 'hover:bg-dark-bg-primary'
                 }`}
                 onClick={() => setSelectedStage(stage as GrowStage)}
               >
@@ -469,7 +558,12 @@ export default function Jacks321Calculator() {
                 <TableCell>{data.nutrients.join(', ')}</TableCell>
                 <TableCell>
                   {data.ratios && data.ratios.length > 0 ? (
-                    data.ratios.map(r => `${r.ratio}`).join(' : ')
+                    <>
+                      {data.ratios.map(r => r.ratio).join(' : ')}
+                      <span className="text-dark-text-secondary ml-2">
+                        ({data.ratios.map(r => r.nutrient).join(' : ')})
+                      </span>
+                    </>
                   ) : (
                     '—'
                   )}
@@ -582,7 +676,7 @@ export default function Jacks321Calculator() {
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
               placeholder="Enter volume in gallons"
-              className="bg-dark-bg-primary border-dark-border"
+              className="bg-dark-bg-secondary border-dark-border"
             />
           </div>
 
@@ -599,9 +693,27 @@ export default function Jacks321Calculator() {
               value={sourceWaterPPM}
               onChange={(e) => setSourceWaterPPM(e.target.value)}
               placeholder="Enter source water PPM"
-              className="bg-dark-bg-primary border-dark-border"
+              className="bg-dark-bg-secondary border-dark-border"
             />
           </div>
+        </div>
+
+        {/* Target PPM Input */}
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <Label htmlFor="targetPPM">Target PPM (you can edit this)</Label>
+            <InfoTooltip content="Default is set by growth stage, but you can adjust as needed" />
+          </div>
+          <Input
+            id="targetPPM"
+            type="number"
+            min="0"
+            step="50"
+            value={targetPPM}
+            onChange={(e) => setTargetPPM(e.target.value)}
+            placeholder="Enter target PPM"
+            className="bg-dark-bg-secondary border-dark-border"
+          />
         </div>
 
         {/* Advanced Options */}
@@ -610,19 +722,22 @@ export default function Jacks321Calculator() {
             <AccordionTrigger className="px-4">Advanced Options</AccordionTrigger>
             <AccordionContent className="px-4">
               <div className="space-y-4">
+                {/* Root Ball Size */}
                 <div className="space-y-2">
                   <Label>Root Ball Size</Label>
-                  <Select 
-                    value={rootSize} 
-                    onValueChange={(value: string) => setRootSize(value as RootSize)}
+                  <Select
+                    value={rootSize}
+                    onValueChange={(value) => setRootSize(value as RootSize)}
                   >
                     <SelectTrigger className="w-full bg-dark-bg-secondary border-dark-border text-dark-text-primary">
-                      <SelectValue />
+                      <SelectValue>
+                        {ROOT_SIZE_OPTIONS.find(opt => opt.value === rootSize)?.label}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="bg-dark-bg-secondary border-dark-border">
                       {ROOT_SIZE_OPTIONS.map(option => (
-                        <SelectItem 
-                          key={option.value} 
+                        <SelectItem
+                          key={option.value}
                           value={option.value}
                           className="text-dark-text-primary hover:bg-dark-bg-primary focus:bg-dark-bg-primary"
                         >
@@ -707,14 +822,80 @@ export default function Jacks321Calculator() {
 
                 {/* pH Range Chart */}
                 <div className="p-4 rounded bg-dark-bg-secondary border border-dark-border">
-                  <h4 className="text-sm font-medium mb-2">Nutrient Uptake pH Ranges</h4>
-                  <div className="space-y-2">
-                    {PH_RANGES.map((range, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{range.nutrient}</span>
-                        <span>{range.min} – {range.max}</span>
+                  <h4 className="text-sm font-medium mb-4">Nutrient Uptake pH Ranges</h4>
+                  
+                  {/* Macronutrients */}
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Macronutrients</h5>
+                      <div className="space-y-1">
+                        {PH_RANGES.filter(range => range.category === 'macro').map((range, index) => {
+                          const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
+                          return (
+                            <div 
+                              key={index} 
+                              className={`flex justify-between text-sm ${
+                                isOutOfRange ? 'text-red-400' : ''
+                              }`}
+                            >
+                              <span className="w-24">{range.nutrient}</span>
+                              <span>→</span>
+                              <span className="w-20 text-right">{range.min} – {range.max}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Micronutrients */}
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Micronutrients</h5>
+                      <div className="space-y-1">
+                        {PH_RANGES.filter(range => range.category === 'micro').map((range, index) => {
+                          const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
+                          return (
+                            <div 
+                              key={index} 
+                              className={`flex justify-between text-sm ${
+                                isOutOfRange ? 'text-red-400' : ''
+                              }`}
+                            >
+                              <span className="w-24">{range.nutrient}</span>
+                              <span>→</span>
+                              <span className="w-20 text-right">{range.min} – {range.max}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Growth Stages */}
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Growth Stages</h5>
+                      <div className="space-y-1">
+                        {PH_RANGES.filter(range => range.category === 'stage').map((range, index) => {
+                          const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
+                          return (
+                            <div key={index} className="space-y-1">
+                              <div 
+                                className={`flex justify-between text-sm ${
+                                  isOutOfRange ? 'text-red-400' : ''
+                                }`}
+                              >
+                                <span className="w-24">{range.nutrient}</span>
+                                <span>→</span>
+                                <span className="w-20 text-right">{range.min} – {range.max}</span>
+                              </div>
+                              {range.description && (
+                                <p className="text-xs text-dark-text-secondary pl-4">
+                                  ({range.description})
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -814,7 +995,7 @@ export default function Jacks321Calculator() {
                 Nutrient Mix for {volume} gallons
               </h3>
               <p className="text-sm text-dark-text-secondary">
-                Target PPM ({isPPM700 ? '700' : '500'}): {isPPM700 ? STAGE_DATA[selectedStage].ppm700 : STAGE_DATA[selectedStage].ppm500}
+                Target PPM ({isPPM700 ? '700' : '500'}): {targetPPM}
               </p>
             </div>
 
@@ -835,13 +1016,10 @@ export default function Jacks321Calculator() {
                     <div className="text-right">
                       <p className="font-medium">{nutrientCalc.partA.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
+                        Base: {(BASE_GRAMS_PER_GALLON.partA * parseFloat(volume)).toFixed(2)}g | 
                         Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM
                       </p>
                     </div>
-                  </div>
-                  <div className="text-xs text-dark-text-secondary">
-                    Base: {(BASE_GRAMS_PER_GALLON.partA * parseFloat(volume)).toFixed(2)}g | 
-                    PPM/g: {PPM_CONTRIBUTION.partA.toFixed(1)}
                   </div>
                 </div>
               )}
@@ -860,13 +1038,10 @@ export default function Jacks321Calculator() {
                     <div className="text-right">
                       <p className="font-medium">{nutrientCalc.partB.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
+                        Base: {(BASE_GRAMS_PER_GALLON.partB * parseFloat(volume)).toFixed(2)}g | 
                         Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM
                       </p>
                     </div>
-                  </div>
-                  <div className="text-xs text-dark-text-secondary">
-                    Base: {(BASE_GRAMS_PER_GALLON.partB * parseFloat(volume)).toFixed(2)}g | 
-                    PPM/g: {PPM_CONTRIBUTION.partB.toFixed(1)}
                   </div>
                 </div>
               )}
@@ -885,13 +1060,10 @@ export default function Jacks321Calculator() {
                     <div className="text-right">
                       <p className="font-medium">{nutrientCalc.bloom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
+                        Base: {(BASE_GRAMS_PER_GALLON.bloom * parseFloat(volume)).toFixed(2)}g | 
                         Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM
                       </p>
                     </div>
-                  </div>
-                  <div className="text-xs text-dark-text-secondary">
-                    Base: {(BASE_GRAMS_PER_GALLON.bloom * parseFloat(volume)).toFixed(2)}g | 
-                    PPM/g: {PPM_CONTRIBUTION.bloom.toFixed(1)}
                   </div>
                 </div>
               )}
@@ -910,13 +1082,10 @@ export default function Jacks321Calculator() {
                     <div className="text-right">
                       <p className="font-medium">{nutrientCalc.finish.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
+                        Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
                         Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM
                       </p>
                     </div>
-                  </div>
-                  <div className="text-xs text-dark-text-secondary">
-                    Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
-                    PPM/g: {PPM_CONTRIBUTION.finish.toFixed(1)}
                   </div>
                 </div>
               )}
@@ -935,13 +1104,10 @@ export default function Jacks321Calculator() {
                     <div className="text-right">
                       <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
+                        Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
                         Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM
                       </p>
                     </div>
-                  </div>
-                  <div className="text-xs text-dark-text-secondary">
-                    Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
-                    PPM/g: {PPM_CONTRIBUTION.epsom.toFixed(1)}
                   </div>
                 </div>
               )}
@@ -963,7 +1129,7 @@ export default function Jacks321Calculator() {
                 </div>
               </div>
 
-              {rootSize !== RootSize.LARGE && (
+              {rootSize !== RootSize.FIVE_PLUS_GAL && (
                 <div className="mt-4 p-3 rounded bg-dark-bg-secondary border border-dark-border">
                   <p className="text-sm">
                     ℹ️ Amounts adjusted for {ROOT_SIZE_OPTIONS.find(opt => opt.value === rootSize)?.label}
