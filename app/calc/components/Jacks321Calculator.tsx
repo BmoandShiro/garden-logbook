@@ -523,7 +523,9 @@ export default function Jacks321Calculator() {
     volume,
     rootSize,
     sourceWaterPPM,
-    isPPM700
+    isPPM700,
+    targetPPM,
+    selectedSymptoms
   ]);
 
   return (
@@ -624,6 +626,100 @@ export default function Jacks321Calculator() {
                 Exceeding 1600 PPM should only be attempted in environments with <strong>automated systems and full-spectrum environmental control</strong>. 
                 For most grow operations, exceeding this threshold risks lockouts, microbial collapse, or reduced efficiency without tangible yield gains.
               </p>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* pH Range Chart - Now Collapsible */}
+      <Collapsible
+        className="border border-dark-border rounded-lg overflow-hidden"
+      >
+        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-dark-bg-primary hover:bg-dark-bg-secondary transition-colors">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📊</span>
+            <span className="font-medium">Nutrient Uptake pH Ranges</span>
+          </div>
+          <ChevronDown className="h-4 w-4 transition-transform" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-4 space-y-4">
+            {/* Macronutrients */}
+            <div>
+              <h5 className="text-sm font-medium mb-2">Macronutrients</h5>
+              <div className="space-y-1">
+                {PH_RANGES.filter(range => range.category === 'macro').map((range, index) => {
+                  const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
+                  return (
+                    <div 
+                      key={index} 
+                      className={`flex justify-between text-sm ${
+                        isOutOfRange ? 'text-red-400' : ''
+                      }`}
+                    >
+                      <span className="w-24">{range.nutrient}</span>
+                      <span>→</span>
+                      <span className="w-20 text-right">{range.min} – {range.max}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Micronutrients */}
+            <div>
+              <h5 className="text-sm font-medium mb-2">Micronutrients</h5>
+              <div className="space-y-1">
+                {PH_RANGES.filter(range => range.category === 'micro').map((range, index) => {
+                  const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
+                  return (
+                    <div 
+                      key={index} 
+                      className={`flex justify-between text-sm ${
+                        isOutOfRange ? 'text-red-400' : ''
+                      }`}
+                    >
+                      <span className="w-24">{range.nutrient}</span>
+                      <span>→</span>
+                      <span className="w-20 text-right">{range.min} – {range.max}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Growth Stages */}
+            <div>
+              <h5 className="text-sm font-medium mb-2">Growth Stages</h5>
+              <div className="space-y-1">
+                {PH_RANGES.filter(range => range.category === 'stage').map((range, index) => {
+                  const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
+                  const isCurrentStage = (
+                    (range.nutrient === 'Seedling' && selectedStage === 'propagation') ||
+                    (range.nutrient === 'Veg' && selectedStage === 'vegetative') ||
+                    (range.nutrient === 'Early Flower' && (selectedStage === 'budset' || selectedStage === 'flower')) ||
+                    (range.nutrient === 'Late Flower' && selectedStage === 'lateflower')
+                  );
+                  return (
+                    <div key={index} className="space-y-1">
+                      <div 
+                        className={`flex justify-between text-sm ${
+                          isOutOfRange ? 'text-red-400' : ''
+                        } ${isCurrentStage ? 'font-medium' : ''}`}
+                      >
+                        <span className="w-24">{range.nutrient}</span>
+                        <span>→</span>
+                        <span className="w-20 text-right">{range.min} – {range.max}</span>
+                      </div>
+                      {range.description && (
+                        <p className="text-xs text-dark-text-secondary pl-4">
+                          ({range.description})
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </CollapsibleContent>
@@ -819,85 +915,6 @@ export default function Jacks321Calculator() {
                     ))}
                   </div>
                 )}
-
-                {/* pH Range Chart */}
-                <div className="p-4 rounded bg-dark-bg-secondary border border-dark-border">
-                  <h4 className="text-sm font-medium mb-4">Nutrient Uptake pH Ranges</h4>
-                  
-                  {/* Macronutrients */}
-                  <div className="space-y-4">
-                    <div>
-                      <h5 className="text-sm font-medium mb-2">Macronutrients</h5>
-                      <div className="space-y-1">
-                        {PH_RANGES.filter(range => range.category === 'macro').map((range, index) => {
-                          const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
-                          return (
-                            <div 
-                              key={index} 
-                              className={`flex justify-between text-sm ${
-                                isOutOfRange ? 'text-red-400' : ''
-                              }`}
-                            >
-                              <span className="w-24">{range.nutrient}</span>
-                              <span>→</span>
-                              <span className="w-20 text-right">{range.min} – {range.max}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Micronutrients */}
-                    <div>
-                      <h5 className="text-sm font-medium mb-2">Micronutrients</h5>
-                      <div className="space-y-1">
-                        {PH_RANGES.filter(range => range.category === 'micro').map((range, index) => {
-                          const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
-                          return (
-                            <div 
-                              key={index} 
-                              className={`flex justify-between text-sm ${
-                                isOutOfRange ? 'text-red-400' : ''
-                              }`}
-                            >
-                              <span className="w-24">{range.nutrient}</span>
-                              <span>→</span>
-                              <span className="w-20 text-right">{range.min} – {range.max}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Growth Stages */}
-                    <div>
-                      <h5 className="text-sm font-medium mb-2">Growth Stages</h5>
-                      <div className="space-y-1">
-                        {PH_RANGES.filter(range => range.category === 'stage').map((range, index) => {
-                          const isOutOfRange = feedPH && (parseFloat(feedPH) < range.min || parseFloat(feedPH) > range.max);
-                          return (
-                            <div key={index} className="space-y-1">
-                              <div 
-                                className={`flex justify-between text-sm ${
-                                  isOutOfRange ? 'text-red-400' : ''
-                                }`}
-                              >
-                                <span className="w-24">{range.nutrient}</span>
-                                <span>→</span>
-                                <span className="w-20 text-right">{range.min} – {range.max}</span>
-                              </div>
-                              {range.description && (
-                                <p className="text-xs text-dark-text-secondary pl-4">
-                                  ({range.description})
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Symptom Selection */}
                 <div className="space-y-2">
