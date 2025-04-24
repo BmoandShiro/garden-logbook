@@ -39,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Types and Enums
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
@@ -48,6 +49,59 @@ enum RootSize {
   MEDIUM = 'MEDIUM',
   LARGE = 'LARGE'
 }
+
+// pH ranges for nutrient uptake
+interface NutrientPHRange {
+  nutrient: string;
+  min: number;
+  max: number;
+  optimal: number;
+}
+
+const PH_RANGES: NutrientPHRange[] = [
+  { nutrient: 'N, K', min: 5.5, max: 6.5, optimal: 6.0 },
+  { nutrient: 'Ca, Mg, S', min: 5.8, max: 6.5, optimal: 6.2 },
+  { nutrient: 'Fe, Mn, Zn, Cu', min: 5.5, max: 6.2, optimal: 5.8 }
+];
+
+// Nutrient deficiency/toxicity symptoms
+enum NutrientSymptom {
+  N_DEFICIENCY = 'Nitrogen Deficiency',
+  P_DEFICIENCY = 'Phosphorus Deficiency',
+  K_DEFICIENCY = 'Potassium Deficiency',
+  CA_DEFICIENCY = 'Calcium Deficiency',
+  MG_DEFICIENCY = 'Magnesium Deficiency',
+  S_DEFICIENCY = 'Sulfur Deficiency',
+  FE_DEFICIENCY = 'Iron Deficiency',
+  N_TOXICITY = 'Nitrogen Toxicity',
+  P_TOXICITY = 'Phosphorus Toxicity',
+  K_TOXICITY = 'Potassium Toxicity',
+  CA_TOXICITY = 'Calcium Toxicity',
+  MG_TOXICITY = 'Magnesium Toxicity'
+}
+
+interface SymptomModifier {
+  partA?: number;
+  partB?: number;
+  epsom?: number;
+  bloom?: number;
+  finish?: number;
+}
+
+const SYMPTOM_MODIFIERS: Record<NutrientSymptom, SymptomModifier> = {
+  [NutrientSymptom.N_DEFICIENCY]: { partA: 0.1, partB: 0.15 },
+  [NutrientSymptom.P_DEFICIENCY]: { partA: 0.15 },
+  [NutrientSymptom.K_DEFICIENCY]: { partA: 0.2 },
+  [NutrientSymptom.CA_DEFICIENCY]: { partB: 0.15 },
+  [NutrientSymptom.MG_DEFICIENCY]: { epsom: 0.2 },
+  [NutrientSymptom.S_DEFICIENCY]: { epsom: 0.15 },
+  [NutrientSymptom.FE_DEFICIENCY]: { partA: 0.1 },
+  [NutrientSymptom.N_TOXICITY]: { partA: -0.15, partB: -0.2 },
+  [NutrientSymptom.P_TOXICITY]: { partA: -0.2 },
+  [NutrientSymptom.K_TOXICITY]: { partA: -0.15 },
+  [NutrientSymptom.CA_TOXICITY]: { partB: -0.15 },
+  [NutrientSymptom.MG_TOXICITY]: { epsom: -0.2 }
+};
 
 interface StageData {
   name: string;
@@ -165,6 +219,9 @@ export default function Jacks321Calculator() {
   const [rootSize, setRootSize] = useState<RootSize>(RootSize.LARGE);
   const [lastFeedPPM, setLastFeedPPM] = useState('');
   const [runoffPPM, setRunoffPPM] = useState('');
+  const [feedPH, setFeedPH] = useState('6.0');
+  const [runoffPH, setRunoffPH] = useState('');
+  const [selectedSymptoms, setSelectedSymptoms] = useState<NutrientSymptom[]>([]);
   
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
@@ -180,7 +237,57 @@ export default function Jacks321Calculator() {
     </TooltipProvider>
   );
 
-  // Calculate nutrient amounts based on stage, volume, and root size
+  // Calculate pH warnings
+  const getPHWarnings = (): string[] => {
+    const warnings: string[] = [];
+    const feedPHNum = parseFloat(feedPH);
+    const runoffPHNum = runoffPH ? parseFloat(runoffPH) : null;
+
+    if (feedPHNum < 5.6) {
+      warnings.push('⚠️ Risk of Mg/Ca/P lockout');
+    }
+    if (feedPHNum > 6.5) {
+      warnings.push('⚠️ Micronutrient uptake may drop');
+    }
+    if (runoffPHNum && Math.abs(runoffPHNum - feedPHNum) > 0.5) {
+      warnings.push('⚠️ Runoff drift detected – check root health');
+    }
+
+    return warnings;
+  };
+
+  // Calculate nutrient modifiers based on symptoms
+  const calculateModifiers = (): SymptomModifier => {
+    const modifiers: SymptomModifier = {
+      partA: 0,
+      partB: 0,
+      epsom: 0,
+      bloom: 0,
+      finish: 0
+    };
+
+    // Apply root size modifier first
+    const rootSizeModifier = ROOT_SIZE_MODIFIERS[rootSize] - 1; // Convert to percentage modifier
+    Object.keys(modifiers).forEach(key => {
+      modifiers[key as keyof SymptomModifier] = rootSizeModifier;
+    });
+
+    // Apply symptom modifiers
+    selectedSymptoms.forEach(symptom => {
+      const symptomMod = SYMPTOM_MODIFIERS[symptom];
+      Object.entries(symptomMod).forEach(([key, value]) => {
+        const nutrientKey = key as keyof SymptomModifier;
+        // Ensure we don't exceed limits
+        modifiers[nutrientKey] = Math.min(0.25, Math.max(-0.3, 
+          (modifiers[nutrientKey] || 0) + (value || 0)
+        ));
+      });
+    });
+
+    return modifiers;
+  };
+
+  // Update calculateNutrients to use modifiers
   const calculateNutrients = (): NutrientCalculation => {
     if (selectedStage === 'flush') {
       return {
@@ -190,17 +297,16 @@ export default function Jacks321Calculator() {
     }
 
     const stageData = STAGE_DATA[selectedStage];
-    const targetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
     const volumeNum = parseFloat(volume);
-    const modifier = ROOT_SIZE_MODIFIERS[rootSize];
+    const modifiers = calculateModifiers();
 
-    // Base calculations (grams per gallon * volume * root size modifier)
     const calc: NutrientCalculation = {
       totalPPM: 0,
       finalPPM: parseInt(sourceWaterPPM)
     };
 
     if (stageData.nutrients.includes('Part A')) {
+      const modifier = 1 + (modifiers.partA || 0);
       calc.partA = {
         grams: BASE_GRAMS_PER_GALLON.partA * volumeNum * modifier,
         ppmContribution: PPM_CONTRIBUTION.partA * modifier
@@ -209,6 +315,7 @@ export default function Jacks321Calculator() {
     }
 
     if (stageData.nutrients.includes('Part B')) {
+      const modifier = 1 + (modifiers.partB || 0);
       calc.partB = {
         grams: BASE_GRAMS_PER_GALLON.partB * volumeNum * modifier,
         ppmContribution: PPM_CONTRIBUTION.partB * modifier
@@ -217,6 +324,7 @@ export default function Jacks321Calculator() {
     }
 
     if (stageData.nutrients.includes('Bloom')) {
+      const modifier = 1 + (modifiers.bloom || 0);
       calc.bloom = {
         grams: BASE_GRAMS_PER_GALLON.bloom * volumeNum * modifier,
         ppmContribution: PPM_CONTRIBUTION.bloom * modifier
@@ -225,6 +333,7 @@ export default function Jacks321Calculator() {
     }
 
     if (stageData.nutrients.includes('Finish')) {
+      const modifier = 1 + (modifiers.finish || 0);
       calc.finish = {
         grams: BASE_GRAMS_PER_GALLON.finish * volumeNum * modifier,
         ppmContribution: PPM_CONTRIBUTION.finish * modifier
@@ -233,6 +342,7 @@ export default function Jacks321Calculator() {
     }
 
     if (stageData.nutrients.includes('Epsom')) {
+      const modifier = 1 + (modifiers.epsom || 0);
       calc.epsom = {
         grams: BASE_GRAMS_PER_GALLON.epsom * volumeNum * modifier,
         ppmContribution: PPM_CONTRIBUTION.epsom * modifier
@@ -468,7 +578,7 @@ export default function Jacks321Calculator() {
                       value={lastFeedPPM}
                       onChange={(e) => setLastFeedPPM(e.target.value)}
                       placeholder="Enter last feed PPM"
-                      className="bg-dark-bg-primary border-dark-border"
+                      className="bg-dark-bg-secondary border-dark-border"
                     />
                   </div>
                   <div className="space-y-2">
@@ -479,10 +589,130 @@ export default function Jacks321Calculator() {
                       value={runoffPPM}
                       onChange={(e) => setRunoffPPM(e.target.value)}
                       placeholder="Enter runoff PPM"
-                      className="bg-dark-bg-primary border-dark-border"
+                      className="bg-dark-bg-secondary border-dark-border"
                     />
                   </div>
                 </div>
+
+                {/* pH Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="feedPH">Feed pH</Label>
+                      <InfoTooltip content="Target pH range: 5.6-6.5. Outside this range can cause nutrient lockout." />
+                    </div>
+                    <Input
+                      id="feedPH"
+                      type="number"
+                      value={feedPH}
+                      onChange={(e) => setFeedPH(e.target.value)}
+                      placeholder="Enter feed pH"
+                      min="0"
+                      max="14"
+                      step="0.1"
+                      className="bg-dark-bg-secondary border-dark-border"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="runoffPH">Runoff pH</Label>
+                      <InfoTooltip content="Compare with feed pH to detect root zone issues." />
+                    </div>
+                    <Input
+                      id="runoffPH"
+                      type="number"
+                      value={runoffPH}
+                      onChange={(e) => setRunoffPH(e.target.value)}
+                      placeholder="Enter runoff pH (optional)"
+                      min="0"
+                      max="14"
+                      step="0.1"
+                      className="bg-dark-bg-secondary border-dark-border"
+                    />
+                  </div>
+                </div>
+
+                {/* pH Warnings */}
+                {getPHWarnings().length > 0 && (
+                  <div className="p-3 rounded bg-yellow-900/20 border border-yellow-900/30">
+                    {getPHWarnings().map((warning, index) => (
+                      <p key={index} className="text-sm">{warning}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* pH Range Chart */}
+                <div className="p-4 rounded bg-dark-bg-secondary border border-dark-border">
+                  <h4 className="text-sm font-medium mb-2">Nutrient Uptake pH Ranges</h4>
+                  <div className="space-y-2">
+                    {PH_RANGES.map((range, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>{range.nutrient}</span>
+                        <span>{range.min} – {range.max}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Symptom Selection */}
+                <div className="space-y-2">
+                  <Label>Nutrient Symptoms</Label>
+                  <div className="space-y-1">
+                    {Object.values(NutrientSymptom)
+                      .filter(symptom => symptom.includes('Deficiency'))
+                      .map(symptom => (
+                        <div key={symptom} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={selectedSymptoms.includes(symptom)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedSymptoms([...selectedSymptoms, symptom]);
+                              } else {
+                                setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
+                              }
+                            }}
+                            className="bg-dark-bg-secondary border-dark-border"
+                          />
+                          <Label>{symptom}</Label>
+                        </div>
+                      ))}
+                    <Separator className="my-2" />
+                    {Object.values(NutrientSymptom)
+                      .filter(symptom => symptom.includes('Toxicity'))
+                      .map(symptom => (
+                        <div key={symptom} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={selectedSymptoms.includes(symptom)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedSymptoms([...selectedSymptoms, symptom]);
+                              } else {
+                                setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
+                              }
+                            }}
+                            className="bg-dark-bg-secondary border-dark-border"
+                          />
+                          <Label>{symptom}</Label>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {selectedSymptoms.length > 0 && (
+                  <div className="p-3 rounded bg-dark-bg-secondary border border-dark-border">
+                    <h4 className="text-sm font-medium mb-2">Applied Modifiers</h4>
+                    <div className="space-y-1">
+                      {Object.entries(calculateModifiers()).map(([key, value]) => (
+                        value !== 0 && (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span>{key}</span>
+                            <span>{(value * 100).toFixed(1)}%</span>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {lastFeedPPM && runoffPPM && (
                   <div className="p-3 rounded bg-dark-bg-primary border border-dark-border">
@@ -519,67 +749,135 @@ export default function Jacks321Calculator() {
               <h3 className="text-lg font-medium mb-2">
                 Nutrient Mix for {volume} gallons
               </h3>
+              <p className="text-sm text-dark-text-secondary">
+                Target PPM ({isPPM700 ? '700' : '500'}): {isPPM700 ? STAGE_DATA[selectedStage].ppm700 : STAGE_DATA[selectedStage].ppm500}
+              </p>
             </div>
 
             <Separator className="bg-dark-border" />
 
             <div className="space-y-3">
               {nutrientCalc.partA && (
-                <div className="flex justify-between items-center">
-                  <span>Part A (5-12-26)</span>
-                  <div className="text-right">
-                    <p className="font-medium">{nutrientCalc.partA.grams}g</p>
-                    <p className="text-sm text-dark-text-secondary">
-                      Adds {nutrientCalc.partA.ppmContribution} PPM
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium">Part A (5-12-26)</span>
+                      {(calculateModifiers().partA ?? 0) !== 0 && (
+                        <span className="ml-2 text-sm text-dark-text-secondary">
+                          ({((calculateModifiers().partA ?? 0) * 100).toFixed(1)}% modifier)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{nutrientCalc.partA.grams.toFixed(2)}g</p>
+                      <p className="text-sm text-dark-text-secondary">
+                        Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-dark-text-secondary">
+                    Base: {(BASE_GRAMS_PER_GALLON.partA * parseFloat(volume)).toFixed(2)}g | 
+                    PPM/g: {PPM_CONTRIBUTION.partA.toFixed(1)}
                   </div>
                 </div>
               )}
 
               {nutrientCalc.partB && (
-                <div className="flex justify-between items-center">
-                  <span>Part B (Calcium Nitrate)</span>
-                  <div className="text-right">
-                    <p className="font-medium">{nutrientCalc.partB.grams}g</p>
-                    <p className="text-sm text-dark-text-secondary">
-                      Adds {nutrientCalc.partB.ppmContribution} PPM
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium">Part B (Calcium Nitrate)</span>
+                      {(calculateModifiers().partB ?? 0) !== 0 && (
+                        <span className="ml-2 text-sm text-dark-text-secondary">
+                          ({((calculateModifiers().partB ?? 0) * 100).toFixed(1)}% modifier)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{nutrientCalc.partB.grams.toFixed(2)}g</p>
+                      <p className="text-sm text-dark-text-secondary">
+                        Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-dark-text-secondary">
+                    Base: {(BASE_GRAMS_PER_GALLON.partB * parseFloat(volume)).toFixed(2)}g | 
+                    PPM/g: {PPM_CONTRIBUTION.partB.toFixed(1)}
                   </div>
                 </div>
               )}
 
               {nutrientCalc.bloom && (
-                <div className="flex justify-between items-center">
-                  <span>Bloom (10-30-20)</span>
-                  <div className="text-right">
-                    <p className="font-medium">{nutrientCalc.bloom.grams}g</p>
-                    <p className="text-sm text-dark-text-secondary">
-                      Adds {nutrientCalc.bloom.ppmContribution} PPM
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium">Bloom (10-30-20)</span>
+                      {(calculateModifiers().bloom ?? 0) !== 0 && (
+                        <span className="ml-2 text-sm text-dark-text-secondary">
+                          ({((calculateModifiers().bloom ?? 0) * 100).toFixed(1)}% modifier)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{nutrientCalc.bloom.grams.toFixed(2)}g</p>
+                      <p className="text-sm text-dark-text-secondary">
+                        Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-dark-text-secondary">
+                    Base: {(BASE_GRAMS_PER_GALLON.bloom * parseFloat(volume)).toFixed(2)}g | 
+                    PPM/g: {PPM_CONTRIBUTION.bloom.toFixed(1)}
                   </div>
                 </div>
               )}
 
               {nutrientCalc.finish && (
-                <div className="flex justify-between items-center">
-                  <span>Finish (7-15-30)</span>
-                  <div className="text-right">
-                    <p className="font-medium">{nutrientCalc.finish.grams}g</p>
-                    <p className="text-sm text-dark-text-secondary">
-                      Adds {nutrientCalc.finish.ppmContribution} PPM
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium">Finish (7-15-30)</span>
+                      {(calculateModifiers().finish ?? 0) !== 0 && (
+                        <span className="ml-2 text-sm text-dark-text-secondary">
+                          ({((calculateModifiers().finish ?? 0) * 100).toFixed(1)}% modifier)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{nutrientCalc.finish.grams.toFixed(2)}g</p>
+                      <p className="text-sm text-dark-text-secondary">
+                        Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-dark-text-secondary">
+                    Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
+                    PPM/g: {PPM_CONTRIBUTION.finish.toFixed(1)}
                   </div>
                 </div>
               )}
 
               {nutrientCalc.epsom && (
-                <div className="flex justify-between items-center">
-                  <span>Epsom Salt</span>
-                  <div className="text-right">
-                    <p className="font-medium">{nutrientCalc.epsom.grams}g</p>
-                    <p className="text-sm text-dark-text-secondary">
-                      Adds {nutrientCalc.epsom.ppmContribution} PPM
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium">Epsom Salt</span>
+                      {(calculateModifiers().epsom ?? 0) !== 0 && (
+                        <span className="ml-2 text-sm text-dark-text-secondary">
+                          ({((calculateModifiers().epsom ?? 0) * 100).toFixed(1)}% modifier)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
+                      <p className="text-sm text-dark-text-secondary">
+                        Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-dark-text-secondary">
+                    Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
+                    PPM/g: {PPM_CONTRIBUTION.epsom.toFixed(1)}
                   </div>
                 </div>
               )}
@@ -593,11 +891,11 @@ export default function Jacks321Calculator() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Nutrient PPM Added</span>
-                  <span>{nutrientCalc.totalPPM}</span>
+                  <span>{nutrientCalc.totalPPM.toFixed(1)}</span>
                 </div>
                 <div className="flex justify-between items-center font-medium">
                   <span>Final Solution PPM</span>
-                  <span>{nutrientCalc.finalPPM}</span>
+                  <span>{nutrientCalc.finalPPM.toFixed(1)}</span>
                 </div>
               </div>
 
