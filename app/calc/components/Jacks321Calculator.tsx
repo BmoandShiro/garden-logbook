@@ -1511,6 +1511,40 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             <Separator className="bg-dark-border" />
 
             <div className="space-y-3">
+              {/* Epsom Salt - Always First */}
+              {nutrientCalc.epsom && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Epsom Salt</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-4 w-4 text-dark-text-secondary" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Always mix Epsom Salt first to avoid precipitates with calcium nitrate</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {(calculateModifiers().epsom ?? 0) !== 0 && (
+                        <span className="ml-2 text-sm text-dark-text-secondary">
+                          ({((calculateModifiers().epsom ?? 0) * 100).toFixed(1)}% modifier)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
+                      <p className="text-sm text-dark-text-secondary">
+                        Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
+                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Part A */}
               {nutrientCalc.partA && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -1533,6 +1567,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 </div>
               )}
 
+              {/* Part B */}
               {nutrientCalc.partB && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -1555,6 +1590,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 </div>
               )}
 
+              {/* Bloom */}
               {nutrientCalc.bloom && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -1577,6 +1613,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 </div>
               )}
 
+              {/* Finish */}
               {nutrientCalc.finish && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -1593,28 +1630,6 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
                         <span className="font-medium text-emerald-400"> Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {nutrientCalc.epsom && (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-medium">Epsom Salt</span>
-                      {(calculateModifiers().epsom ?? 0) !== 0 && (
-                        <span className="ml-2 text-sm text-dark-text-secondary">
-                          ({((calculateModifiers().epsom ?? 0) * 100).toFixed(1)}% modifier)
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
-                      <p className="text-sm text-dark-text-secondary">
-                        Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
