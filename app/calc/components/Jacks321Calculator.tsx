@@ -1491,9 +1491,6 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
 
               <p className="text-sm text-dark-text-secondary">
                 Target PPM ({isPPM700 ? '700' : '500'}): {targetPPM}
-                {luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 && (
-                  <span> → {Math.floor(parseInt(targetPPM) * luxuryUptakeMode.multiplier)}</span>
-                )}
               </p>
             </div>
 
