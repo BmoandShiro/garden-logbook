@@ -112,7 +112,7 @@ interface SymptomAdjustment {
 interface Warning {
   message: string;
   priority: number; // 1 = highest, 5 = lowest
-  type: 'flush' | 'conflict' | 'severe' | 'antagonism' | 'notice';
+  type: 'flush' | 'conflict' | 'severe' | 'antagonism' | 'notice' | 'stage-conflict';
 }
 
 // Update the symptom modifiers with the new values
@@ -280,6 +280,150 @@ interface PPMAllocation {
   finish?: number;
 }
 
+// Stage-specific nutrient adjustment configuration
+interface StageNutrientConfig {
+  allowedNutrients: string[];
+  deficiencyAdjustments: Record<NutrientSymptom, {
+    adjustment: number;
+    nutrientToAdjust?: string;
+    warning?: string;
+    requiresSupplementation?: boolean;
+  }>;
+}
+
+// Create a base empty adjustment record
+const EMPTY_ADJUSTMENTS: Record<NutrientSymptom, {
+  adjustment: number;
+  nutrientToAdjust?: string;
+  warning?: string;
+  requiresSupplementation?: boolean;
+}> = {
+  [NutrientSymptom.N_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.P_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.K_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.CA_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.MG_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.S_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.FE_DEFICIENCY]: { adjustment: 0 },
+  [NutrientSymptom.N_TOXICITY]: { adjustment: 0 },
+  [NutrientSymptom.P_TOXICITY]: { adjustment: 0 },
+  [NutrientSymptom.K_TOXICITY]: { adjustment: 0 },
+  [NutrientSymptom.CA_TOXICITY]: { adjustment: 0 },
+  [NutrientSymptom.MG_TOXICITY]: { adjustment: 0 }
+};
+
+// Stage-specific nutrient configurations
+const STAGE_NUTRIENT_CONFIG: Record<GrowStage, StageNutrientConfig> = {
+  propagation: {
+    allowedNutrients: ['Clone formula'],
+    deficiencyAdjustments: EMPTY_ADJUSTMENTS
+  },
+  vegetative: {
+    allowedNutrients: ['Part A', 'Part B', 'Epsom'],
+    deficiencyAdjustments: {
+      ...EMPTY_ADJUSTMENTS,
+      [NutrientSymptom.N_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.P_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.K_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.CA_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.MG_DEFICIENCY]: { adjustment: 0.20, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.S_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.FE_DEFICIENCY]: { adjustment: 0.10, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.N_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.P_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.K_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.CA_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.MG_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Epsom' }
+    }
+  },
+  budset: {
+    allowedNutrients: ['Bloom', 'Epsom'],
+    deficiencyAdjustments: {
+      ...EMPTY_ADJUSTMENTS,
+      [NutrientSymptom.N_DEFICIENCY]: { 
+        adjustment: 0.10, 
+        nutrientToAdjust: 'Bloom',
+        warning: 'Nitrogen adjustments in Bud Set should be minimal. Monitor closely.'
+      },
+      [NutrientSymptom.P_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Bloom' },
+      [NutrientSymptom.K_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Bloom' },
+      [NutrientSymptom.CA_DEFICIENCY]: { 
+        requiresSupplementation: true,
+        adjustment: 0,
+        warning: 'Calcium supplementation recommended in Bud Set. Do not adjust base nutrients.'
+      },
+      [NutrientSymptom.MG_DEFICIENCY]: { adjustment: 0.20, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.S_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.FE_DEFICIENCY]: { 
+        adjustment: 0.10, 
+        nutrientToAdjust: 'Bloom',
+        warning: 'Iron adjustments via Bloom in Bud Set should be monitored carefully.'
+      },
+      [NutrientSymptom.N_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Bloom' },
+      [NutrientSymptom.P_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Bloom' },
+      [NutrientSymptom.K_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Bloom' },
+      [NutrientSymptom.MG_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Epsom' }
+    }
+  },
+  flower: {
+    allowedNutrients: ['Part A', 'Part B', 'Epsom'],
+    deficiencyAdjustments: {
+      ...EMPTY_ADJUSTMENTS,
+      [NutrientSymptom.N_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.P_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.K_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.CA_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.MG_DEFICIENCY]: { adjustment: 0.20, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.S_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.FE_DEFICIENCY]: { adjustment: 0.10, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.N_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.P_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.K_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Part A' },
+      [NutrientSymptom.CA_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Part B' },
+      [NutrientSymptom.MG_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Epsom' }
+    }
+  },
+  lateflower: {
+    allowedNutrients: ['Finish', 'Epsom'],
+    deficiencyAdjustments: {
+      ...EMPTY_ADJUSTMENTS,
+      [NutrientSymptom.N_DEFICIENCY]: { 
+        adjustment: 0,
+        warning: 'Nitrogen increase not recommended in Late Flower. Consider earlier adjustment in cycle.'
+      },
+      [NutrientSymptom.P_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Finish' },
+      [NutrientSymptom.K_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Finish' },
+      [NutrientSymptom.CA_DEFICIENCY]: { 
+        requiresSupplementation: true,
+        adjustment: 0,
+        warning: 'Calcium supplementation recommended in Late Flower. Do not adjust base nutrients.'
+      },
+      [NutrientSymptom.MG_DEFICIENCY]: { adjustment: 0.20, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.S_DEFICIENCY]: { adjustment: 0.15, nutrientToAdjust: 'Epsom' },
+      [NutrientSymptom.FE_DEFICIENCY]: { 
+        requiresSupplementation: true,
+        adjustment: 0,
+        warning: 'Iron supplementation recommended in Late Flower. Consider micronutrient blend.'
+      },
+      [NutrientSymptom.N_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Finish' },
+      [NutrientSymptom.P_TOXICITY]: { adjustment: -0.20, nutrientToAdjust: 'Finish' },
+      [NutrientSymptom.K_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Finish' },
+      [NutrientSymptom.MG_TOXICITY]: { adjustment: -0.15, nutrientToAdjust: 'Epsom' }
+    }
+  },
+  flush: {
+    allowedNutrients: ['Clear water'],
+    deficiencyAdjustments: EMPTY_ADJUSTMENTS
+  }
+};
+
+// Add interface for luxury uptake mode
+interface LuxuryUptakeState {
+  enabled: boolean;
+  multiplier: number;
+  warning?: string;
+}
+
 export default function Jacks321Calculator() {
   // Core state
   const [selectedStage, setSelectedStage] = useState<GrowStage>('vegetative');
@@ -295,6 +439,15 @@ export default function Jacks321Calculator() {
   const [runoffPH, setRunoffPH] = useState('');
   const [selectedSymptoms, setSelectedSymptoms] = useState<NutrientSymptom[]>([]);
   const [targetPPM, setTargetPPM] = useState('');
+  
+  // Add new state for luxury uptake mode
+  const [luxuryUptakeMode, setLuxuryUptakeMode] = useState<LuxuryUptakeState>({
+    enabled: false,
+    multiplier: 1
+  });
+
+  // Add state for transition warnings
+  const [transitionWarning, setTransitionWarning] = useState<string | null>(null);
   
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
@@ -347,13 +500,18 @@ export default function Jacks321Calculator() {
       newTargetPPM = Math.min(stageData.co2Max, Math.floor(newTargetPPM * CO2_PPM_MODIFIER));
     }
 
+    // Apply luxury uptake multiplier if enabled
+    if (luxuryUptakeMode.enabled && selectedStage !== 'propagation' && selectedStage !== 'flush') {
+      newTargetPPM = Math.floor(newTargetPPM * luxuryUptakeMode.multiplier);
+    }
+
     // Convert to 700 scale if needed
     if (isPPM700) {
       newTargetPPM = convertPPM(newTargetPPM, true);
     }
     
     setTargetPPM(newTargetPPM.toString());
-  }, [selectedStage, isPPM700, isCO2Enriched, selectedSymptoms]);
+  }, [selectedStage, isPPM700, isCO2Enriched, selectedSymptoms, luxuryUptakeMode]);
 
   // Update calculateNutrients to use the modified target PPM
   const calculateNutrients = (): NutrientCalculation => {
@@ -507,7 +665,76 @@ export default function Jacks321Calculator() {
     return warnings;
   };
 
-  // Add helper functions for symptom processing
+  // Add helper function to check for stage-based conflicts
+  const getStageBasedConflicts = (symptoms: NutrientSymptom[]): Warning[] => {
+    const warnings: Warning[] = [];
+    const stageConfig = STAGE_NUTRIENT_CONFIG[selectedStage];
+    
+    symptoms.forEach(symptom => {
+      const adjustment = stageConfig.deficiencyAdjustments[symptom];
+      if (adjustment.warning) {
+        warnings.push({
+          message: adjustment.warning,
+          priority: 3,
+          type: 'stage-conflict'
+        });
+      }
+      if (adjustment.requiresSupplementation) {
+        warnings.push({
+          message: `⚠️ Stage-Based Conflict:
+This nutrient is not typically active in the current stage.
+Proceed cautiously. Use external supplements or wait for new growth before adjusting further.`,
+          priority: 2,
+          type: 'stage-conflict'
+        });
+      }
+    });
+
+    return warnings;
+  };
+
+  // Add function to check for luxury uptake conditions
+  const checkLuxuryUptakeConditions = () => {
+    if (!lastFeedPPM || selectedStage === 'propagation' || selectedStage === 'flush') {
+      return;
+    }
+
+    const lastFeedValue = parseInt(lastFeedPPM);
+    const stageData = STAGE_DATA[selectedStage];
+    const recommendedPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    
+    if (lastFeedValue > recommendedPPM + 150) {
+      const multiplier = lastFeedValue / recommendedPPM;
+      
+      setTransitionWarning(`
+📌 Transition Warning – Luxury Uptake Shock:
+Your last feeding strength (${lastFeedValue} PPM) was significantly higher than the recommended PPM (${recommendedPPM}) for this stage.
+This often results in temporary deficiency-like symptoms as the plant adjusts to reduced nutrient availability.
+
+Adjustment Tip:
+Consider scaling this stage's strength to match your prior feeding ratio.
+If your previous feeding was ${multiplier.toFixed(2)}× recommended, you may want to feed this stage at the same ratio.
+
+💡 Suggestion:
+Enable Luxury Uptake Mode to automatically match feed strength to your previous ratio.`);
+
+      // Update luxury uptake state
+      if (luxuryUptakeMode.enabled) {
+        const newMultiplier = Math.min(multiplier, 1.8); // Cap at 1.8x
+        setLuxuryUptakeMode({
+          enabled: true,
+          multiplier: newMultiplier,
+          warning: newMultiplier >= 1.8 ? 
+            'Warning: High feed ratio detected. Monitor runoff EC and plant response carefully.' : 
+            undefined
+        });
+      }
+    } else {
+      setTransitionWarning(null);
+    }
+  };
+
+  // Update getSymptomWarnings to include stage-based conflicts
   const getSymptomWarnings = (selectedSymptoms: NutrientSymptom[]): Warning[] => {
     const warnings: Warning[] = [];
     
@@ -537,8 +764,11 @@ Verify root zone pH and EC runoff after flushing to ensure healthy conditions.`,
         priority: 1,
         type: 'conflict'
       });
-      return warnings; // Return early if conflicts exist
+      return warnings;
     }
+
+    // Add stage-based conflicts
+    warnings.push(...getStageBasedConflicts(selectedSymptoms));
 
     // Check for severe toxicity
     const toxicityCount = selectedSymptoms.filter(s => s.includes('Toxicity')).length;
@@ -550,7 +780,7 @@ A full flush is recommended before adjusting feed.`,
         priority: 1,
         type: 'flush'
       });
-      return warnings; // Return early if severe toxicity
+      return warnings;
     }
 
     // Only check for underfeeding if no conflicts or severe toxicity
@@ -580,7 +810,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
     return warnings.sort((a, b) => a.priority - b.priority);
   };
 
-  // Update the calculate modifiers function
+  // Update calculateModifiers to use stage-specific adjustments
   const calculateModifiers = (): SymptomModifier => {
     const modifiers: SymptomModifier = {
       partA: 0,
@@ -598,23 +828,27 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
       });
     }
 
+    // Get stage configuration
+    const stageConfig = STAGE_NUTRIENT_CONFIG[selectedStage];
+    
     // Get all warnings
     const warnings = getSymptomWarnings(selectedSymptoms);
     const shouldFlush = warnings.some(w => w.type === 'flush');
+    const isUnderfeeding = warnings.some(w => w.message.includes('Possible General Underfeeding'));
     
-    if (!shouldFlush) {
-      // Apply symptom modifiers if not flushing
+    if (!shouldFlush && !isUnderfeeding) {
+      // Apply stage-specific symptom modifiers
       selectedSymptoms.forEach(symptom => {
-        const symptomMod = SYMPTOM_MODIFIERS[symptom];
-        Object.entries(symptomMod).forEach(([key, value]) => {
-          if (key !== 'warning' && typeof value === 'number') {
-            const nutrientKey = key as keyof SymptomModifier;
+        const adjustment = stageConfig.deficiencyAdjustments[symptom];
+        if (adjustment.adjustment !== 0 && adjustment.nutrientToAdjust) {
+          const nutrientKey = getNutrientKey(adjustment.nutrientToAdjust);
+          if (nutrientKey) {
             // Cap adjustments at ±30%
             modifiers[nutrientKey] = Math.min(0.30, Math.max(-0.30, 
-              (modifiers[nutrientKey] || 0) + value
+              (modifiers[nutrientKey] || 0) + adjustment.adjustment
             ));
           }
-        });
+        }
       });
     }
 
@@ -705,6 +939,11 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
     const warnings = getSymptomWarnings(selectedSymptoms);
     return warnings.some(w => w.message.includes('Possible General Underfeeding'));
   }, [selectedSymptoms]);
+
+  // Add effect to check luxury uptake conditions when relevant values change
+  useEffect(() => {
+    checkLuxuryUptakeConditions();
+  }, [lastFeedPPM, selectedStage, isPPM700]);
 
   return (
     <div className="space-y-6">
@@ -1338,6 +1577,49 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           <p className="text-center text-dark-text-secondary py-2">
             Flush with plain pH-adjusted water
           </p>
+        </div>
+      )}
+
+      {/* Luxury Uptake Mode Toggle */}
+      {selectedStage !== 'propagation' && selectedStage !== 'flush' && (
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Luxury Uptake Mode</Label>
+            <p className="text-sm text-dark-text-secondary">
+              Automatically scale feed strength to match your last feed ratio
+            </p>
+          </div>
+          <Switch
+            checked={luxuryUptakeMode.enabled}
+            onCheckedChange={(checked) => setLuxuryUptakeMode(prev => ({ 
+              ...prev, 
+              enabled: checked 
+            }))}
+            aria-label="Toggle luxury uptake mode"
+          />
+        </div>
+      )}
+
+      {/* Luxury Uptake Multiplier Display */}
+      {luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 && (
+        <div className="p-3 rounded bg-dark-bg-secondary border border-dark-border">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">
+              {(luxuryUptakeMode.multiplier).toFixed(2)}× Scaling Applied
+            </span>
+            {luxuryUptakeMode.warning && (
+              <span className="text-sm text-yellow-400">
+                {luxuryUptakeMode.warning}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Transition Warning Display */}
+      {transitionWarning && (
+        <div className="p-4 rounded-lg bg-yellow-900/20 border border-yellow-900/30">
+          <p className="text-sm whitespace-pre-line">{transitionWarning}</p>
         </div>
       )}
     </div>
