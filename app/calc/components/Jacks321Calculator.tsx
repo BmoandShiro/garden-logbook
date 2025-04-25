@@ -464,6 +464,9 @@ export default function Jacks321Calculator() {
     finalTargetPPM: 0
   });
 
+  // Add state for first water toggle
+  const [isFirstWater, setIsFirstWater] = useState(false);
+
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
     <TooltipProvider>
@@ -733,19 +736,31 @@ Proceed cautiously. Use external supplements or wait for new growth before adjus
 
     const lastFeedValue = parseInt(lastFeedPPM);
     const stageData = STAGE_DATA[selectedStage];
-    const recommendedPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
     
-    if (lastFeedValue > recommendedPPM + 150) {
-      const multiplier = Math.min(lastFeedValue / recommendedPPM, 1.8);
+    // Determine which stage's PPM to use as reference
+    let referencePPM;
+    if (isFirstWater) {
+      // Get the previous stage in the sequence
+      const stageSequence: GrowStage[] = ['propagation', 'vegetative', 'budset', 'flower', 'lateflower', 'flush'];
+      const currentIndex = stageSequence.indexOf(selectedStage);
+      const previousStage = currentIndex > 0 ? stageSequence[currentIndex - 1] : selectedStage;
+      referencePPM = isPPM700 ? STAGE_DATA[previousStage].ppm700 : STAGE_DATA[previousStage].ppm500;
+    } else {
+      referencePPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    }
+    
+    if (lastFeedValue > referencePPM + 150) {
+      const multiplier = Math.min(lastFeedValue / referencePPM, 1.8);
       
+      // Update warning message to reflect first water context
       setTransitionWarning(`
 📌 Transition Warning – Luxury Uptake Detected:
-Your last feeding strength (${lastFeedValue} PPM) was significantly higher than the recommended PPM (${recommendedPPM}) for this stage.
+Your last feeding strength (${lastFeedValue} PPM) was significantly higher than the ${isFirstWater ? 'previous' : 'recommended'} stage's PPM (${referencePPM}).
 This often results in temporary deficiency-like symptoms as the plant adjusts to reduced nutrient availability.
 
 Adjustment Tip:
 Consider scaling this stage's strength to match your prior feeding ratio.
-If your previous feeding was ${multiplier.toFixed(2)}× recommended, you may want to feed this stage at the same ratio.
+If your previous feeding was ${multiplier.toFixed(2)}× ${isFirstWater ? 'the previous stage' : 'recommended'}, you may want to feed this stage at the same ratio.
 
 💡 Suggestion:
 Enable Luxury Uptake Mode to automatically match feed strength to your previous ratio.`);
@@ -762,7 +777,6 @@ Enable Luxury Uptake Mode to automatically match feed strength to your previous 
       }
     } else {
       setTransitionWarning(null);
-      // Reset to base multiplier if luxury uptake is enabled
       if (luxuryUptakeMode.enabled) {
         setLuxuryUptakeMode(prev => ({
           ...prev,
@@ -982,7 +996,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
   // Add effect to check luxury uptake conditions when relevant values change
   useEffect(() => {
     checkLuxuryUptakeConditions();
-  }, [lastFeedPPM, selectedStage, isPPM700]);
+  }, [lastFeedPPM, selectedStage, isPPM700, isFirstWater]);
 
   return (
     <div className="space-y-6">
@@ -1689,6 +1703,21 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           <p className="text-sm whitespace-pre-line">{transitionWarning}</p>
         </div>
       )}
+
+      {/* Add First Water toggle after Luxury Uptake toggle */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label>First Water of New Stage</Label>
+          <p className="text-sm text-dark-text-secondary">
+            Calculate feed ratio based on previous stage's recommended PPM
+          </p>
+        </div>
+        <Switch
+          checked={isFirstWater}
+          onCheckedChange={setIsFirstWater}
+          aria-label="Toggle first water of new stage"
+        />
+      </div>
     </div>
   );
 } 
