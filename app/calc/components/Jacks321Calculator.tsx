@@ -310,12 +310,18 @@ export default function Jacks321Calculator() {
     </TooltipProvider>
   );
 
-  // Add CO2 PPM modifier constants
+  // Add constants for PPM adjustments
+  const UNDERFEEDING_PPM_INCREASE = 150;
   const CO2_PPM_MODIFIER = 1.2; // 20% increase in PPM when CO2 enriched
+
+  // Helper function to convert between PPM scales
+  const convertPPM = (ppm: number, to700: boolean) => {
+    return to700 ? ppm * 1.4 : ppm / 1.4;
+  };
 
   // Calculate nutrient amounts based on stage, volume, and modifiers
   const calculateNutrients = (): NutrientCalculation => {
-    if (selectedStage === 'flush') {
+    if (selectedStage === 'flush' || shouldFlush()) {
       return {
         totalPPM: 0,
         finalPPM: parseInt(sourceWaterPPM)
@@ -328,9 +334,31 @@ export default function Jacks321Calculator() {
     const calculatedModifiers = calculateModifiers();
     
     // Calculate target PPM based on CO2 and PPM scale
-    let baseTargetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    let baseTargetPPM = stageData.ppm500; // Start with 500 scale
+    
+    // Apply CO2 enrichment if applicable
     if (isCO2Enriched && stageData.co2Max && baseTargetPPM < stageData.co2Max) {
       baseTargetPPM = Math.min(stageData.co2Max, Math.floor(baseTargetPPM * CO2_PPM_MODIFIER));
+    }
+
+    // Convert to 700 scale if needed
+    if (isPPM700) {
+      baseTargetPPM = convertPPM(baseTargetPPM, true);
+    }
+
+    // Check for underfeeding condition
+    const warnings = getSymptomWarnings(selectedSymptoms);
+    const isUnderfeeding = warnings.some(w => 
+      w.message.includes('Possible General Underfeeding') && 
+      !shouldFlush()
+    );
+
+    // Add PPM for underfeeding if detected
+    if (isUnderfeeding) {
+      const ppmIncrease = isPPM700 ? 
+        convertPPM(UNDERFEEDING_PPM_INCREASE, true) : 
+        UNDERFEEDING_PPM_INCREASE;
+      baseTargetPPM += ppmIncrease;
     }
     
     // Use custom target PPM if set, otherwise use calculated base target
@@ -383,13 +411,28 @@ export default function Jacks321Calculator() {
     return calc;
   };
 
-  // Update useEffect for targetPPM to include CO2 consideration
+  // Helper function to check if we should flush
+  const shouldFlush = (): boolean => {
+    const warnings = getSymptomWarnings(selectedSymptoms);
+    return warnings.some(w => 
+      w.type === 'flush' || 
+      w.type === 'conflict'
+    );
+  };
+
+  // Update useEffect for targetPPM to handle CO2 and PPM scale properly
   useEffect(() => {
     const stageData = STAGE_DATA[selectedStage];
-    let newTargetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    let newTargetPPM = stageData.ppm500; // Start with 500 scale
     
+    // Apply CO2 enrichment if applicable
     if (isCO2Enriched && stageData.co2Max && newTargetPPM < stageData.co2Max) {
       newTargetPPM = Math.min(stageData.co2Max, Math.floor(newTargetPPM * CO2_PPM_MODIFIER));
+    }
+
+    // Convert to 700 scale if needed
+    if (isPPM700) {
+      newTargetPPM = convertPPM(newTargetPPM, true);
     }
     
     setTargetPPM(newTargetPPM.toString());
