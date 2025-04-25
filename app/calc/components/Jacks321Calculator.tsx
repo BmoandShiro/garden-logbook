@@ -310,21 +310,90 @@ export default function Jacks321Calculator() {
     </TooltipProvider>
   );
 
-  // Update target PPM when stage changes
-  useEffect(() => {
-    const newTargetPPM = isPPM700 ? 
-      STAGE_DATA[selectedStage].ppm700.toString() : 
-      STAGE_DATA[selectedStage].ppm500.toString();
-    setTargetPPM(newTargetPPM);
-  }, [selectedStage, isPPM700]);
+  // Add CO2 PPM modifier constants
+  const CO2_PPM_MODIFIER = 1.2; // 20% increase in PPM when CO2 enriched
 
-  // Update target PPM when scale changes
+  // Calculate nutrient amounts based on stage, volume, and modifiers
+  const calculateNutrients = (): NutrientCalculation => {
+    if (selectedStage === 'flush') {
+      return {
+        totalPPM: 0,
+        finalPPM: parseInt(sourceWaterPPM)
+      };
+    }
+
+    const stageData = STAGE_DATA[selectedStage];
+    const volumeNum = parseFloat(volume);
+    const sourcePPMNum = parseInt(sourceWaterPPM);
+    const calculatedModifiers = calculateModifiers();
+    
+    // Calculate target PPM based on CO2 and PPM scale
+    let baseTargetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    if (isCO2Enriched && stageData.co2Max && baseTargetPPM < stageData.co2Max) {
+      baseTargetPPM = Math.min(stageData.co2Max, Math.floor(baseTargetPPM * CO2_PPM_MODIFIER));
+    }
+    
+    // Use custom target PPM if set, otherwise use calculated base target
+    const targetPPMNum = parseInt(targetPPM || baseTargetPPM.toString());
+    const nutrientPPM = targetPPMNum - sourcePPMNum;
+
+    // Calculate weighted PPM total and shares
+    let weightedPPM = 0;
+    const ppmShares: PPMAllocation = {};
+
+    if (stageData.ratios && stageData.ratios.length > 0) {
+      weightedPPM = stageData.ratios.reduce((total, { nutrient, ratio }) => {
+        const ppmPerGram = getPPMPerGram(nutrient);
+        return total + (ratio * ppmPerGram);
+      }, 0);
+
+      stageData.ratios.forEach(({ nutrient, ratio }) => {
+        const ppmPerGram = getPPMPerGram(nutrient);
+        const share = (ratio * ppmPerGram) / weightedPPM;
+        const nutrientKey = getNutrientKey(nutrient);
+        if (nutrientKey) {
+          ppmShares[nutrientKey] = share;
+        }
+      });
+    }
+
+    const calc: NutrientCalculation = {
+      totalPPM: 0,
+      finalPPM: sourcePPMNum
+    };
+
+    Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
+      if (share && share > 0) {
+        const allocatedPPM = nutrientPPM * share;
+        const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
+        const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
+        const modifier = 1 + (calculatedModifiers[nutrientKey as keyof SymptomModifier] || 0);
+        const adjustedGrams = baseGrams * modifier;
+        const nutrientAmount: NutrientAmount = {
+          grams: adjustedGrams,
+          ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
+        };
+
+        (calc as any)[nutrientKey] = nutrientAmount;
+        calc.totalPPM += nutrientAmount.ppmContribution;
+      }
+    });
+
+    calc.finalPPM = calc.totalPPM + sourcePPMNum;
+    return calc;
+  };
+
+  // Update useEffect for targetPPM to include CO2 consideration
   useEffect(() => {
-    const newTargetPPM = isPPM700 ? 
-      STAGE_DATA[selectedStage].ppm700.toString() : 
-      STAGE_DATA[selectedStage].ppm500.toString();
-    setTargetPPM(newTargetPPM);
-  }, [isPPM700]);
+    const stageData = STAGE_DATA[selectedStage];
+    let newTargetPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+    
+    if (isCO2Enriched && stageData.co2Max && newTargetPPM < stageData.co2Max) {
+      newTargetPPM = Math.min(stageData.co2Max, Math.floor(newTargetPPM * CO2_PPM_MODIFIER));
+    }
+    
+    setTargetPPM(newTargetPPM.toString());
+  }, [selectedStage, isPPM700, isCO2Enriched]);
 
   // Calculate pH warnings
   const getPHWarnings = (): string[] => {
@@ -541,72 +610,6 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
         ))}
       </div>
     );
-  };
-
-  // Calculate nutrient amounts based on stage, volume, and modifiers
-  const calculateNutrients = (): NutrientCalculation => {
-    if (selectedStage === 'flush') {
-      return {
-        totalPPM: 0,
-        finalPPM: parseInt(sourceWaterPPM)
-      };
-    }
-
-    const stageData = STAGE_DATA[selectedStage];
-    const volumeNum = parseFloat(volume);
-    const targetPPMNum = parseInt(targetPPM || '0');
-    const sourcePPMNum = parseInt(sourceWaterPPM);
-    const nutrientPPM = targetPPMNum - sourcePPMNum;
-    const modifiers = calculateModifiers();
-
-    // Calculate weighted PPM total and shares
-    let weightedPPM = 0;
-    const ppmShares: PPMAllocation = {};
-
-    if (stageData.ratios && stageData.ratios.length > 0) {
-      // Calculate total weighted PPM
-      weightedPPM = stageData.ratios.reduce((total, { nutrient, ratio }) => {
-        const ppmPerGram = getPPMPerGram(nutrient);
-        return total + (ratio * ppmPerGram);
-      }, 0);
-
-      // Calculate PPM shares
-      stageData.ratios.forEach(({ nutrient, ratio }) => {
-        const ppmPerGram = getPPMPerGram(nutrient);
-        const share = (ratio * ppmPerGram) / weightedPPM;
-        const nutrientKey = getNutrientKey(nutrient);
-        if (nutrientKey) {
-          ppmShares[nutrientKey] = share;
-        }
-      });
-    }
-
-    // Initialize calculation result
-    const calc: NutrientCalculation = {
-      totalPPM: 0,
-      finalPPM: sourcePPMNum
-    };
-
-    // Calculate grams and PPM for each nutrient
-    Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
-      if (share && share > 0) {
-        const allocatedPPM = nutrientPPM * share;
-        const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
-        const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
-        const modifier = 1 + (modifiers[nutrientKey as keyof SymptomModifier] || 0);
-        const adjustedGrams = baseGrams * modifier;
-        const nutrientAmount: NutrientAmount = {
-          grams: adjustedGrams,
-          ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
-        };
-
-        (calc as any)[nutrientKey] = nutrientAmount;
-        calc.totalPPM += nutrientAmount.ppmContribution;
-      }
-    });
-
-    calc.finalPPM = calc.totalPPM + sourcePPMNum;
-    return calc;
   };
 
   // Helper function to get PPM per gram for a nutrient
