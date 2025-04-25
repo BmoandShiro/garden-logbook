@@ -99,19 +99,48 @@ interface SymptomModifier {
   finish?: number;
 }
 
-const SYMPTOM_MODIFIERS: Record<NutrientSymptom, SymptomModifier> = {
-  [NutrientSymptom.N_DEFICIENCY]: { partA: 0.1, partB: 0.15 },
+// Add new interfaces and types for symptom handling
+interface SymptomAdjustment {
+  partA?: number;
+  partB?: number;
+  epsom?: number;
+  bloom?: number;
+  finish?: number;
+  warning?: string;
+}
+
+interface Warning {
+  message: string;
+  priority: number; // 1 = highest, 5 = lowest
+  type: 'flush' | 'conflict' | 'severe' | 'antagonism' | 'notice';
+}
+
+// Update the symptom modifiers with the new values
+const SYMPTOM_MODIFIERS: Record<NutrientSymptom, SymptomAdjustment> = {
+  [NutrientSymptom.N_DEFICIENCY]: { partB: 0.15 },
   [NutrientSymptom.P_DEFICIENCY]: { partA: 0.15 },
-  [NutrientSymptom.K_DEFICIENCY]: { partA: 0.2 },
+  [NutrientSymptom.K_DEFICIENCY]: { partA: 0.15 },
   [NutrientSymptom.CA_DEFICIENCY]: { partB: 0.15 },
-  [NutrientSymptom.MG_DEFICIENCY]: { epsom: 0.2 },
-  [NutrientSymptom.S_DEFICIENCY]: { epsom: 0.15 },
-  [NutrientSymptom.FE_DEFICIENCY]: { partA: 0.1 },
-  [NutrientSymptom.N_TOXICITY]: { partA: -0.15, partB: -0.2 },
-  [NutrientSymptom.P_TOXICITY]: { partA: -0.2 },
-  [NutrientSymptom.K_TOXICITY]: { partA: -0.15 },
-  [NutrientSymptom.CA_TOXICITY]: { partB: -0.15 },
-  [NutrientSymptom.MG_TOXICITY]: { epsom: -0.2 }
+  [NutrientSymptom.MG_DEFICIENCY]: { epsom: 0.20 },
+  [NutrientSymptom.S_DEFICIENCY]: { epsom: 0.10 },
+  [NutrientSymptom.FE_DEFICIENCY]: { partA: 0.10 },
+  [NutrientSymptom.N_TOXICITY]: { partB: -0.20 },
+  [NutrientSymptom.P_TOXICITY]: { 
+    partA: -0.20,
+    warning: "⚠️ High phosphorus can lock out Fe, Mg, Zn, and Ca."
+  },
+  [NutrientSymptom.K_TOXICITY]: { 
+    partA: -0.15,
+    warning: "⚠️ Excess potassium can lock out Mg, Ca, and Zn."
+  },
+  [NutrientSymptom.CA_TOXICITY]: { 
+    partB: -0.15,
+    warning: "⚠️ Excess calcium can lock out Mg, K, Mn, and Fe."
+  },
+  [NutrientSymptom.MG_TOXICITY]: { 
+    epsom: -0.15,
+    warning: "⚠️ Excess magnesium may inhibit calcium and potassium uptake."
+  }
 };
 
 interface StageData {
@@ -370,7 +399,86 @@ export default function Jacks321Calculator() {
     return warnings;
   };
 
-  // Calculate nutrient modifiers based on symptoms
+  // Add helper functions for symptom processing
+  const getSymptomWarnings = (selectedSymptoms: NutrientSymptom[]): Warning[] => {
+    const warnings: Warning[] = [];
+    
+    // Check for conflicts (deficiency + toxicity of same nutrient)
+    const hasNitrogenConflict = selectedSymptoms.includes(NutrientSymptom.N_DEFICIENCY) && 
+                               selectedSymptoms.includes(NutrientSymptom.N_TOXICITY);
+    const hasPhosphorusConflict = selectedSymptoms.includes(NutrientSymptom.P_DEFICIENCY) && 
+                                   selectedSymptoms.includes(NutrientSymptom.P_TOXICITY);
+    const hasPotassiumConflict = selectedSymptoms.includes(NutrientSymptom.K_DEFICIENCY) && 
+                                    selectedSymptoms.includes(NutrientSymptom.K_TOXICITY);
+    const hasCalciumConflict = selectedSymptoms.includes(NutrientSymptom.CA_DEFICIENCY) && 
+                                  selectedSymptoms.includes(NutrientSymptom.CA_TOXICITY);
+    const hasMagnesiumConflict = selectedSymptoms.includes(NutrientSymptom.MG_DEFICIENCY) && 
+                                    selectedSymptoms.includes(NutrientSymptom.MG_TOXICITY);
+
+    if (hasNitrogenConflict || hasPhosphorusConflict || hasPotassiumConflict || 
+        hasCalciumConflict || hasMagnesiumConflict) {
+      warnings.push({
+        message: `⚠️ Conflicting Symptom Detected:
+Both toxicity and deficiency symptoms selected for the same nutrient.
+This often indicates pH imbalance, root health issues, salt buildup, or nutrient antagonism.
+Recommended Action:
+Perform a full flush with pH-balanced water, followed immediately by a refeed at your target PPM using a clean, balanced nutrient solution.
+Verify root zone pH and EC runoff after flushing to ensure healthy conditions.`,
+        priority: 1,
+        type: 'conflict'
+      });
+    }
+
+    // Check for severe toxicity (multiple toxicities selected)
+    const toxicityCount = selectedSymptoms.filter(s => s.includes('Toxicity')).length;
+    if (toxicityCount >= 3) {
+      warnings.push({
+        message: `⚠️ Severe Toxicity Detected:
+Nutrient toxicity may be causing widespread lockout.
+A full flush is recommended before adjusting feed.`,
+        priority: 1,
+        type: 'flush'
+      });
+    }
+
+    // Check for general underfeeding
+    const deficiencyCount = selectedSymptoms.filter(s => s.includes('Deficiency')).length;
+    if (deficiencyCount >= 3) {
+      warnings.push({
+        message: `⚠️ Possible General Underfeeding:
+Multiple major deficiencies detected.
+Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient ratios.`,
+        priority: 3,
+        type: 'severe'
+      });
+    }
+
+    // Add antagonism warnings
+    selectedSymptoms.forEach(symptom => {
+      const modifier = SYMPTOM_MODIFIERS[symptom];
+      if (modifier.warning) {
+        warnings.push({
+          message: modifier.warning,
+          priority: 4,
+          type: 'antagonism'
+        });
+      }
+    });
+
+    // Special case: Iron deficiency + Phosphorus toxicity
+    if (selectedSymptoms.includes(NutrientSymptom.FE_DEFICIENCY) && 
+        selectedSymptoms.includes(NutrientSymptom.P_TOXICITY)) {
+      warnings.push({
+        message: "⚠️ Iron deficiency may be due to high phosphorus levels.",
+        priority: 4,
+        type: 'antagonism'
+      });
+    }
+
+    return warnings.sort((a, b) => a.priority - b.priority);
+  };
+
+  // Update the calculate modifiers function
   const calculateModifiers = (): SymptomModifier => {
     const modifiers: SymptomModifier = {
       partA: 0,
@@ -382,24 +490,57 @@ export default function Jacks321Calculator() {
 
     // Apply root size modifier first
     if (isSmallRoots) {
-      const rootSizeModifier = ROOT_SIZE_MODIFIERS[RootSize.SMALL] - 1; // Convert to percentage modifier
+      const rootSizeModifier = -0.15; // -15% for small roots
       Object.keys(modifiers).forEach(key => {
         modifiers[key as keyof SymptomModifier] = rootSizeModifier;
       });
     }
 
-    // Apply symptom modifiers
-    selectedSymptoms.forEach(symptom => {
-      const symptomMod = SYMPTOM_MODIFIERS[symptom];
-      Object.entries(symptomMod).forEach(([key, value]) => {
-        const nutrientKey = key as keyof SymptomModifier;
-        modifiers[nutrientKey] = Math.min(0.25, Math.max(-0.3, 
-          (modifiers[nutrientKey] || 0) + (value || 0)
-        ));
+    // Get all warnings
+    const warnings = getSymptomWarnings(selectedSymptoms);
+    const shouldFlush = warnings.some(w => w.type === 'flush');
+    
+    if (!shouldFlush) {
+      // Apply symptom modifiers if not flushing
+      selectedSymptoms.forEach(symptom => {
+        const symptomMod = SYMPTOM_MODIFIERS[symptom];
+        Object.entries(symptomMod).forEach(([key, value]) => {
+          if (key !== 'warning' && typeof value === 'number') {
+            const nutrientKey = key as keyof SymptomModifier;
+            // Cap adjustments at ±30%
+            modifiers[nutrientKey] = Math.min(0.30, Math.max(-0.30, 
+              (modifiers[nutrientKey] || 0) + value
+            ));
+          }
+        });
       });
-    });
+    }
 
     return modifiers;
+  };
+
+  // Update the component to display warnings
+  const SymptomWarnings: React.FC<{ warnings: Warning[] }> = ({ warnings }) => {
+    if (warnings.length === 0) return null;
+
+    return (
+      <div className="space-y-2">
+        {warnings.map((warning, index) => (
+          <div 
+            key={index} 
+            className={`p-3 rounded ${
+              warning.type === 'flush' || warning.type === 'conflict'
+                ? 'bg-red-900/20 border border-red-900/30'
+                : warning.type === 'severe'
+                ? 'bg-yellow-900/20 border border-yellow-900/30'
+                : 'bg-dark-bg-secondary border border-dark-border'
+            }`}
+          >
+            <p className="text-sm whitespace-pre-line">{warning.message}</p>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // Calculate nutrient amounts based on stage, volume, and modifiers
@@ -906,7 +1047,7 @@ export default function Jacks321Calculator() {
                 )}
 
                 {/* Symptom Selection */}
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label>Nutrient Symptoms</Label>
                   <div className="space-y-1">
                     {Object.values(NutrientSymptom)
@@ -947,23 +1088,29 @@ export default function Jacks321Calculator() {
                         </div>
                       ))}
                   </div>
-                </div>
 
-                {selectedSymptoms.length > 0 && (
-                  <div className="p-3 rounded bg-dark-bg-secondary border border-dark-border">
-                    <h4 className="text-sm font-medium mb-2">Applied Modifiers</h4>
-                    <div className="space-y-1">
-                      {Object.entries(calculateModifiers()).map(([key, value]) => (
-                        value !== 0 && (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span>{key}</span>
-                            <span>{(value * 100).toFixed(1)}%</span>
-                          </div>
-                        )
-                      ))}
+                  {/* Display Warnings */}
+                  <SymptomWarnings warnings={getSymptomWarnings(selectedSymptoms)} />
+
+                  {/* Display Active Modifiers */}
+                  {selectedSymptoms.length > 0 && (
+                    <div className="p-3 rounded bg-dark-bg-secondary border border-dark-border">
+                      <h4 className="text-sm font-medium mb-2">Applied Modifiers</h4>
+                      <div className="space-y-1">
+                        {Object.entries(calculateModifiers()).map(([key, value]) => (
+                          value !== 0 && (
+                            <div key={key} className="flex justify-between text-sm">
+                              <span>{key}</span>
+                              <span className={value > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                                {(value * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                          )
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {lastFeedPPM && runoffPPM && (
                   <div className="p-3 rounded bg-dark-bg-primary border border-dark-border">
