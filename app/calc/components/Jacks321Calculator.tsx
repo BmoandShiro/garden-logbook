@@ -326,7 +326,36 @@ export default function Jacks321Calculator() {
     return isPPM700 ? Math.round(convertPPM(co2Max, true)).toString() : co2Max.toString();
   };
 
-  // Calculate nutrient amounts based on stage, volume, and modifiers
+  // Update useEffect for targetPPM to handle underfeeding
+  useEffect(() => {
+    const stageData = STAGE_DATA[selectedStage];
+    let newTargetPPM = stageData.ppm500; // Start with 500 scale
+    
+    // Check for underfeeding first
+    const warnings = getSymptomWarnings(selectedSymptoms);
+    const isUnderfeeding = warnings.some(w => 
+      w.message.includes('Possible General Underfeeding')
+    );
+
+    // Add underfeeding increase if needed (before CO2 and scale conversion)
+    if (isUnderfeeding) {
+      newTargetPPM += UNDERFEEDING_PPM_INCREASE;
+    }
+    
+    // Apply CO2 enrichment if applicable
+    if (isCO2Enriched && stageData.co2Max && newTargetPPM < stageData.co2Max) {
+      newTargetPPM = Math.min(stageData.co2Max, Math.floor(newTargetPPM * CO2_PPM_MODIFIER));
+    }
+
+    // Convert to 700 scale if needed
+    if (isPPM700) {
+      newTargetPPM = convertPPM(newTargetPPM, true);
+    }
+    
+    setTargetPPM(newTargetPPM.toString());
+  }, [selectedStage, isPPM700, isCO2Enriched, selectedSymptoms]);
+
+  // Update calculateNutrients to use the modified target PPM
   const calculateNutrients = (): NutrientCalculation => {
     if (selectedStage === 'flush' || shouldFlush()) {
       return {
@@ -338,38 +367,9 @@ export default function Jacks321Calculator() {
     const stageData = STAGE_DATA[selectedStage];
     const volumeNum = parseFloat(volume);
     const sourcePPMNum = parseInt(sourceWaterPPM);
-    const calculatedModifiers = calculateModifiers();
     
-    // Calculate target PPM based on CO2 and PPM scale
-    let baseTargetPPM = stageData.ppm500; // Start with 500 scale
-    
-    // Apply CO2 enrichment if applicable
-    if (isCO2Enriched && stageData.co2Max && baseTargetPPM < stageData.co2Max) {
-      baseTargetPPM = Math.min(stageData.co2Max, Math.floor(baseTargetPPM * CO2_PPM_MODIFIER));
-    }
-
-    // Convert to 700 scale if needed
-    if (isPPM700) {
-      baseTargetPPM = convertPPM(baseTargetPPM, true);
-    }
-
-    // Check for underfeeding condition
-    const warnings = getSymptomWarnings(selectedSymptoms);
-    const isUnderfeeding = warnings.some(w => 
-      w.message.includes('Possible General Underfeeding') && 
-      !shouldFlush()
-    );
-
-    // Add PPM for underfeeding if detected
-    if (isUnderfeeding) {
-      const ppmIncrease = isPPM700 ? 
-        convertPPM(UNDERFEEDING_PPM_INCREASE, true) : 
-        UNDERFEEDING_PPM_INCREASE;
-      baseTargetPPM += ppmIncrease;
-    }
-    
-    // Use custom target PPM if set, otherwise use calculated base target
-    const targetPPMNum = parseInt(targetPPM || baseTargetPPM.toString());
+    // Use the target PPM that's already been adjusted for underfeeding if applicable
+    const targetPPMNum = parseInt(targetPPM || stageData.ppm500.toString());
     const nutrientPPM = targetPPMNum - sourcePPMNum;
 
     // Calculate weighted PPM total and shares
@@ -397,13 +397,19 @@ export default function Jacks321Calculator() {
       finalPPM: sourcePPMNum
     };
 
+    // Check for underfeeding to determine if we should apply other modifiers
+    const warnings = getSymptomWarnings(selectedSymptoms);
+    const isUnderfeeding = warnings.some(w => 
+      w.message.includes('Possible General Underfeeding')
+    );
+
     Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
       if (share && share > 0) {
         const allocatedPPM = nutrientPPM * share;
         const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
         const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
-        // Only apply modifiers if not underfeeding
-        const modifier = isUnderfeeding ? 1 : 1 + (calculatedModifiers[nutrientKey as keyof SymptomModifier] || 0);
+        // Only apply symptom modifiers if not underfeeding
+        const modifier = isUnderfeeding ? 1 : 1 + (calculateModifiers()[nutrientKey as keyof SymptomModifier] || 0);
         const adjustedGrams = baseGrams * modifier;
         const nutrientAmount: NutrientAmount = {
           grams: adjustedGrams,
@@ -427,24 +433,6 @@ export default function Jacks321Calculator() {
       w.type === 'conflict'
     );
   };
-
-  // Update useEffect for targetPPM to handle CO2 and PPM scale properly
-  useEffect(() => {
-    const stageData = STAGE_DATA[selectedStage];
-    let newTargetPPM = stageData.ppm500; // Start with 500 scale
-    
-    // Apply CO2 enrichment if applicable
-    if (isCO2Enriched && stageData.co2Max && newTargetPPM < stageData.co2Max) {
-      newTargetPPM = Math.min(stageData.co2Max, Math.floor(newTargetPPM * CO2_PPM_MODIFIER));
-    }
-
-    // Convert to 700 scale if needed
-    if (isPPM700) {
-      newTargetPPM = convertPPM(newTargetPPM, true);
-    }
-    
-    setTargetPPM(newTargetPPM.toString());
-  }, [selectedStage, isPPM700, isCO2Enriched]);
 
   // Calculate pH warnings
   const getPHWarnings = (): string[] => {
@@ -523,7 +511,7 @@ export default function Jacks321Calculator() {
   const getSymptomWarnings = (selectedSymptoms: NutrientSymptom[]): Warning[] => {
     const warnings: Warning[] = [];
     
-    // Check for conflicts (deficiency + toxicity of same nutrient)
+    // Check for conflicts first
     const hasNitrogenConflict = selectedSymptoms.includes(NutrientSymptom.N_DEFICIENCY) && 
                                selectedSymptoms.includes(NutrientSymptom.N_TOXICITY);
     const hasPhosphorusConflict = selectedSymptoms.includes(NutrientSymptom.P_DEFICIENCY) && 
@@ -535,8 +523,10 @@ export default function Jacks321Calculator() {
     const hasMagnesiumConflict = selectedSymptoms.includes(NutrientSymptom.MG_DEFICIENCY) && 
                                     selectedSymptoms.includes(NutrientSymptom.MG_TOXICITY);
 
-    if (hasNitrogenConflict || hasPhosphorusConflict || hasPotassiumConflict || 
-        hasCalciumConflict || hasMagnesiumConflict) {
+    const hasConflicts = hasNitrogenConflict || hasPhosphorusConflict || hasPotassiumConflict || 
+                        hasCalciumConflict || hasMagnesiumConflict;
+
+    if (hasConflicts) {
       warnings.push({
         message: `⚠️ Conflicting Symptom Detected:
 Both toxicity and deficiency symptoms selected for the same nutrient.
@@ -547,9 +537,10 @@ Verify root zone pH and EC runoff after flushing to ensure healthy conditions.`,
         priority: 1,
         type: 'conflict'
       });
+      return warnings; // Return early if conflicts exist
     }
 
-    // Check for severe toxicity (multiple toxicities selected)
+    // Check for severe toxicity
     const toxicityCount = selectedSymptoms.filter(s => s.includes('Toxicity')).length;
     if (toxicityCount >= 3) {
       warnings.push({
@@ -559,15 +550,16 @@ A full flush is recommended before adjusting feed.`,
         priority: 1,
         type: 'flush'
       });
+      return warnings; // Return early if severe toxicity
     }
 
-    // Check for general underfeeding
+    // Only check for underfeeding if no conflicts or severe toxicity
     const deficiencyCount = selectedSymptoms.filter(s => s.includes('Deficiency')).length;
     if (deficiencyCount >= 3) {
       warnings.push({
         message: `⚠️ Possible General Underfeeding:
 Multiple major deficiencies detected.
-Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient ratios.`,
+Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.`,
         priority: 3,
         type: 'severe'
       });
@@ -584,16 +576,6 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
         });
       }
     });
-
-    // Special case: Iron deficiency + Phosphorus toxicity
-    if (selectedSymptoms.includes(NutrientSymptom.FE_DEFICIENCY) && 
-        selectedSymptoms.includes(NutrientSymptom.P_TOXICITY)) {
-      warnings.push({
-        message: "⚠️ Iron deficiency may be due to high phosphorus levels.",
-        priority: 4,
-        type: 'antagonism'
-      });
-    }
 
     return warnings.sort((a, b) => a.priority - b.priority);
   };
@@ -717,6 +699,12 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
     targetPPM,
     selectedSymptoms
   ]);
+
+  // Calculate if we're in an underfeeding state
+  const isUnderfeeding = useMemo(() => {
+    const warnings = getSymptomWarnings(selectedSymptoms);
+    return warnings.some(w => w.message.includes('Possible General Underfeeding'));
+  }, [selectedSymptoms]);
 
   return (
     <div className="space-y-6">
@@ -1158,7 +1146,7 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
                   <SymptomWarnings warnings={getSymptomWarnings(selectedSymptoms)} />
 
                   {/* Display Active Modifiers */}
-                  {selectedSymptoms.length > 0 && (
+                  {selectedSymptoms.length > 0 && !isUnderfeeding && (
                     <div className="p-3 rounded bg-dark-bg-secondary border border-dark-border">
                       <h4 className="text-sm font-medium mb-2">Applied Modifiers</h4>
                       <div className="space-y-1">
