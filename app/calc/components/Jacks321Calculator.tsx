@@ -974,6 +974,14 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
                   </div>
                 </div>
 
+                {isSmallRoots && (
+                  <div className="mt-4 p-3 rounded bg-dark-bg-secondary border border-dark-border">
+                    <p className="text-sm">
+                      ℹ️ Amounts reduced to {ROOT_SIZE_MODIFIERS[RootSize.SMALL] * 100}% for small root ball
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="lastFeedPPM">Last Feed PPM</Label>
@@ -1037,12 +1045,15 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
                   </div>
                 </div>
 
-                {/* pH Warnings */}
-                {getPHWarnings().length > 0 && (
+                {/* pH and Runoff Warnings */}
+                {(getPHWarnings().length > 0 || (lastFeedPPM && runoffPPM)) && (
                   <div className="p-3 rounded bg-yellow-900/20 border border-yellow-900/30">
                     {getPHWarnings().map((warning, index) => (
                       <p key={index} className="text-sm">{warning}</p>
                     ))}
+                    {lastFeedPPM && runoffPPM && (
+                      <p className="text-sm">{getRunoffWarning()}</p>
+                    )}
                   </div>
                 )}
 
@@ -1111,20 +1122,6 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
                     </div>
                   )}
                 </div>
-
-                {lastFeedPPM && runoffPPM && (
-                  <div className="p-3 rounded bg-dark-bg-primary border border-dark-border">
-                    <p className="text-sm">{getRunoffWarning()}</p>
-                  </div>
-                )}
-
-                {isSmallRoots && (
-                  <div className="mt-4 p-3 rounded bg-dark-bg-secondary border border-dark-border">
-                    <p className="text-sm">
-                      ℹ️ Amounts reduced to {ROOT_SIZE_MODIFIERS[RootSize.SMALL] * 100}% for small root ball
-                    </p>
-                  </div>
-                )}
               </div>
             </AccordionContent>
           </AccordionItem>
