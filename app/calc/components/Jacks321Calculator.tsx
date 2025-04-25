@@ -424,6 +424,15 @@ interface LuxuryUptakeState {
   warning?: string;
 }
 
+// Add new interface for PPM adjustment tracking
+interface PPMAdjustment {
+  baseTargetPPM: number;
+  luxuryScaledPPM?: number;
+  underfeedingPPM?: number;
+  finalTargetPPM: number;
+  luxuryRatio?: number;
+}
+
 export default function Jacks321Calculator() {
   // Core state
   const [selectedStage, setSelectedStage] = useState<GrowStage>('vegetative');
@@ -448,7 +457,13 @@ export default function Jacks321Calculator() {
 
   // Add state for transition warnings
   const [transitionWarning, setTransitionWarning] = useState<string | null>(null);
-  
+
+  // Add state for PPM adjustment tracking
+  const [ppmAdjustments, setPPMAdjustments] = useState<PPMAdjustment>({
+    baseTargetPPM: 0,
+    finalTargetPPM: 0
+  });
+
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
     <TooltipProvider>
@@ -479,41 +494,55 @@ export default function Jacks321Calculator() {
     return isPPM700 ? Math.round(convertPPM(co2Max, true)).toString() : co2Max.toString();
   };
 
-  // Update useEffect for targetPPM to handle underfeeding
+  // Helper function to format PPM progression
+  const formatPPMProgression = (adj: PPMAdjustment): string => {
+    const parts = [adj.baseTargetPPM.toString()];
+    if (adj.luxuryScaledPPM) {
+      parts.push(adj.luxuryScaledPPM.toString());
+    }
+    if (adj.underfeedingPPM) {
+      parts.push(adj.underfeedingPPM.toString());
+    }
+    return parts.join(' → ');
+  };
+
+  // Update useEffect for targetPPM to handle luxury uptake first
   useEffect(() => {
     const stageData = STAGE_DATA[selectedStage];
-    let newTargetPPM = stageData.ppm500; // Start with 500 scale
+    let basePPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
     
-    // Check for underfeeding first
+    // Step 1: Apply luxury uptake if enabled
+    if (luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 && 
+        selectedStage !== 'propagation' && selectedStage !== 'flush') {
+      basePPM = Math.floor(basePPM * luxuryUptakeMode.multiplier);
+    }
+
+    // Step 2: Apply CO2 enrichment if applicable
+    if (isCO2Enriched && stageData.co2Max && basePPM < stageData.co2Max) {
+      basePPM = Math.min(stageData.co2Max, Math.floor(basePPM * CO2_PPM_MODIFIER));
+    }
+
+    // Step 3: Check for underfeeding
     const warnings = getSymptomWarnings(selectedSymptoms);
-    const isUnderfeeding = warnings.some(w => 
-      w.message.includes('Possible General Underfeeding')
+    const isUnderfeeding = warnings.some(warning => 
+      warning.message.includes('Possible General Underfeeding')
     );
 
-    // Add underfeeding increase if needed (before CO2 and scale conversion)
     if (isUnderfeeding) {
-      newTargetPPM += UNDERFEEDING_PPM_INCREASE;
-    }
-    
-    // Apply CO2 enrichment if applicable
-    if (isCO2Enriched && stageData.co2Max && newTargetPPM < stageData.co2Max) {
-      newTargetPPM = Math.min(stageData.co2Max, Math.floor(newTargetPPM * CO2_PPM_MODIFIER));
+      basePPM += UNDERFEEDING_PPM_INCREASE;
     }
 
-    // Apply luxury uptake multiplier if enabled
-    if (luxuryUptakeMode.enabled && selectedStage !== 'propagation' && selectedStage !== 'flush') {
-      newTargetPPM = Math.floor(newTargetPPM * luxuryUptakeMode.multiplier);
-    }
-
-    // Convert to 700 scale if needed
-    if (isPPM700) {
-      newTargetPPM = convertPPM(newTargetPPM, true);
-    }
-    
-    setTargetPPM(newTargetPPM.toString());
+    setTargetPPM(basePPM.toString());
+    setPPMAdjustments({
+      baseTargetPPM: isPPM700 ? stageData.ppm700 : stageData.ppm500,
+      finalTargetPPM: basePPM,
+      underfeedingPPM: isUnderfeeding ? basePPM : undefined,
+      luxuryScaledPPM: luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 ? 
+        Math.floor((isPPM700 ? stageData.ppm700 : stageData.ppm500) * luxuryUptakeMode.multiplier) : undefined
+    });
   }, [selectedStage, isPPM700, isCO2Enriched, selectedSymptoms, luxuryUptakeMode]);
 
-  // Update calculateNutrients to use the modified target PPM
+  // Update calculateNutrients to use the already-adjusted target PPM
   const calculateNutrients = (): NutrientCalculation => {
     if (selectedStage === 'flush' || shouldFlush()) {
       return {
@@ -525,9 +554,9 @@ export default function Jacks321Calculator() {
     const stageData = STAGE_DATA[selectedStage];
     const volumeNum = parseFloat(volume);
     const sourcePPMNum = parseInt(sourceWaterPPM);
+    const targetPPMNum = parseInt(targetPPM);
     
-    // Use the target PPM that's already been adjusted for underfeeding if applicable
-    const targetPPMNum = parseInt(targetPPM || stageData.ppm500.toString());
+    // Calculate nutrient PPM (target PPM already includes luxury uptake if enabled)
     const nutrientPPM = targetPPMNum - sourcePPMNum;
 
     // Calculate weighted PPM total and shares
@@ -555,10 +584,10 @@ export default function Jacks321Calculator() {
       finalPPM: sourcePPMNum
     };
 
-    // Check for underfeeding to determine if we should apply other modifiers
+    // Check for underfeeding
     const warnings = getSymptomWarnings(selectedSymptoms);
-    const isUnderfeeding = warnings.some(w => 
-      w.message.includes('Possible General Underfeeding')
+    const isUnderfeeding = warnings.some(warning => 
+      warning.message.includes('Possible General Underfeeding')
     );
 
     Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
@@ -566,9 +595,11 @@ export default function Jacks321Calculator() {
         const allocatedPPM = nutrientPPM * share;
         const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
         const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
+        
         // Only apply symptom modifiers if not underfeeding
         const modifier = isUnderfeeding ? 1 : 1 + (calculateModifiers()[nutrientKey as keyof SymptomModifier] || 0);
         const adjustedGrams = baseGrams * modifier;
+        
         const nutrientAmount: NutrientAmount = {
           grams: adjustedGrams,
           ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
@@ -693,9 +724,10 @@ Proceed cautiously. Use external supplements or wait for new growth before adjus
     return warnings;
   };
 
-  // Add function to check for luxury uptake conditions
+  // Update luxury uptake conditions check
   const checkLuxuryUptakeConditions = () => {
     if (!lastFeedPPM || selectedStage === 'propagation' || selectedStage === 'flush') {
+      setTransitionWarning(null);
       return;
     }
 
@@ -704,10 +736,10 @@ Proceed cautiously. Use external supplements or wait for new growth before adjus
     const recommendedPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
     
     if (lastFeedValue > recommendedPPM + 150) {
-      const multiplier = lastFeedValue / recommendedPPM;
+      const multiplier = Math.min(lastFeedValue / recommendedPPM, 1.8);
       
       setTransitionWarning(`
-📌 Transition Warning – Luxury Uptake Shock:
+📌 Transition Warning – Luxury Uptake Detected:
 Your last feeding strength (${lastFeedValue} PPM) was significantly higher than the recommended PPM (${recommendedPPM}) for this stage.
 This often results in temporary deficiency-like symptoms as the plant adjusts to reduced nutrient availability.
 
@@ -718,19 +750,26 @@ If your previous feeding was ${multiplier.toFixed(2)}× recommended, you may wan
 💡 Suggestion:
 Enable Luxury Uptake Mode to automatically match feed strength to your previous ratio.`);
 
-      // Update luxury uptake state
+      // Update luxury uptake state if enabled
       if (luxuryUptakeMode.enabled) {
-        const newMultiplier = Math.min(multiplier, 1.8); // Cap at 1.8x
         setLuxuryUptakeMode({
           enabled: true,
-          multiplier: newMultiplier,
-          warning: newMultiplier >= 1.8 ? 
+          multiplier: multiplier,
+          warning: multiplier >= 1.8 ? 
             'Warning: High feed ratio detected. Monitor runoff EC and plant response carefully.' : 
             undefined
         });
       }
     } else {
       setTransitionWarning(null);
+      // Reset to base multiplier if luxury uptake is enabled
+      if (luxuryUptakeMode.enabled) {
+        setLuxuryUptakeMode(prev => ({
+          ...prev,
+          multiplier: 1,
+          warning: undefined
+        }));
+      }
     }
   };
 
@@ -1327,13 +1366,21 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 </div>
 
                 {/* pH and Runoff Warnings */}
-                {(getPHWarnings().length > 0 || (lastFeedPPM && runoffPPM)) && (
+                {(getPHWarnings().length > 0 || (lastFeedPPM && runoffPPM) || 
+                  (lastFeedPPM && parseInt(lastFeedPPM) > (isPPM700 ? STAGE_DATA[selectedStage].ppm700 : STAGE_DATA[selectedStage].ppm500) + 150)) && (
                   <div className="p-3 rounded bg-yellow-900/20 border border-yellow-900/30">
                     {getPHWarnings().map((warning, index) => (
                       <p key={index} className="text-sm">{warning}</p>
                     ))}
                     {lastFeedPPM && runoffPPM && (
                       <p className="text-sm">{getRunoffWarning()}</p>
+                    )}
+                    {lastFeedPPM && parseInt(lastFeedPPM) > (isPPM700 ? STAGE_DATA[selectedStage].ppm700 : STAGE_DATA[selectedStage].ppm500) + 150 && (
+                      <p className="text-sm">
+                        ⚠️ Luxury Uptake Detected:
+                        Your last feed may exceed this stage's recommended strength.
+                        📌 See full warning at bottom of page.
+                      </p>
                     )}
                   </div>
                 )}
@@ -1433,8 +1480,20 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               <h3 className="text-lg font-medium mb-2">
                 Nutrient Mix for {volume} gallons
               </h3>
+
+              {/* Luxury Uptake Badge */}
+              {luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 && (
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-900/20 border border-yellow-900/30 rounded text-sm mb-2">
+                  <span>🔄</span>
+                  <span>Luxury Uptake: {(luxuryUptakeMode.multiplier * 100).toFixed(0)}%</span>
+                </div>
+              )}
+
               <p className="text-sm text-dark-text-secondary">
                 Target PPM ({isPPM700 ? '700' : '500'}): {targetPPM}
+                {luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 && (
+                  <span> → {Math.floor(parseInt(targetPPM) * luxuryUptakeMode.multiplier)}</span>
+                )}
               </p>
             </div>
 
@@ -1591,10 +1650,21 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           </div>
           <Switch
             checked={luxuryUptakeMode.enabled}
-            onCheckedChange={(checked) => setLuxuryUptakeMode(prev => ({ 
-              ...prev, 
-              enabled: checked 
-            }))}
+            onCheckedChange={(checked) => {
+              const lastFeedValue = parseInt(lastFeedPPM);
+              const stageData = STAGE_DATA[selectedStage];
+              const recommendedPPM = isPPM700 ? stageData.ppm700 : stageData.ppm500;
+              const multiplier = lastFeedValue && recommendedPPM ? 
+                Math.min(lastFeedValue / recommendedPPM, 1.8) : 1;
+
+              setLuxuryUptakeMode({
+                enabled: checked,
+                multiplier: checked && multiplier > 1 ? multiplier : 1,
+                warning: multiplier >= 1.8 ? 
+                  'Warning: High feed ratio detected. Monitor runoff EC and plant response carefully.' : 
+                  undefined
+              });
+            }}
             aria-label="Toggle luxury uptake mode"
           />
         </div>
