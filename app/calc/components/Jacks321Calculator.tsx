@@ -311,12 +311,19 @@ export default function Jacks321Calculator() {
   );
 
   // Add constants for PPM adjustments
-  const UNDERFEEDING_PPM_INCREASE = 150;
+  const UNDERFEEDING_PPM_INCREASE = 200;
   const CO2_PPM_MODIFIER = 1.2; // 20% increase in PPM when CO2 enriched
 
   // Helper function to convert between PPM scales
   const convertPPM = (ppm: number, to700: boolean) => {
     return to700 ? ppm * 1.4 : ppm / 1.4;
+  };
+
+  // Helper function to get CO2 max for display
+  const getDisplayCO2Max = (stage: GrowStage): string => {
+    const co2Max = STAGE_DATA[stage].co2Max;
+    if (!co2Max) return '—';
+    return isPPM700 ? Math.round(convertPPM(co2Max, true)).toString() : co2Max.toString();
   };
 
   // Calculate nutrient amounts based on stage, volume, and modifiers
@@ -395,7 +402,8 @@ export default function Jacks321Calculator() {
         const allocatedPPM = nutrientPPM * share;
         const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
         const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
-        const modifier = 1 + (calculatedModifiers[nutrientKey as keyof SymptomModifier] || 0);
+        // Only apply modifiers if not underfeeding
+        const modifier = isUnderfeeding ? 1 : 1 + (calculatedModifiers[nutrientKey as keyof SymptomModifier] || 0);
         const adjustedGrams = baseGrams * modifier;
         const nutrientAmount: NutrientAmount = {
           grams: adjustedGrams,
@@ -752,7 +760,7 @@ Recommend increasing total PPM by +150 to +200 PPM, maintaining current nutrient
                     '—'
                   )}
                 </TableCell>
-                {isCO2Enriched && <TableCell>{data.co2Max || '—'}</TableCell>}
+                {isCO2Enriched && <TableCell>{getDisplayCO2Max(stage as GrowStage)}</TableCell>}
               </TableRow>
             ))}
           </TableBody>
