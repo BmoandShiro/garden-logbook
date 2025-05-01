@@ -57,7 +57,7 @@ const getLogIcon = (type: LogType) => {
     INSPECTION: '🔍',
     TREATMENT: '💊',
     STRESS: '⚠️',
-    GENERAL: '📝',
+    EQUIPMENT: '🔧',
   };
   return icons[type] || '📝';
 };
