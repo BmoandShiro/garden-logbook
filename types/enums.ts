@@ -12,9 +12,7 @@ export enum LogType {
   CLONING = 'CLONING',
   INSPECTION = 'INSPECTION',
   TREATMENT = 'TREATMENT',
-  STRESS = 'STRESS',
-  EQUIPMENT = 'EQUIPMENT',
-  CUSTOM = 'CUSTOM'
+  EQUIPMENT = 'EQUIPMENT'
 }
 
 export enum Stage {

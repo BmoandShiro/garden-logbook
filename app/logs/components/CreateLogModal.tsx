@@ -2769,11 +2769,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderHealthFields();
       case 'TREATMENT':
         return renderTreatmentFields();
-      case 'STRESS':
-        return renderHealthFields();
       case 'EQUIPMENT':
-        return null;
-      case 'CUSTOM':
         return null;
       default:
         return null;
