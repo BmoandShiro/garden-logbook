@@ -26,7 +26,10 @@ import {
   TrainingMethod,
   SuspectedStressCause,
   PestCategory,
-  LightIntensityUnit
+  LightIntensityUnit,
+  DetectionMethod,
+  StressDuration,
+  ExpectedRecoveryTime
 } from '@/types/enums';
 
 // Types for form data
@@ -436,6 +439,11 @@ interface FormData {
   leafColor?: string;
   pestSeverity?: number;
   diseaseSeverity?: number;
+  detectionMethods: DetectionMethod[];
+  stressDuration?: StressDuration;
+  suspectedCause?: string;
+  recoveryActions?: string;
+  expectedRecoveryTime?: ExpectedRecoveryTime;
 
   // Treatment
   treatmentMethods: TreatmentMethod[];
@@ -571,7 +579,7 @@ interface CreateLogModalProps {
 
 export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: CreateLogModalProps) {
   const [formData, setFormData] = useState<FormData>({
-    logType: LogType.GENERAL,
+    logType: LogType.EQUIPMENT,
     stage: Stage.VEGETATIVE,
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().slice(0, 5),
@@ -621,7 +629,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     targetPests: [],
     coverageMethod: 'HAND_PUMP_SPRAYER',
     treatmentPh: 7.0,
-    treatmentAdditives: []
+    treatmentAdditives: [],
+    detectionMethods: []
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1396,6 +1405,11 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         <Label>🧪 General / Other Plant Stress Signs</Label>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {[
+            { value: 'COLD_STRESS', label: 'Cold stress' },
+            { value: 'ROOT_BOUND', label: 'Root bound' },
+            { value: 'PHYSICAL_DAMAGE', label: 'Physical damage' },
+            { value: 'TRANSPLANT_SHOCK', label: 'Transplant shock' },
+            { value: 'CHEMICAL_SPRAY_DAMAGE', label: 'Chemical/foliar spray damage' },
             { value: 'STUNTED_GROWTH', label: 'Stunted growth' },
             { value: 'SLOW_RECOVERY', label: 'Slow recovery after watering' },
             { value: 'PALE_COLOR', label: 'Pale overall color' },
@@ -1410,7 +1424,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             { value: 'STRETCHING', label: 'Stretching or lanky structure' },
             { value: 'TIP_CURL', label: 'Tip curl (wind or VPD stress)' },
             { value: 'OVER_TRANSPIRATION', label: 'Over-transpiration (leaf taco)' },
-            { value: 'NUTRIENT_LOCKOUT', label: 'Nutrient lockout mimicking disease' }
+            { value: 'NUTRIENT_LOCKOUT', label: 'Nutrient lockout mimicking disease' },
+            { value: 'OTHER', label: 'Other' }
           ].map(({ value, label }) => (
             <div key={value} className="flex items-center space-x-2">
               <input
@@ -2654,8 +2669,94 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderHarvestFields();
       case 'DRYING':
         return renderDryingFields();
-      case 'PEST_DISEASE':
-        return renderHealthFields();
+      case 'PEST_STRESS_DISEASE':
+        return (
+          <>
+            {renderHealthFields()}
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Method of Detection</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {Object.values(DetectionMethod).map((method) => (
+                    <div key={method} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`detection-${method}`}
+                        checked={formData.detectionMethods.includes(method)}
+                        onChange={(e) => {
+                          const methods = e.target.checked
+                            ? [...formData.detectionMethods, method]
+                            : formData.detectionMethods.filter(m => m !== method);
+                          setFormData({ ...formData, detectionMethods: methods });
+                        }}
+                        className="h-4 w-4 rounded border-dark-border bg-dark-bg-primary text-garden-600 focus:ring-garden-500"
+                      />
+                      <Label htmlFor={`detection-${method}`} className="text-sm font-normal">
+                        {method.replace(/_/g, ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="stressDuration">Duration of Stress</Label>
+                <select
+                  id="stressDuration"
+                  value={formData.stressDuration || ''}
+                  onChange={(e) => setFormData({ ...formData, stressDuration: e.target.value as StressDuration })}
+                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                >
+                  <option value="">Select Duration</option>
+                  {Object.values(StressDuration).map((duration) => (
+                    <option key={duration} value={duration}>
+                      {duration.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="suspectedCause">Suspected Cause</Label>
+                <Textarea
+                  id="suspectedCause"
+                  value={formData.suspectedCause || ''}
+                  onChange={(e) => setFormData({ ...formData, suspectedCause: e.target.value })}
+                  className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                  placeholder="Describe what you think caused the stress..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="recoveryActions">Recovery Actions Taken</Label>
+                <Textarea
+                  id="recoveryActions"
+                  value={formData.recoveryActions || ''}
+                  onChange={(e) => setFormData({ ...formData, recoveryActions: e.target.value })}
+                  className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                  placeholder="Describe what actions you've taken to help the plant recover..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="expectedRecoveryTime">Expected Recovery Time</Label>
+                <select
+                  id="expectedRecoveryTime"
+                  value={formData.expectedRecoveryTime || ''}
+                  onChange={(e) => setFormData({ ...formData, expectedRecoveryTime: e.target.value as ExpectedRecoveryTime })}
+                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                >
+                  <option value="">Select Expected Time</option>
+                  {Object.values(ExpectedRecoveryTime).map((time) => (
+                    <option key={time} value={time}>
+                      {time.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
+        );
       case 'TRANSPLANT':
         return renderTransplantFields();
       case 'TRANSFER':
@@ -2664,8 +2765,16 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
         return renderGerminationFields();
       case 'CLONING':
         return renderCloningFields();
+      case 'INSPECTION':
+        return renderHealthFields();
       case 'TREATMENT':
         return renderTreatmentFields();
+      case 'STRESS':
+        return renderHealthFields();
+      case 'EQUIPMENT':
+        return null;
+      case 'CUSTOM':
+        return null;
       default:
         return null;
     }
