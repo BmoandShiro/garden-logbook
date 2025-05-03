@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { format } from 'date-fns';
+import LogRawDataToggle from '../components/LogRawDataToggle';
 
 async function getLog(id: string) {
   const headersList = await headers();
@@ -21,40 +22,62 @@ function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-dark-bg-primary rounded-lg shadow p-6 mb-6">
+      <h2 className="text-lg font-semibold mb-2 text-garden-400">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
 export default async function LogDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const log = await getLog(id);
   if (!log) return notFound();
 
+  // Merge log fields and log.data fields for display
+  const merged = { ...log, ...(log.data || {}) };
+
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <div className="bg-dark-bg-primary rounded-lg shadow p-6 mb-8">
-        <h1 className="text-2xl font-bold mb-2 text-garden-400">{log.type.replace(/_/g, ' ')} Log</h1>
-        <p className="text-dark-text-secondary mb-4">{format(new Date(log.logDate), 'PPP p')}</p>
-        <div className="space-y-2">
-          <FieldRow label="Stage" value={log.stage} />
-          <FieldRow label="Notes" value={log.notes} />
-          <FieldRow label="Plant" value={log.plant?.name} />
-          <FieldRow label="Garden" value={log.garden?.name} />
-          <FieldRow label="Room" value={log.room?.name} />
-          <FieldRow label="Zone" value={log.zone?.name} />
-          <FieldRow label="Water Amount" value={log.waterAmount ? `${log.waterAmount} ${log.waterUnit || ''}` : undefined} />
-          <FieldRow label="Source Water pH" value={log.sourceWaterPh} />
-          <FieldRow label="Nutrient Water pH" value={log.nutrientWaterPh} />
-          <FieldRow label="Source Water PPM" value={log.sourceWaterPpm} />
-          <FieldRow label="Nutrient Water PPM" value={log.nutrientWaterPpm} />
-          <FieldRow label="PPM Scale" value={log.ppmScale} />
-          <FieldRow label="Nutrient Line" value={log.nutrientLine} />
-          <FieldRow label="Temperature" value={log.temperature} />
-          <FieldRow label="Humidity" value={log.humidity} />
-        </div>
-      </div>
-      <div className="bg-dark-bg-primary rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-2 text-garden-400">All Log Data</h2>
-        <pre className="text-dark-text-primary text-sm overflow-x-auto">
-          {JSON.stringify(log, null, 2)}
-        </pre>
-      </div>
+      {/* Location Section */}
+      <Section title="Location">
+        <FieldRow label="Garden" value={log.garden?.name} />
+        <FieldRow label="Room" value={log.room?.name} />
+        <FieldRow label="Zone" value={log.zone?.name} />
+        <FieldRow label="Plant" value={log.plant?.name} />
+      </Section>
+
+      {/* Log Info Section */}
+      <Section title="Log Info">
+        <FieldRow label="Type" value={log.type?.replace(/_/g, ' ')} />
+        <FieldRow label="Stage" value={log.stage} />
+        <FieldRow label="Date/Time" value={format(new Date(log.logDate), 'PPP p')} />
+        <FieldRow label="User ID" value={log.userId} />
+      </Section>
+
+      {/* Data Section */}
+      <Section title="Data">
+        <FieldRow label="Water Amount" value={merged.waterAmount ? `${merged.waterAmount} ${merged.waterUnit || ''}` : undefined} />
+        <FieldRow label="Source Water pH" value={merged.sourceWaterPh} />
+        <FieldRow label="Nutrient Water pH" value={merged.nutrientWaterPh} />
+        <FieldRow label="Source Water PPM" value={merged.sourceWaterPpm} />
+        <FieldRow label="Nutrient Water PPM" value={merged.nutrientWaterPpm} />
+        <FieldRow label="PPM Scale" value={merged.ppmScale} />
+        <FieldRow label="Nutrient Line" value={merged.nutrientLine} />
+        <FieldRow label="Temperature" value={merged.temperature} />
+        <FieldRow label="Humidity" value={merged.humidity} />
+        {/* Add more fields as needed */}
+      </Section>
+
+      {/* Notes Section */}
+      <Section title="Notes">
+        <div className="text-dark-text-primary whitespace-pre-line min-h-[2rem]">{merged.notes || <span className="italic text-dark-text-secondary">N/A</span>}</div>
+      </Section>
+
+      {/* Raw Data Toggle (Client Component) */}
+      <LogRawDataToggle log={log} />
     </div>
   );
 } 
