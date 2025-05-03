@@ -95,6 +95,15 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
             <FieldRow label="Booster Amount" value={merged.boosterAmount} />
             <FieldRow label="Finish Amount" value={merged.finishAmount} />
           </Section>
+
+          <Section title="Additives">
+            <FieldRow label="Uncoated Aspirin (81-325mg/gal)" value={merged.uncoatedAspirin} />
+            <FieldRow label="Nukem Root Drench" value={merged.nukemRootDrench} />
+            <FieldRow label="Oxiphos" value={merged.oxiphos} />
+            <FieldRow label="SeaGreen" value={merged.seaGreen} />
+            <FieldRow label="Teabrewer Batch" value={merged.teabrewerBatch} />
+            <FieldRow label="Teabrewer Volume" value={merged.teabrewerVolume} />
+          </Section>
         </>
       )}
 
