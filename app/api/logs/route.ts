@@ -123,61 +123,69 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Session user ID:', session.user.id);
-    
     // Verify the user exists
     const user = await db.user.findUnique({
-      where: { id: session.user.id }
+      where: { email: session.user.email }
     });
 
     if (!user) {
-      console.error('User not found in database:', session.user.id);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
-    const data = await request.json();
-    console.log('Request data:', data);
-    
-    // Convert date and time to a proper DateTime
-    const [year, month, day] = data.date.split('-').map(Number);
-    const [hours, minutes] = data.time.split(':').map(Number);
-    const dateTime = new Date(year, month - 1, day, hours, minutes);
 
-    // Create the log with the proper field names
+    const data = await request.json();
+    console.log('Received data:', JSON.stringify(data, null, 2));
+    const { date, time, selectedPlants, logType, ...rest } = data;
+
+    // Convert date and time to DateTime
+    const logDate = new Date(`${date}T${time}`);
+    console.log('Converted logDate:', logDate);
+
+    // Map form fields to schema fields
+    const logData = {
+      logDate,
+      type: logType,
+      stage: data.stage,
+      notes: data.notes,
+      imageUrls: data.imageUrls || [],
+      plantId: selectedPlants?.[0], // Take the first selected plant
+      userId: user.id,
+      gardenId: data.gardenId,
+      roomId: data.roomId,
+      zoneId: data.zoneId,
+      temperature: data.temperature,
+      humidity: data.humidity,
+      co2: data.co2,
+      vpd: data.vpd,
+      waterAmount: data.waterAmount,
+      waterSource: data.waterSource,
+      waterUnit: data.waterUnit,
+      waterTemperature: data.waterTemperature,
+      waterTemperatureUnit: data.waterTemperatureUnit,
+      sourceWaterPh: data.sourceWaterPh,
+      nutrientWaterPh: data.nutrientWaterPh,
+      sourceWaterPpm: data.sourceWaterPpm,
+      nutrientWaterPpm: data.nutrientWaterPpm,
+      ppmScale: data.ppmScale,
+      nutrientLine: data.nutrientLine,
+      jacks321Used: data.jacks321Used || [],
+      jacks321Unit: data.jacks321Unit,
+      partAAmount: data.partAAmount,
+      partBAmount: data.partBAmount,
+      partCAmount: data.partCAmount,
+      boosterAmount: data.boosterAmount,
+      finishAmount: data.finishAmount,
+      customNutrients: data.customNutrients,
+      data: rest // Store any additional fields in the data JSON field
+    };
+    console.log('Attempting to create log with data:', JSON.stringify(logData, null, 2));
+
     const log = await db.log.create({
-      data: {
-        logDate: dateTime,
-        type: data.type,
-        stage: data.stage,
-        notes: data.notes,
-        temperature: data.temperature,
-        humidity: data.humidity,
-        waterAmount: data.waterAmount,
-        waterTemp: data.waterTemperature,
-        waterPh: data.waterPh,
-        runoffPh: data.runoffPh,
-        waterPpm: data.waterPpm,
-        runoffPpm: data.runoffPpm,
-        partAPpm: data.partAPpm,
-        partBPpm: data.partBPpm,
-        partCPpm: data.partCPpm,
-        boosterPpm: data.boosterPpm,
-        finishPpm: data.finishPpm,
-        healthRating: data.healthRating,
-        userId: session.user.id,
-        garden: data.garden,
-        room: data.room,
-        zone: data.zone,
-        plant: data.plant,
-      },
+      data: logData,
       include: {
-        garden: true,
-        room: true,
-        zone: true,
         plant: true
       }
     });
@@ -185,6 +193,50 @@ export async function POST(request: Request) {
     return NextResponse.json(log);
   } catch (error) {
     console.error('Error creating log:', error);
+
+    // Type guard for Error objects
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+
+    // Type guard for Prisma errors
+    type PrismaError = {
+      code: string;
+      meta?: {
+        target?: string[];
+      };
+    };
+
+    const isPrismaError = (err: unknown): err is PrismaError => {
+      return typeof err === 'object' && err !== null && 'code' in err;
+    };
+
+    if (isPrismaError(error)) {
+      console.error('Prisma error code:', error.code);
+      console.error('Prisma error meta:', error.meta);
+
+      switch (error.code) {
+        case 'P2002':
+          return NextResponse.json({ 
+            error: `Unique constraint violation on fields: ${error.meta?.target?.join(', ')}` 
+          }, { status: 400 });
+        case 'P2003':
+          return NextResponse.json({ 
+            error: `Foreign key constraint violation on fields: ${error.meta?.target?.join(', ')}` 
+          }, { status: 400 });
+        case 'P2025':
+          return NextResponse.json({ 
+            error: 'Record not found' 
+          }, { status: 404 });
+        default:
+          return NextResponse.json({ 
+            error: `Database error: ${error.code}` 
+          }, { status: 500 });
+      }
+    }
+
     return NextResponse.json(
       { error: `Failed to create log: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }

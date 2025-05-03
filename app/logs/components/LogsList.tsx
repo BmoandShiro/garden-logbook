@@ -8,7 +8,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 
 interface LogWithLocation {
   id: string;
-  date: Date;
+  logDate: string | Date;
   type: LogType;
   notes?: string | null;
   plant?: {
@@ -45,9 +45,7 @@ const getLogIcon = (type: LogType) => {
     WATERING: '💧',
     ENVIRONMENTAL: '🌡️',
     LST: '🎋',
-    HST: '✂️',
     HARVEST: '🌾',
-    DRYING: '🌞',
     PEST_STRESS_DISEASE: '🐛',
     TRANSPLANT: '🪴',
     TRANSFER: '🔄',
@@ -111,7 +109,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                     </p>
                     <div className="flex items-center space-x-2">
                       <p className="text-sm text-dark-text-secondary">
-                        {format(new Date(log.date), 'MMM d, yyyy h:mm a')}
+                        {format(new Date(log.logDate), 'MMM d, yyyy h:mm a')}
                       </p>
                       <DeleteLogButton logId={log.id} onSuccess={onLogDeleted} />
                     </div>

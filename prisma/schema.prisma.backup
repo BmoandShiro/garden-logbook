@@ -175,25 +175,120 @@ model Log {
   waterPpm     Float?
   waterTemp    Float?
 
-  // Watering-specific fields
+  // New fields
+  stressCause            String?
+  dewPoint              Float?
+  averagePar            Float?
+  fanSpeed              String?
+  ventilationType       String?
   waterSource           String?
-  waterUnit            String?
-  waterTemperature     Float?
-  waterTemperatureUnit String?
-  sourceWaterPh        Float?
-  nutrientWaterPh      Float?
-  sourceWaterPpm       Float?
-  nutrientWaterPpm     Float?
-  ppmScale             String?
-  nutrientLine         String?
-  jacks321Used         String[]
-  jacks321Unit         String?
-  partAAmount          Float?
-  partBAmount          Float?
-  partCAmount          Float?
-  boosterAmount        Float?
-  finishAmount         Float?
-  customNutrients      Json?
+  branchCount           Int?
+  estimatedYield       Float?
+  pestTypes            String[]
+  pestCategories       String[]
+  diseaseTypes         String[]
+  deficiencies         String[]
+  leafColor            String?
+  pestSeverity         Int?
+  diseaseSeverity      Int?
+  detectionMethods     String[]
+  stressDuration       String?
+  suspectedCause       String?
+  recoveryActions      String?
+  expectedRecoveryTime String?
+  treatmentMethods     String[]
+  treatmentProducts    String[]
+  applicationMethod    String?
+  applicationTiming    String?
+  coverage             String?
+  treatmentDosage      Float?
+  treatmentDosageUnit  String?
+  sprayPressure        Float?
+  sprayDistance        Float?
+  sprayDistanceUnit    String?
+  mixingRatio          String?
+  phAdjusted           Boolean?
+  finalSprayPh         Float?
+  waterTempUnit        String?
+  reentry              Int?
+  repeatIn             Int?
+  tankMixProducts      String[]
+  trainingMethods      String[]
+  trimAmount           Float?
+  trimAmountUnit       String?
+  hangMethod           String?
+  forLiveUse           Boolean?
+  trichomeColor        String?
+  trimMoisture         String?
+  nugMoisturePercent   Float?
+  trimMethod           String?
+  dryingRh             Float?
+  dryingTemp           Float?
+  estimatedDaysLeft    Int?
+  mediumMoisture       Float?
+  mediumTemp           Float?
+  mediumPh             Float?
+  aspirinAmount        Float?
+  nukemAmount          Float?
+  oxiphosAmount        Float?
+  seagreenAmount       Float?
+  teabrewerBatch       String?
+  teabrewerVolume      Float?
+  bendingIntensity     String?
+  tieDownIntensity     String?
+  supportedPlants      String[]
+  canopyShape          String?
+  leafTuckingIntensity String?
+  lstIntensity         String?
+  toppedNode           Int?
+  fimNode              Int?
+  defoliationIntensity String?
+  defoliationPercentage Float?
+  trainingGoals        String[]
+  inspectionMethod     String?
+  affectedAreas        String[]
+  leafSymptoms         String[]
+  pestIndicators       String[]
+  fungalSymptoms       String[]
+  stressSymptoms       String[]
+  pestIdentificationStatus String?
+  pestConfidenceLevel  Int?
+  ipmMethods           String[]
+  transplantFromSize   String?
+  transplantToSize     String?
+  soilMoisture         String?
+  destinationGardenId  String?
+  destinationRoomId    String?
+  destinationZoneId    String?
+  germinationMethod    String?
+  germinationStatus    String?
+  germinationRh        Float?
+  germinationTemp      Float?
+  daysToSprout         Int?
+  cloningMethod        String?
+  cloningAdditives     String[]
+  cutType              String?
+  cloningRh            Float?
+  cloningTemp          Float?
+  lightHoursPerDay     Int?
+  lightType            String?
+  domeUsed             Boolean?
+  ventsOpened          Boolean?
+  ventsClosed          Boolean?
+  domeRemoved          Boolean?
+  sanitationMethod     String?
+  cloneGardenId        String?
+  cloneRoomId          String?
+  cloneZoneId          String?
+  treatmentType        String?
+  foliarSprayProducts  String[]
+  bcaPredatorTypes     String[]
+  releaseCount         Int?
+  bcaAcclimation       Boolean?
+  targetPests          String[]
+  coverageMethod       String?
+  treatmentPh          Float?
+  treatmentAdditives   String[]
 
   // Relations
   garden       Garden?    @relation(fields: [gardenId], references: [id])
@@ -503,7 +598,6 @@ enum LogType {
   HARVEST
   DRYING
   PEST_STRESS_DISEASE
-  PEST_DISEASE
   TRANSPLANT
   TRANSFER
   GERMINATION
@@ -513,8 +607,6 @@ enum LogType {
   STRESS
   EQUIPMENT
   CUSTOM
-  FLUSHING
-  GENERAL
 }
 
 enum LSTIntensity {
