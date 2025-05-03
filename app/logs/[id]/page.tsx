@@ -21,8 +21,9 @@ function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export default async function LogDetailsPage({ params }: { params: { id: string } }) {
-  const log = await getLog(params.id);
+export default async function LogDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const log = await getLog(id);
   if (!log) return notFound();
 
   return (
