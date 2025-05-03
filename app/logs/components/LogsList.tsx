@@ -294,6 +294,51 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                             )}
                           </>
                         )}
+                        {/* PEST_STRESS_DISEASE log: show key badges */}
+                        {log.type === 'PEST_STRESS_DISEASE' && (
+                          <>
+                            {merged.healthRating !== null && merged.healthRating !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ❤️ {merged.healthRating}/10
+                              </span>
+                            )}
+                            {merged.pestIdentificationStatus && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🏷️ {merged.pestIdentificationStatus}
+                              </span>
+                            )}
+                            {merged.pestConfidenceLevel !== null && merged.pestConfidenceLevel !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🔢 {merged.pestConfidenceLevel}
+                              </span>
+                            )}
+                            {Array.isArray(merged.pestTypes) && merged.pestTypes.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🐛 {merged.pestTypes[0]}
+                              </span>
+                            )}
+                            {Array.isArray(merged.diseaseTypes) && merged.diseaseTypes.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🦠 {merged.diseaseTypes[0]}
+                              </span>
+                            )}
+                            {merged.inspectionMethod && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🔍 {merged.inspectionMethod}
+                              </span>
+                            )}
+                            {merged.expectedRecoveryTime && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ⏳ {merged.expectedRecoveryTime}
+                              </span>
+                            )}
+                            {merged.recoveryActions && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary max-w-[10rem] truncate">
+                                🛠️ {String(merged.recoveryActions).slice(0, 20)}{String(merged.recoveryActions).length > 20 ? '…' : ''}
+                              </span>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

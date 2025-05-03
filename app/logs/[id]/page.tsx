@@ -17,7 +17,7 @@ function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between py-1 border-b border-dark-border last:border-b-0">
       <span className="font-medium text-dark-text-secondary">{label}</span>
-      <span className="text-dark-text-primary">{value ?? <span className="italic text-dark-text-secondary">N/A</span>}</span>
+      <span className="text-dark-text-primary text-right min-w-[8rem] flex-1 justify-end flex">{value ?? <span className="italic text-dark-text-secondary">N/A</span>}</span>
     </div>
   );
 }
@@ -56,6 +56,29 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         <FieldRow label="Date/Time" value={format(new Date(log.logDate), 'PPP p')} />
         <FieldRow label="User ID" value={log.userId} />
       </Section>
+
+      {/* PEST_STRESS_DISEASE-specific section - Only for PEST_STRESS_DISEASE logs */}
+      {log.type === 'PEST_STRESS_DISEASE' && (
+        <Section title="Pest/Stress/Disease Details">
+          <FieldRow label="Health Rating" value={merged.healthRating} />
+          <FieldRow label="Method Inspected" value={merged.inspectionMethod} />
+          <FieldRow label="Area of Plant Most Affected" value={Array.isArray(merged.affectedAreas) ? merged.affectedAreas.join(', ') : merged.affectedAreas} />
+          <FieldRow label="Leaf Symptoms" value={Array.isArray(merged.leafSymptoms) ? merged.leafSymptoms.join(', ') : merged.leafSymptoms} />
+          <FieldRow label="Pest Indicators" value={Array.isArray(merged.pestIndicators) ? merged.pestIndicators.join(', ') : merged.pestIndicators} />
+          <FieldRow label="Fungal/Bacterial Symptoms" value={Array.isArray(merged.fungalSymptoms) ? merged.fungalSymptoms.join(', ') : merged.fungalSymptoms} />
+          <FieldRow label="General/Other Plant Stress Signs" value={Array.isArray(merged.stressSymptoms) ? merged.stressSymptoms.join(', ') : merged.stressSymptoms} />
+          <FieldRow label="Pest Identification Status" value={merged.pestIdentificationStatus} />
+          <FieldRow label="Confidence Level" value={merged.pestConfidenceLevel} />
+          <FieldRow label="Pest Types" value={Array.isArray(merged.pestTypes) ? merged.pestTypes.join(', ') : merged.pestTypes} />
+          <FieldRow label="Disease Types" value={Array.isArray(merged.diseaseTypes) ? merged.diseaseTypes.join(', ') : merged.diseaseTypes} />
+          <FieldRow label="IPM Methods & Beneficial Organisms" value={Array.isArray(merged.ipmMethods) ? merged.ipmMethods.join(', ') : merged.ipmMethods} />
+          <FieldRow label="Method of Detection" value={Array.isArray(merged.detectionMethods) ? merged.detectionMethods.join(', ') : merged.detectionMethods} />
+          <FieldRow label="Duration of Stress" value={merged.stressDuration} />
+          <FieldRow label="Suspected Cause" value={merged.suspectedCause} />
+          <FieldRow label="Recovery Actions Taken" value={merged.recoveryActions} />
+          <FieldRow label="Expected Recovery Time" value={merged.expectedRecoveryTime} />
+        </Section>
+      )}
 
       {/* DRYING-specific section - Only for DRYING logs */}
       {log.type === 'DRYING' && (
