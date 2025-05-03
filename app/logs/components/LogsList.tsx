@@ -125,7 +125,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                         <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
                       )}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {log.temperature !== null && log.temperature !== undefined && (
+                        {log.type !== 'ENVIRONMENTAL' && log.temperature !== null && log.temperature !== undefined && (
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
                             🌡️ {formatMeasurementWithPreferences(log.temperature, log.temperatureUnit, unitPreferences.temperature)}
                           </span>
@@ -181,6 +181,31 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                             {merged.vpd !== null && merged.vpd !== undefined && (
                               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
                                 🌫️ {merged.vpd} kPa
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* LST log: show key badges */}
+                        {log.type === 'LST' && (
+                          <>
+                            {merged.supercroppingIntensity && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🪓 {merged.supercroppingIntensity}
+                              </span>
+                            )}
+                            {merged.tieDownIntensity && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🪢 {merged.tieDownIntensity}
+                              </span>
+                            )}
+                            {merged.canopyShape && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌳 {merged.canopyShape}
+                              </span>
+                            )}
+                            {merged.leafTuckingIntensity && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🍃 {merged.leafTuckingIntensity}
                               </span>
                             )}
                           </>

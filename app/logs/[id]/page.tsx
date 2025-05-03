@@ -57,6 +57,17 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         <FieldRow label="User ID" value={log.userId} />
       </Section>
 
+      {/* LST-specific section - Only for LST logs */}
+      {log.type === 'LST' && (
+        <Section title="LST Details">
+          <FieldRow label="Supercropping Intensity" value={merged.supercroppingIntensity} />
+          <FieldRow label="Tie Down Intensity" value={merged.tieDownIntensity} />
+          <FieldRow label="Canopy Shape" value={merged.canopyShape} />
+          <FieldRow label="Leaf Tucking Intensity" value={merged.leafTuckingIntensity} />
+          <FieldRow label="Trunk Supports" value={merged.trunkSupports} />
+        </Section>
+      )}
+
       {/* Environmental Data Section - Only for ENVIRONMENTAL logs */}
       {log.type === 'ENVIRONMENTAL' && (
         <Section title="Environmental Data">
