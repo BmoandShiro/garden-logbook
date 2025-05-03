@@ -568,6 +568,12 @@ interface FormData {
   coverageMethod?: CoverageMethod;
   treatmentPh?: number;
   treatmentAdditives: TreatmentAdditive[];
+
+  // Water Temperature
+  sourceWaterTemperature?: number;
+  sourceWaterTemperatureUnit?: TemperatureUnit;
+  nutrientWaterTemperature?: number;
+  nutrientWaterTemperatureUnit?: TemperatureUnit;
 }
 
 interface CreateLogModalProps {
@@ -630,7 +636,9 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     coverageMethod: 'HAND_PUMP_SPRAYER',
     treatmentPh: 7.0,
     treatmentAdditives: [],
-    detectionMethods: []
+    detectionMethods: [],
+    sourceWaterTemperatureUnit: TemperatureUnit.CELSIUS,
+    nutrientWaterTemperatureUnit: TemperatureUnit.CELSIUS
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -944,6 +952,48 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           onChange={(e) => setFormData({ ...formData, nutrientWaterPpm: parseFloat(e.target.value) })}
           className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
         />
+      </div>
+      <div>
+        <Label htmlFor="sourceWaterTemperature">Source Water Temperature</Label>
+        <div className="flex gap-2">
+          <Input
+            type="number"
+            id="sourceWaterTemperature"
+            value={formData.sourceWaterTemperature || ''}
+            onChange={(e) => setFormData({ ...formData, sourceWaterTemperature: parseFloat(e.target.value) })}
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+          <select
+            value={formData.sourceWaterTemperatureUnit || TemperatureUnit.CELSIUS}
+            onChange={(e) => setFormData({ ...formData, sourceWaterTemperatureUnit: e.target.value as TemperatureUnit })}
+            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+          >
+            {Object.values(TemperatureUnit).map((unit) => (
+              <option key={unit} value={unit}>{unit}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="nutrientWaterTemperature">Nutrient Water Temperature</Label>
+        <div className="flex gap-2">
+          <Input
+            type="number"
+            id="nutrientWaterTemperature"
+            value={formData.nutrientWaterTemperature || ''}
+            onChange={(e) => setFormData({ ...formData, nutrientWaterTemperature: parseFloat(e.target.value) })}
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          />
+          <select
+            value={formData.nutrientWaterTemperatureUnit || TemperatureUnit.CELSIUS}
+            onChange={(e) => setFormData({ ...formData, nutrientWaterTemperatureUnit: e.target.value as TemperatureUnit })}
+            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+          >
+            {Object.values(TemperatureUnit).map((unit) => (
+              <option key={unit} value={unit}>{unit}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );

@@ -35,6 +35,8 @@ interface LogWithLocation {
   widthUnit?: string;
   healthRating?: number | null;
   data?: any;
+  nutrientWaterTemperature?: number | null;
+  nutrientWaterTemperatureUnit?: string;
 }
 
 interface LogsListProps {
@@ -209,6 +211,12 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                               </span>
                             )}
                           </>
+                        )}
+                        {/* WATERING log: show nutrient water temperature badge */}
+                        {log.type === 'WATERING' && merged.nutrientWaterTemperature !== null && merged.nutrientWaterTemperature !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            🌡️ {merged.nutrientWaterTemperature}{merged.nutrientWaterTemperatureUnit ? ` ${merged.nutrientWaterTemperatureUnit}` : ''} Nutrient
+                          </span>
                         )}
                       </div>
                     </div>

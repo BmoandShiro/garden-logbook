@@ -194,6 +194,10 @@ model Log {
   boosterAmount        Float?
   finishAmount         Float?
   customNutrients      Json?
+  sourceWaterTemperature Float?
+  sourceWaterTemperatureUnit String?
+  nutrientWaterTemperature Float?
+  nutrientWaterTemperatureUnit String?
 
   // Relations
   garden       Garden?    @relation(fields: [gardenId], references: [id])

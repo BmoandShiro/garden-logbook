@@ -89,11 +89,13 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
             <FieldRow label="Water Source" value={merged.waterSource} />
             <FieldRow label="Source Water pH" value={merged.sourceWaterPh} />
             <FieldRow label="Source Water PPM" value={merged.sourceWaterPpm} />
+            <FieldRow label="Source Water Temperature" value={merged.sourceWaterTemperature !== undefined ? `${merged.sourceWaterTemperature}${merged.sourceWaterTemperatureUnit ? ` ${merged.sourceWaterTemperatureUnit}` : ''}` : undefined} />
           </Section>
 
           <Section title="Nutrient Information">
             <FieldRow label="Water Amount" value={merged.waterAmount ? `${merged.waterAmount} ${merged.waterUnit || ''}` : undefined} />
             <FieldRow label="Water Temperature" value={merged.waterTemperature ? `${merged.waterTemperature}${merged.waterTemperatureUnit ? ` ${merged.waterTemperatureUnit}` : ''}` : undefined} />
+            <FieldRow label="Nutrient Water Temperature" value={merged.nutrientWaterTemperature !== undefined ? `${merged.nutrientWaterTemperature}${merged.nutrientWaterTemperatureUnit ? ` ${merged.nutrientWaterTemperatureUnit}` : ''}` : undefined} />
             <FieldRow label="Nutrient Water pH" value={merged.nutrientWaterPh} />
             <FieldRow label="Nutrient Water PPM" value={merged.nutrientWaterPpm} />
             <FieldRow label="PPM Scale" value={merged.ppmScale} />
