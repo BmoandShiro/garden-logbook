@@ -64,28 +64,22 @@ export async function GET(request: Request) {
 
     const logs = await db.log.findMany({
       where,
-      include: {
-        plant: {
-          select: {
-            name: true,
-            stage: true,
-          },
-        },
-        garden: {
-          select: {
-            name: true,
-          },
-        },
-        room: {
-          select: {
-            name: true,
-          },
-        },
-        zone: {
-          select: {
-            name: true,
-          },
-        },
+      select: {
+        id: true,
+        logDate: true,
+        type: true,
+        notes: true,
+        plant: { select: { name: true, stage: true } },
+        garden: { select: { name: true } },
+        room: { select: { name: true } },
+        zone: { select: { name: true } },
+        temperature: true,
+        humidity: true,
+        waterAmount: true,
+        height: true,
+        width: true,
+        healthRating: true,
+        data: true,
       },
       orderBy: {
         logDate: 'desc',

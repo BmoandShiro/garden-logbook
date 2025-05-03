@@ -34,6 +34,7 @@ interface LogWithLocation {
   width?: number | null;
   widthUnit?: string;
   healthRating?: number | null;
+  data?: any;
 }
 
 interface LogsListProps {
@@ -97,68 +98,93 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
     <div className="bg-dark-bg-secondary rounded-lg shadow overflow-hidden">
       <div className="flow-root">
         <ul role="list" className="divide-y divide-dark-border">
-          {logs.map((log) => (
-            <li key={log.id} className="p-4 hover:bg-dark-bg-hover transition-colors flex items-start space-x-4">
-              <Link href={`/logs/${log.id}`} className="flex-1 min-w-0 block">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-garden-100 flex items-center justify-center">
-                    {getLogIcon(log.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-dark-text-primary truncate">
-                        {log.type.replace(/_/g, ' ')}
-                      </p>
-                      <p className="text-sm text-dark-text-secondary">
-                        {format(new Date(log.logDate), 'MMM d, yyyy h:mm a')}
-                      </p>
+          {logs.map((log) => {
+            // Merge log fields and log.data fields for display
+            const merged = { ...log, ...(log.data || {}) };
+            return (
+              <li key={log.id} className="p-4 hover:bg-dark-bg-hover transition-colors flex items-start space-x-4">
+                <Link href={`/logs/${log.id}`} className="flex-1 min-w-0 block">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-garden-100 flex items-center justify-center">
+                      {getLogIcon(log.type)}
                     </div>
-                    <p className="mt-1 text-sm text-dark-text-secondary">
-                      {getLocationString(log)}
-                    </p>
-                    {log.notes && (
-                      <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {log.temperature !== null && log.temperature !== undefined && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                          🌡️ {formatMeasurementWithPreferences(log.temperature, log.temperatureUnit, unitPreferences.temperature)}
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-dark-text-primary truncate">
+                          {log.type.replace(/_/g, ' ')}
+                        </p>
+                        <p className="text-sm text-dark-text-secondary">
+                          {format(new Date(log.logDate), 'MMM d, yyyy h:mm a')}
+                        </p>
+                      </div>
+                      {/* Location string always visible */}
+                      <p className="mt-1 text-sm text-dark-text-secondary">
+                        {getLocationString(log)}
+                      </p>
+                      {log.notes && (
+                        <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
                       )}
-                      {log.humidity !== null && log.humidity !== undefined && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                          💧 {log.humidity}%
-                        </span>
-                      )}
-                      {log.waterAmount !== null && log.waterAmount !== undefined && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                          🚰 {formatMeasurementWithPreferences(log.waterAmount, log.waterUnit, unitPreferences.volume)}
-                        </span>
-                      )}
-                      {log.height !== null && log.height !== undefined && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                          📏 {formatMeasurementWithPreferences(log.height, log.heightUnit, unitPreferences.length)}
-                        </span>
-                      )}
-                      {log.width !== null && log.width !== undefined && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                          ↔️ {formatMeasurementWithPreferences(log.width, log.widthUnit, unitPreferences.length)}
-                        </span>
-                      )}
-                      {log.healthRating !== null && log.healthRating !== undefined && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                          ❤️ {log.healthRating}/5
-                        </span>
-                      )}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {log.temperature !== null && log.temperature !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            🌡️ {formatMeasurementWithPreferences(log.temperature, log.temperatureUnit, unitPreferences.temperature)}
+                          </span>
+                        )}
+                        {log.humidity !== null && log.humidity !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            💧 {log.humidity}%
+                          </span>
+                        )}
+                        {log.waterAmount !== null && log.waterAmount !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            🚰 {formatMeasurementWithPreferences(log.waterAmount, log.waterUnit, unitPreferences.volume)}
+                          </span>
+                        )}
+                        {log.height !== null && log.height !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            📏 {formatMeasurementWithPreferences(log.height, log.heightUnit, unitPreferences.length)}
+                          </span>
+                        )}
+                        {log.width !== null && log.width !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            ↔️ {formatMeasurementWithPreferences(log.width, log.widthUnit, unitPreferences.length)}
+                          </span>
+                        )}
+                        {log.healthRating !== null && log.healthRating !== undefined && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                            ❤️ {log.healthRating}/5
+                          </span>
+                        )}
+                        {/* WATERING log: show extra info */}
+                        {log.type === 'WATERING' && (
+                          <>
+                            {merged.nutrientWaterPpm !== null && merged.nutrientWaterPpm !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-900 text-blue-100">
+                                🧪 {merged.nutrientWaterPpm} PPM
+                              </span>
+                            )}
+                            {merged.nutrientWaterPh !== null && merged.nutrientWaterPh !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-900 text-blue-100">
+                                pH {merged.nutrientWaterPh}
+                              </span>
+                            )}
+                            {merged.waterTemperature !== null && merged.waterTemperature !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-900 text-blue-100">
+                                🌡️ {merged.waterTemperature}{merged.waterTemperatureUnit ? ` ${merged.waterTemperatureUnit}` : ''}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
+                </Link>
+                <div className="flex-shrink-0 flex items-center ml-4">
+                  <DeleteLogButton logId={log.id} onSuccess={onLogDeleted} />
                 </div>
-              </Link>
-              <div className="flex-shrink-0 flex items-center ml-4">
-                <DeleteLogButton logId={log.id} onSuccess={onLogDeleted} />
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
