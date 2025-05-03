@@ -155,22 +155,32 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                             ❤️ {log.healthRating}/5
                           </span>
                         )}
-                        {/* WATERING log: show extra info */}
-                        {log.type === 'WATERING' && (
+                        {/* ENVIRONMENTAL log: show key badges */}
+                        {log.type === 'ENVIRONMENTAL' && (
                           <>
-                            {merged.nutrientWaterPpm !== null && merged.nutrientWaterPpm !== undefined && (
+                            {merged.temperature !== null && merged.temperature !== undefined && (
                               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                                🧪 {merged.nutrientWaterPpm} PPM
+                                🌡️ {merged.temperature}{merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}
                               </span>
                             )}
-                            {merged.nutrientWaterPh !== null && merged.nutrientWaterPh !== undefined && (
+                            {merged.humidity !== null && merged.humidity !== undefined && (
                               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                                ⚗️ pH {merged.nutrientWaterPh}
+                                💧 {merged.humidity}%
                               </span>
                             )}
-                            {merged.waterTemperature !== null && merged.waterTemperature !== undefined && (
+                            {merged.co2 !== null && merged.co2 !== undefined && (
                               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                                🌡️ {merged.waterTemperature}{merged.waterTemperatureUnit ? ` ${merged.waterTemperatureUnit}` : ''}
+                                🫧 {merged.co2} ppm
+                              </span>
+                            )}
+                            {merged.averagePar !== null && merged.averagePar !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💡 {merged.averagePar} PAR
+                              </span>
+                            )}
+                            {merged.vpd !== null && merged.vpd !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌫️ {merged.vpd} kPa
                               </span>
                             )}
                           </>

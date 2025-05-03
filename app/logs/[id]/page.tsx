@@ -57,35 +57,46 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         <FieldRow label="User ID" value={log.userId} />
       </Section>
 
-      {/* Source Water Info Section */}
-      <Section title="Source Water Info">
-        <FieldRow label="Water Source" value={merged.waterSource} />
-        <FieldRow label="Source Water pH" value={merged.sourceWaterPh} />
-        <FieldRow label="Source Water PPM" value={merged.sourceWaterPpm} />
-      </Section>
+      {/* Environmental Data Section - Only for ENVIRONMENTAL logs */}
+      {log.type === 'ENVIRONMENTAL' && (
+        <Section title="Environmental Data">
+          <FieldRow label="Temperature" value={merged.temperature !== undefined ? `${merged.temperature}${merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}` : undefined} />
+          <FieldRow label="Humidity" value={merged.humidity} />
+          <FieldRow label="CO₂" value={merged.co2} />
+          <FieldRow label="VPD" value={merged.vpd} />
+          <FieldRow label="Dew Point" value={merged.dewPoint} />
+          <FieldRow label="Average PAR" value={merged.averagePar} />
+          <FieldRow label="Fan Speed" value={merged.fanSpeed} />
+          <FieldRow label="Air Exchange Type" value={merged.airExchangeType} />
+        </Section>
+      )}
 
-      {/* Nutrient Information Section */}
-      <Section title="Nutrient Information">
-        <FieldRow label="Water Amount" value={merged.waterAmount ? `${merged.waterAmount} ${merged.waterUnit || ''}` : undefined} />
-        <FieldRow label="Water Temperature" value={merged.waterTemperature ? `${merged.waterTemperature}${merged.waterTemperatureUnit ? ` ${merged.waterTemperatureUnit}` : ''}` : undefined} />
-        <FieldRow label="Nutrient Water pH" value={merged.nutrientWaterPh} />
-        <FieldRow label="Nutrient Water PPM" value={merged.nutrientWaterPpm} />
-        <FieldRow label="PPM Scale" value={merged.ppmScale} />
-        <FieldRow label="Nutrient Line" value={merged.nutrientLine} />
-        <FieldRow label="Jacks321 Used" value={Array.isArray(merged.jacks321Used) ? merged.jacks321Used.join(', ') : merged.jacks321Used} />
-        <FieldRow label="Jacks321 Unit" value={merged.jacks321Unit} />
-        <FieldRow label="Part A Amount" value={merged.partAAmount} />
-        <FieldRow label="Part B Amount" value={merged.partBAmount} />
-        <FieldRow label="Part C Amount" value={merged.partCAmount} />
-        <FieldRow label="Booster Amount" value={merged.boosterAmount} />
-        <FieldRow label="Finish Amount" value={merged.finishAmount} />
-      </Section>
+      {/* Watering-specific sections - Only for WATERING logs */}
+      {log.type === 'WATERING' && (
+        <>
+          <Section title="Source Water Info">
+            <FieldRow label="Water Source" value={merged.waterSource} />
+            <FieldRow label="Source Water pH" value={merged.sourceWaterPh} />
+            <FieldRow label="Source Water PPM" value={merged.sourceWaterPpm} />
+          </Section>
 
-      {/* Other Section */}
-      <Section title="Other">
-        <FieldRow label="Temperature" value={merged.temperature} />
-        <FieldRow label="Humidity" value={merged.humidity} />
-      </Section>
+          <Section title="Nutrient Information">
+            <FieldRow label="Water Amount" value={merged.waterAmount ? `${merged.waterAmount} ${merged.waterUnit || ''}` : undefined} />
+            <FieldRow label="Water Temperature" value={merged.waterTemperature ? `${merged.waterTemperature}${merged.waterTemperatureUnit ? ` ${merged.waterTemperatureUnit}` : ''}` : undefined} />
+            <FieldRow label="Nutrient Water pH" value={merged.nutrientWaterPh} />
+            <FieldRow label="Nutrient Water PPM" value={merged.nutrientWaterPpm} />
+            <FieldRow label="PPM Scale" value={merged.ppmScale} />
+            <FieldRow label="Nutrient Line" value={merged.nutrientLine} />
+            <FieldRow label="Jacks321 Used" value={Array.isArray(merged.jacks321Used) ? merged.jacks321Used.join(', ') : merged.jacks321Used} />
+            <FieldRow label="Jacks321 Unit" value={merged.jacks321Unit} />
+            <FieldRow label="Part A Amount" value={merged.partAAmount} />
+            <FieldRow label="Part B Amount" value={merged.partBAmount} />
+            <FieldRow label="Part C Amount" value={merged.partCAmount} />
+            <FieldRow label="Booster Amount" value={merged.boosterAmount} />
+            <FieldRow label="Finish Amount" value={merged.finishAmount} />
+          </Section>
+        </>
+      )}
 
       {/* Notes Section */}
       <Section title="Notes">
