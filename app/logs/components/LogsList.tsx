@@ -37,6 +37,9 @@ interface LogWithLocation {
   data?: any;
   nutrientWaterTemperature?: number | null;
   nutrientWaterTemperatureUnit?: string;
+  destinationGardenId?: string | null;
+  destinationRoomId?: string | null;
+  destinationZoneId?: string | null;
 }
 
 interface LogsListProps {
@@ -335,6 +338,161 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                             {merged.recoveryActions && (
                               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary max-w-[10rem] truncate">
                                 🛠️ {String(merged.recoveryActions).slice(0, 20)}{String(merged.recoveryActions).length > 20 ? '…' : ''}
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* TRANSPLANT log: show key badges */}
+                        {log.type === 'TRANSPLANT' && (
+                          <>
+                            {merged.transplantFromSize && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🪴 From: {merged.transplantFromSize.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                            {merged.transplantToSize && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌱 To: {merged.transplantToSize.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                            {merged.soilMoisture && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💧 Soil: {merged.soilMoisture}
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* TRANSFER log: show key badges */}
+                        {log.type === 'TRANSFER' && (
+                          <>
+                            {merged.destinationGardenId && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🏡 Garden: {merged.destinationGardenId}
+                              </span>
+                            )}
+                            {merged.destinationRoomId && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🚪 Room: {merged.destinationRoomId}
+                              </span>
+                            )}
+                            {merged.destinationZoneId && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                📦 Zone: {merged.destinationZoneId}
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* GERMINATION log: show key badges */}
+                        {log.type === 'GERMINATION' && (
+                          <>
+                            {merged.germinationMethod && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌱 {merged.germinationMethod}
+                              </span>
+                            )}
+                            {merged.germinationStatus && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌱 {merged.germinationStatus}
+                              </span>
+                            )}
+                            {merged.rh !== undefined && merged.rh !== null && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💧 RH: {merged.rh}%
+                              </span>
+                            )}
+                            {merged.temperature !== undefined && merged.temperature !== null && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌡️ {merged.temperature}{merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}
+                              </span>
+                            )}
+                            {merged.daysToSprout && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ⏳ {merged.daysToSprout} days
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* CLONING log: show key badges */}
+                        {log.type === 'CLONING' && (
+                          <>
+                            {merged.cloningMethod && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🧬 {merged.cloningMethod}
+                              </span>
+                            )}
+                            {merged.cutFrom && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ✂️ {merged.cutFrom}
+                              </span>
+                            )}
+                            {merged.additivesUsed && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🧪 {Array.isArray(merged.additivesUsed) ? merged.additivesUsed.join(', ') : merged.additivesUsed}
+                              </span>
+                            )}
+                            {merged.rh !== undefined && merged.rh !== null && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💧 RH: {merged.rh}%
+                              </span>
+                            )}
+                            {merged.temperature !== undefined && merged.temperature !== null && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌡️ {merged.temperature}{merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}
+                              </span>
+                            )}
+                            {merged.lightHoursPerDay && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💡 {merged.lightHoursPerDay}h
+                              </span>
+                            )}
+                            {merged.domeUsed && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🛡️ Dome
+                              </span>
+                            )}
+                            {merged.ventsOpened && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌬️ Vents
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* TREATMENT log: show key badges */}
+                        {log.type === 'TREATMENT' && (
+                          <>
+                            {merged.applicationMethod && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🧴 {merged.applicationMethod}
+                              </span>
+                            )}
+                            {merged.coverageMethod && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🪣 {merged.coverageMethod}
+                              </span>
+                            )}
+                            {Array.isArray(merged.targetPests) && merged.targetPests.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🐛 {merged.targetPests[0]}
+                              </span>
+                            )}
+                            {Array.isArray(merged.bcaPredatorTypes) && merged.bcaPredatorTypes.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🦠 {merged.bcaPredatorTypes[0]}
+                              </span>
+                            )}
+                            {merged.releaseCount !== undefined && merged.releaseCount !== null && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🔢 {merged.releaseCount}
+                              </span>
+                            )}
+                            {merged.phOfTreatmentSolution !== undefined && merged.phOfTreatmentSolution !== null && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ⚗️ pH {merged.phOfTreatmentSolution}
+                              </span>
+                            )}
+                            {merged.additives && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🧪 {Array.isArray(merged.additives) ? merged.additives.join(', ') : merged.additives}
                               </span>
                             )}
                           </>

@@ -57,6 +57,24 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         <FieldRow label="User ID" value={log.userId} />
       </Section>
 
+      {/* TRANSFER-specific section - Only for TRANSFER logs */}
+      {log.type === 'TRANSFER' && (
+        <Section title="Transfer Details">
+          <FieldRow label="Transfer To Garden" value={merged.destinationGardenId} />
+          <FieldRow label="Transfer To Room" value={merged.destinationRoomId} />
+          <FieldRow label="Transfer To Zone" value={merged.destinationZoneId} />
+        </Section>
+      )}
+
+      {/* TRANSPLANT-specific section - Only for TRANSPLANT logs */}
+      {log.type === 'TRANSPLANT' && (
+        <Section title="Transplant Details">
+          <FieldRow label="Transplant From" value={merged.transplantFromSize} />
+          <FieldRow label="Transplant To" value={merged.transplantToSize} />
+          <FieldRow label="Soil Moisture When Transplanting" value={merged.soilMoisture} />
+        </Section>
+      )}
+
       {/* PEST_STRESS_DISEASE-specific section - Only for PEST_STRESS_DISEASE logs */}
       {log.type === 'PEST_STRESS_DISEASE' && (
         <Section title="Pest/Stress/Disease Details">
@@ -173,6 +191,40 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
             <FieldRow label="Teabrewer Volume" value={merged.teabrewerVolume} />
           </Section>
         </>
+      )}
+
+      {/* CLONING-specific section - Only for CLONING logs */}
+      {log.type === 'CLONING' && (
+        <Section title="Cloning Details">
+          <FieldRow label="Cloning Method" value={merged.cloningMethod} />
+          <FieldRow label="Cut From" value={merged.cutFrom} />
+          <FieldRow label="Additives Used" value={Array.isArray(merged.additivesUsed) ? merged.additivesUsed.join(', ') : merged.additivesUsed} />
+          <FieldRow label="Sanitation Method" value={merged.sanitationMethod} />
+          <FieldRow label="RH (%)" value={merged.rh} />
+          <FieldRow label="Temperature" value={merged.temperature !== null && merged.temperature !== undefined ? `${merged.temperature}${merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}` : undefined} />
+          <FieldRow label="Light Hours per Day" value={merged.lightHoursPerDay} />
+          <FieldRow label="Light Type" value={merged.lightType} />
+          <FieldRow label="Dome Used" value={merged.domeUsed ? 'Yes' : 'No'} />
+          <FieldRow label="Vents Opened" value={merged.ventsOpened ? 'Yes' : 'No'} />
+          <FieldRow label="Dome Removed" value={merged.domeRemoved ? 'Yes' : 'No'} />
+          <FieldRow label="Vents Closed" value={merged.ventsClosed ? 'Yes' : 'No'} />
+        </Section>
+      )}
+
+      {/* TREATMENT-specific section - Only for TREATMENT logs */}
+      {log.type === 'TREATMENT' && (
+        <Section title="Treatment Details">
+          <FieldRow label="Treatment Type" value={merged.treatmentType} />
+          <FieldRow label="Foliar Spray Products" value={Array.isArray(merged.foliarSprayProducts) ? merged.foliarSprayProducts.join(', ') : merged.foliarSprayProducts} />
+          <FieldRow label="Application Method" value={merged.applicationMethod} />
+          <FieldRow label="Coverage Method" value={merged.coverageMethod} />
+          <FieldRow label="Target Pests" value={Array.isArray(merged.targetPests) ? merged.targetPests.join(', ') : merged.targetPests} />
+          <FieldRow label="BCA Predator Types" value={Array.isArray(merged.bcaPredatorTypes) ? merged.bcaPredatorTypes.join(', ') : merged.bcaPredatorTypes} />
+          <FieldRow label="BCA Acclimation Prior to Release" value={merged.bcaAcclimationPriorToRelease ? 'Yes' : 'No'} />
+          <FieldRow label="Release Count" value={merged.releaseCount} />
+          <FieldRow label="pH of Treatment Solution" value={merged.phOfTreatmentSolution} />
+          <FieldRow label="Additives" value={Array.isArray(merged.additives) ? merged.additives.join(', ') : merged.additives} />
+        </Section>
       )}
 
       {/* Notes Section */}
