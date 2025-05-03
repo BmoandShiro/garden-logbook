@@ -165,7 +165,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                             )}
                             {merged.nutrientWaterPh !== null && merged.nutrientWaterPh !== undefined && (
                               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
-                                pH {merged.nutrientWaterPh}
+                                ⚗️ pH {merged.nutrientWaterPh}
                               </span>
                             )}
                             {merged.waterTemperature !== null && merged.waterTemperature !== undefined && (
