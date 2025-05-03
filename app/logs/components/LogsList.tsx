@@ -59,7 +59,8 @@ const getLogIcon = (type: LogType) => {
     TREATMENT: '💊',
     STRESS: '⚠️',
     EQUIPMENT: '🔧',
-    CUSTOM: '📝'
+    CUSTOM: '📝',
+    DRYING: '🏜️'
   };
   return icons[type] || '📝';
 };
@@ -217,6 +218,81 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
                             🌡️ {merged.nutrientWaterTemperature}{merged.nutrientWaterTemperatureUnit ? ` ${merged.nutrientWaterTemperatureUnit}` : ''} Nutrient
                           </span>
+                        )}
+                        {/* HST log: show key badges */}
+                        {log.type === 'HST' && (
+                          <>
+                            {merged.toppedNode && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ✂️ Top: Node {merged.toppedNode}
+                              </span>
+                            )}
+                            {merged.fimNode && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🪒 FIM: Node {merged.fimNode}
+                              </span>
+                            )}
+                            {merged.defoliationIntensity && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🍃 Defol: {merged.defoliationIntensity}
+                              </span>
+                            )}
+                            {merged.defoliationPercentage && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                % Defol: {merged.defoliationPercentage}
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* HARVEST log: show key badges */}
+                        {log.type === 'HARVEST' && (
+                          <>
+                            {merged.hangMethod && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🪢 {merged.hangMethod}
+                              </span>
+                            )}
+                            {merged.trichomeColor && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🔬 {merged.trichomeColor}
+                              </span>
+                            )}
+                            {merged.forLiveUse && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-700 text-white">
+                                LIVE
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {/* DRYING log: show key badges */}
+                        {log.type === 'DRYING' && (
+                          <>
+                            {merged.trimMoisture && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ✂️ {merged.trimMoisture}
+                              </span>
+                            )}
+                            {merged.nugMoisturePercent !== null && merged.nugMoisturePercent !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💧 {merged.nugMoisturePercent}%
+                              </span>
+                            )}
+                            {merged.dryingRh !== null && merged.dryingRh !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                💦 RH {merged.dryingRh}%
+                              </span>
+                            )}
+                            {merged.dryingTemp !== null && merged.dryingTemp !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                🌡️ {merged.dryingTemp}{merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}
+                              </span>
+                            )}
+                            {merged.estimatedDaysLeft !== null && merged.estimatedDaysLeft !== undefined && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
+                                ⏳ {merged.estimatedDaysLeft}d
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

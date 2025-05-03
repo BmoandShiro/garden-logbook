@@ -57,6 +57,38 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         <FieldRow label="User ID" value={log.userId} />
       </Section>
 
+      {/* DRYING-specific section - Only for DRYING logs */}
+      {log.type === 'DRYING' && (
+        <Section title="Drying Details">
+          <FieldRow label="Trim Moisture" value={merged.trimMoisture} />
+          <FieldRow label="Nug Moisture When Trimmed (%)" value={merged.nugMoisturePercent} />
+          <FieldRow label="Trim Method" value={merged.trimMethod} />
+          <FieldRow label="RH (%)" value={merged.dryingRh} />
+          <FieldRow label="Temperature" value={merged.dryingTemp !== undefined ? `${merged.dryingTemp}${merged.temperatureUnit ? ` ${merged.temperatureUnit}` : ''}` : undefined} />
+          <FieldRow label="Estimated Days Left Till Dry" value={merged.estimatedDaysLeft} />
+        </Section>
+      )}
+
+      {/* HARVEST-specific section - Only for HARVEST logs */}
+      {log.type === 'HARVEST' && (
+        <Section title="Harvest Details">
+          <FieldRow label="Hang Method" value={merged.hangMethod} />
+          <FieldRow label="Trichome Coloration" value={merged.trichomeColor} />
+          <FieldRow label="Harvest to be used live" value={merged.forLiveUse ? 'Yes' : 'No'} />
+        </Section>
+      )}
+
+      {/* HST-specific section - Only for HST logs */}
+      {log.type === 'HST' && (
+        <Section title="HST Details">
+          <FieldRow label="Topped at Node" value={merged.toppedNode} />
+          <FieldRow label="FIM at Node" value={merged.fimNode} />
+          <FieldRow label="Defoliation Intensity" value={merged.defoliationIntensity} />
+          <FieldRow label="Portion of Plant Defoliated (%)" value={merged.defoliationPercentage} />
+          <FieldRow label="Training Goals" value={Array.isArray(merged.trainingGoals) ? merged.trainingGoals.join(', ') : merged.trainingGoals} />
+        </Section>
+      )}
+
       {/* LST-specific section - Only for LST logs */}
       {log.type === 'LST' && (
         <Section title="LST Details">
