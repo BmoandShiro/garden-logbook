@@ -22,4 +22,21 @@ export async function GET(
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch log' }, { status: 500 });
   }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const deleted = await db.log.delete({
+      where: { id: params.id },
+    });
+    if (!deleted) {
+      return NextResponse.json({ error: 'Log not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to delete log' }, { status: 500 });
+  }
 } 
