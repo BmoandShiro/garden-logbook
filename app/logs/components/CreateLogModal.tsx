@@ -2699,11 +2699,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
   );
 
   const renderTypeSpecificFields = () => {
-    const logType = formData.logType as string;
-    switch (logType) {
-      case 'ENVIRONMENTAL':
-        return renderEnvironmentalFields();
-      case 'WATERING':
+    switch (formData.logType) {
+      case LogType.WATERING:
         return (
           <>
             {renderWateringFields()}
@@ -2711,15 +2708,17 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             {renderAdditivesFields()}
           </>
         );
-      case 'LST':
+      case LogType.ENVIRONMENTAL:
+        return renderEnvironmentalFields();
+      case LogType.LST:
         return renderLSTFields();
-      case 'HST':
+      case LogType.HST:
         return renderHSTFields();
-      case 'HARVEST':
+      case LogType.HARVEST:
         return renderHarvestFields();
-      case 'DRYING':
+      case LogType.DRYING:
         return renderDryingFields();
-      case 'PEST_STRESS_DISEASE':
+      case LogType.PEST_STRESS_DISEASE:
         return (
           <>
             {renderHealthFields()}
@@ -2807,19 +2806,17 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             </div>
           </>
         );
-      case 'TRANSPLANT':
+      case LogType.TRANSPLANT:
         return renderTransplantFields();
-      case 'TRANSFER':
+      case LogType.TRANSFER:
         return renderTransferFields();
-      case 'GERMINATION':
+      case LogType.GERMINATION:
         return renderGerminationFields();
-      case 'CLONING':
+      case LogType.CLONING:
         return renderCloningFields();
-      case 'INSPECTION':
-        return renderHealthFields();
-      case 'TREATMENT':
+      case LogType.TREATMENT:
         return renderTreatmentFields();
-      case 'EQUIPMENT':
+      case LogType.EQUIPMENT:
         return null;
       default:
         return null;
