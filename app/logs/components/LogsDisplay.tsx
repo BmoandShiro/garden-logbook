@@ -103,6 +103,36 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
           >
             <Settings className="h-4 w-4" />
           </Button>
+          <Button
+            onClick={() => {
+              window.location.href = '/api/export';
+            }}
+            className="bg-yellow-600 text-white hover:bg-yellow-700"
+          >
+            Export Database
+          </Button>
+          <label htmlFor="import-database" className="inline-block">
+            <input
+              id="import-database"
+              type="file"
+              accept=".csv,.zip"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                // Placeholder for import logic
+                if (e.target.files && e.target.files[0]) {
+                  alert(`Selected file: ${e.target.files[0].name}`);
+                }
+              }}
+            />
+            <span>
+              <Button
+                type="button"
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Import Database
+              </Button>
+            </span>
+          </label>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-garden-600 hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
