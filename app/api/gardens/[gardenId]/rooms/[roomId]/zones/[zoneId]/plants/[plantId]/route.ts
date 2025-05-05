@@ -36,7 +36,7 @@ export async function DELETE(
     }
 
     // Check if plant exists and belongs to the zone
-    const plant = await prisma.zonePlant.findFirst({
+    const plant = await prisma.plant.findFirst({
       where: {
         id: params.plantId,
         zoneId: params.zoneId,
@@ -52,7 +52,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Plant not found or access denied' }, { status: 404 });
     }
 
-    await prisma.zonePlant.delete({
+    await prisma.plant.delete({
       where: {
         id: params.plantId
       }

@@ -10,22 +10,11 @@ export default async function Dashboard() {
     redirect('/auth/signin');
   }
 
-  // Fetch zone plants count
-  const [zonePlantCount, regularPlantCount] = await Promise.all([
-    prisma.zonePlant.count({
-      where: {
-        creatorId: session.user.id
-      }
-    }),
-    prisma.plant.count({
-      where: {
-        userId: session.user.id,
-        type: 'ZONE_PLANT'
-      }
-    })
-  ]);
-
-  const totalPlantCount = zonePlantCount + regularPlantCount;
+  const totalPlantCount = await prisma.plant.count({
+    where: {
+      userId: session.user.id
+    }
+  });
 
   return (
     <div className="py-10">

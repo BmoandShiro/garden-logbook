@@ -34,7 +34,6 @@ model User {
   sessions          Session[]
   strains           Strain[]
   createdZones      Zone[]
-  createdPlants     ZonePlant[]
   seeds             Seed[]
 }
 
@@ -67,6 +66,7 @@ model Session {
 model Plant {
   id          String     @id @default(cuid())
   name        String
+  strainName  String?
   strainId    String?
   stage       Stage      @default(VEGETATIVE)
   location    String?
@@ -160,7 +160,6 @@ model Log {
   vpd          Float?
   width        Float?
   zoneId       String?
-  zonePlantId  String?
   ppfd         Float?
   runoffPh     Float?
   waterPh      Float?
@@ -205,7 +204,6 @@ model Log {
   room         Room?      @relation(fields: [roomId], references: [id])
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   zone         Zone?      @relation(fields: [zoneId], references: [id])
-  zonePlant    ZonePlant? @relation(fields: [zonePlantId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([logDate])
@@ -408,22 +406,6 @@ model Zone {
   plants      Plant[]
   createdBy   User        @relation(fields: [creatorId], references: [id])
   room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  zonePlants  ZonePlant[]
-}
-
-model ZonePlant {
-  id        String   @id @default(cuid())
-  name      String
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  zoneId    String
-  creatorId String
-  strain    String?
-  type      String?
-  logs      Log[]
-  createdBy User     @relation(fields: [creatorId], references: [id])
-  zone      Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 }
 
 model Seed {

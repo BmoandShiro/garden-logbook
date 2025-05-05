@@ -20,7 +20,7 @@ export default async function PlantPage({ params }: PageProps) {
     redirect('/auth');
   }
 
-  const plant = await prisma.zonePlant.findUnique({
+  const plant = await prisma.plant.findUnique({
     where: {
       id: params.plantId,
     },
@@ -43,7 +43,7 @@ export default async function PlantPage({ params }: PageProps) {
           }
         }
       },
-      createdBy: true
+      user: true
     }
   });
 
@@ -76,7 +76,7 @@ export default async function PlantPage({ params }: PageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-emerald-100">{plant.name}</h1>
-          <p className="text-emerald-300/70">{plant.species}{plant.variety ? ` (${plant.variety})` : ''}</p>
+          <p className="text-emerald-300/70">{plant.strainName || plant.species || 'Unknown'}{plant.variety ? ` (${plant.variety})` : ''}</p>
         </div>
       </div>
       
@@ -88,8 +88,8 @@ export default async function PlantPage({ params }: PageProps) {
             
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-emerald-100">Species</p>
-                <p className="text-emerald-300/70">{plant.species}</p>
+                <p className="text-sm font-medium text-emerald-100">Strain</p>
+                <p className="text-emerald-300/70">{plant.strainName || plant.species || 'Unknown'}</p>
               </div>
 
               {plant.variety && (
@@ -127,7 +127,7 @@ export default async function PlantPage({ params }: PageProps) {
               <div>
                 <p className="text-sm font-medium text-emerald-100">Added By</p>
                 <p className="text-emerald-300/70">
-                  {plant.createdBy.name || plant.createdBy.email}
+                  {plant.user.name || plant.user.email}
                 </p>
               </div>
             </div>

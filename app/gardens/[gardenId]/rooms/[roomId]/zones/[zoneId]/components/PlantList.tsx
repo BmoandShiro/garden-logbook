@@ -16,10 +16,10 @@ interface Plant {
   createdAt: Date;
   updatedAt: Date;
   zoneId: string;
-  creatorId: string;
-  strain: string | null;
+  userId: string;
+  strainId: string | null;
   type: string | null;
-  createdBy: User;
+  user: User;
 }
 
 interface PlantListProps {
@@ -82,11 +82,11 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                 <h3 className="text-lg font-semibold text-emerald-100">{plant.name}</h3>
                 <div className="space-y-1">
                   <p className="text-sm text-emerald-300/70">
-                    <span className="font-medium text-emerald-200">Species:</span> {plant.strain || 'Unknown'}
+                    <span className="font-medium text-emerald-200">Species:</span> {plant.strainId || 'Unknown'}
                     {plant.type && ` (${plant.type})`}
                   </p>
                   <p className="text-sm text-emerald-300/70">
-                    Added by {plant.createdBy.name || plant.createdBy.email}
+                    Added by {plant.user.name || plant.user.email}
                   </p>
                 </div>
               </div>

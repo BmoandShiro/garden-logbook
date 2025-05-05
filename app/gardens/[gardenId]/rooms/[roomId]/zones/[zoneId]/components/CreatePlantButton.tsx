@@ -26,6 +26,7 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
   const [plantedDate, setPlantedDate] = useState('');
   const [expectedHarvestDate, setExpectedHarvestDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [strainName, setStrainName] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,11 +39,13 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
         },
         body: JSON.stringify({
           name,
+          strainName: strainName || null,
           species,
           variety: variety || null,
           plantedDate: plantedDate || null,
           expectedHarvestDate: expectedHarvestDate || null,
           notes: notes || null,
+          type: 'ZONE_PLANT',
         }),
       });
 
@@ -60,6 +63,7 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
       router.refresh();
       setIsOpen(false);
       setName('');
+      setStrainName('');
       setSpecies('');
       setVariety('');
       setPlantedDate('');
@@ -98,6 +102,16 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter plant name"
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="strainName">Strain</Label>
+              <Input
+                id="strainName"
+                value={strainName}
+                onChange={(e) => setStrainName(e.target.value)}
+                placeholder="Enter strain name (e.g. Mandarin Cookie R3 #01)"
               />
             </div>
 

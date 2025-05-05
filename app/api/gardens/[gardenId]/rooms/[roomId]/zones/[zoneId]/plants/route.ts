@@ -5,8 +5,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: Request,
-  { params }: { params: { gardenId: string; roomId: string; zoneId: string } }
+  context: { params: { gardenId: string; roomId: string; zoneId: string } }
 ) {
+  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
 
@@ -21,7 +22,7 @@ export async function POST(
       userId: session.user.id
     });
 
-    const { name, species, variety, plantedDate, expectedHarvestDate, notes } = body;
+    const { name, strainName, species, variety, plantedDate, expectedHarvestDate, notes, type } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -71,27 +72,18 @@ export async function POST(
     }
 
     try {
-      const plant = await prisma.zonePlant.create({
+      const plant = await prisma.plant.create({
         data: {
           name,
+          strainName: strainName || null,
           notes: notes || null,
-          strain: species || null,
-          type: variety || null,
-          zone: {
-            connect: {
-              id: params.zoneId
-            }
-          },
-          createdBy: {
-            connect: {
-              id: session.user.id
-            }
-          }
+          zoneId: params.zoneId,
+          userId: session.user.id,
+          strainId: null,
+          type: type || 'ZONE_PLANT',
+          startDate: plantedDate ? new Date(plantedDate) : undefined,
+          harvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : undefined,
         },
-        include: {
-          zone: true,
-          createdBy: true
-        }
       });
 
       console.log('Successfully created plant:', plant);
@@ -147,7 +139,7 @@ export async function DELETE(
     }
 
     // Check if plant exists and belongs to the zone
-    const plant = await prisma.zonePlant.findFirst({
+    const plant = await prisma.plant.findFirst({
       where: {
         id: params.plantId,
         zoneId: params.zoneId,
@@ -163,7 +155,7 @@ export async function DELETE(
       return new NextResponse('Plant not found or access denied', { status: 404 });
     }
 
-    await prisma.zonePlant.delete({
+    await prisma.plant.delete({
       where: {
         id: params.plantId
       }
@@ -200,7 +192,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const plants = await prisma.zonePlant.findMany({
+    const plants = await prisma.plant.findMany({
       where: { zoneId: params.zoneId },
       select: { id: true, name: true },
     });
