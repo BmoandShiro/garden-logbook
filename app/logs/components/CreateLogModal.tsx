@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -645,29 +645,44 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
   const { toast } = useToast();
   const router = useRouter();
 
-  const [locations, setLocations] = useState<LocationNode[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  // Replace locations state with separate states
+  const [gardens, setGardens] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [plants, setPlants] = useState([]);
 
-  // Filter locations by type
-  const gardens = locations.filter(loc => loc.type === 'garden');
-  const rooms = locations.filter(loc => loc.type === 'room' && (!formData.gardenId || loc.path[0] === gardens.find(g => g.id === formData.gardenId)?.name));
-  const zones = locations.filter(loc => loc.type === 'zone' && (!formData.roomId || loc.path[1] === rooms.find(r => r.id === formData.roomId)?.name));
-  const plants = locations.filter(loc => loc.type === 'plant' && (!formData.zoneId || loc.path[2] === zones.find(z => z.id === formData.zoneId)?.name));
+  // Fetch gardens on modal open
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/gardens')
+        .then(res => res.json())
+        .then(setGardens);
+    }
+  }, [isOpen]);
 
-  // Filter locations for destination
-  const destinationGardens = locations.filter(loc => loc.type === 'garden');
-  const destinationRooms = locations.filter(loc => loc.type === 'room' && (!formData.destinationGardenId || loc.path[0] === destinationGardens.find(g => g.id === formData.destinationGardenId)?.name));
-  const destinationZones = locations.filter(loc => loc.type === 'zone' && (!formData.destinationRoomId || loc.path[1] === destinationRooms.find(r => r.id === formData.destinationRoomId)?.name));
+  const handleGardenChange = (gardenId: string) => {
+    setFormData({ ...formData, gardenId, roomId: '', zoneId: '', selectedPlants: [] });
+    fetch(`/api/gardens/${gardenId}/rooms`)
+      .then(res => res.json())
+      .then(setRooms);
+    setZones([]);
+    setPlants([]);
+  };
 
-  // Add these filter functions for mother and clone locations
-  const motherGardens = locations.filter(loc => loc.type === 'garden');
-  const motherRooms = locations.filter(loc => loc.type === 'room' && (!formData.gardenId || loc.path[0] === motherGardens.find(g => g.id === formData.gardenId)?.name));
-  const motherZones = locations.filter(loc => loc.type === 'zone' && (!formData.roomId || loc.path[1] === motherRooms.find(r => r.id === formData.roomId)?.name));
-  const motherPlants = locations.filter(loc => loc.type === 'plant' && (!formData.zoneId || loc.path[2] === motherZones.find(z => z.id === formData.zoneId)?.name));
+  const handleRoomChange = (roomId: string) => {
+    setFormData({ ...formData, roomId, zoneId: '', selectedPlants: [] });
+    fetch(`/api/rooms/${roomId}/zones`)
+      .then(res => res.json())
+      .then(setZones);
+    setPlants([]);
+  };
 
-  const cloneGardens = locations.filter(loc => loc.type === 'garden');
-  const cloneRooms = locations.filter(loc => loc.type === 'room' && (!formData.cloneGardenId || loc.path[0] === cloneGardens.find(g => g.id === formData.cloneGardenId)?.name));
-  const cloneZones = locations.filter(loc => loc.type === 'zone' && (!formData.cloneRoomId || loc.path[1] === cloneRooms.find(r => r.id === formData.cloneRoomId)?.name));
+  const handleZoneChange = (zoneId: string) => {
+    setFormData({ ...formData, zoneId, selectedPlants: [] });
+    fetch(`/api/zones/${zoneId}/plants`)
+      .then(res => res.json())
+      .then(setPlants);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -717,11 +732,11 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           <select
             id="garden"
             value={formData.gardenId || ''}
-            onChange={(e) => setFormData({ ...formData, gardenId: e.target.value })}
+            onChange={e => handleGardenChange(e.target.value)}
             className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Garden</option>
-            {gardens.map((garden) => (
+            {gardens.map((garden: any) => (
               <option key={garden.id} value={garden.id}>{garden.name}</option>
             ))}
           </select>
@@ -731,11 +746,12 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           <select
             id="room"
             value={formData.roomId || ''}
-            onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
+            onChange={e => handleRoomChange(e.target.value)}
+            disabled={!formData.gardenId}
             className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Room</option>
-            {rooms.map((room) => (
+            {rooms.map((room: any) => (
               <option key={room.id} value={room.id}>{room.name}</option>
             ))}
           </select>
@@ -745,11 +761,12 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           <select
             id="zone"
             value={formData.zoneId || ''}
-            onChange={(e) => setFormData({ ...formData, zoneId: e.target.value })}
+            onChange={e => handleZoneChange(e.target.value)}
+            disabled={!formData.roomId}
             className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Zone</option>
-            {zones.map((zone) => (
+            {zones.map((zone: any) => (
               <option key={zone.id} value={zone.id}>{zone.name}</option>
             ))}
           </select>
@@ -2047,7 +2064,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Garden</option>
-              {destinationGardens.map((garden) => (
+              {gardens.map((garden: any) => (
                 <option key={garden.id} value={garden.id}>{garden.name}</option>
               ))}
             </select>
@@ -2069,7 +2086,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               disabled={!formData.destinationGardenId}
             >
               <option value="">Select Room</option>
-              {destinationRooms.map((room) => (
+              {rooms.map((room: any) => (
                 <option key={room.id} value={room.id}>{room.name}</option>
               ))}
             </select>
@@ -2085,7 +2102,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               disabled={!formData.destinationRoomId}
             >
               <option value="">Select Zone</option>
-              {destinationZones.map((zone) => (
+              {zones.map((zone: any) => (
                 <option key={zone.id} value={zone.id}>{zone.name}</option>
               ))}
             </select>
@@ -2209,7 +2226,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
             >
               <option value="">Select Garden</option>
-              {cloneGardens.map((garden) => (
+              {gardens.map((garden: any) => (
                 <option key={garden.id} value={garden.id}>{garden.name}</option>
               ))}
             </select>
@@ -2231,7 +2248,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               disabled={!formData.cloneGardenId}
             >
               <option value="">Select Room</option>
-              {cloneRooms.map((room) => (
+              {rooms.map((room: any) => (
                 <option key={room.id} value={room.id}>{room.name}</option>
               ))}
             </select>
@@ -2247,7 +2264,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               disabled={!formData.cloneRoomId}
             >
               <option value="">Select Zone</option>
-              {cloneZones.map((zone) => (
+              {zones.map((zone: any) => (
                 <option key={zone.id} value={zone.id}>{zone.name}</option>
               ))}
             </select>
@@ -2898,9 +2915,9 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             <Label htmlFor="plants">Plants</Label>
             <MultiSelect
               value={formData.selectedPlants}
-              onChange={(value) => setFormData({ ...formData, selectedPlants: value })}
+              onChange={value => setFormData({ ...formData, selectedPlants: value })}
+              options={plants.map((p: any) => ({ value: p.id, label: p.name }))}
               placeholder="Select plants"
-              options={[]} // TODO: Add plant options
               className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
             />
           </div>

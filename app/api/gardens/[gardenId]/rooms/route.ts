@@ -133,4 +133,39 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+// GET /api/gardens/[gardenId]/rooms - List rooms for a garden
+export async function GET(
+  request: Request,
+  { params }: { params: { gardenId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const garden = await prisma.garden.findUnique({
+      where: { id: params.gardenId },
+      include: { members: true },
+    });
+    if (!garden) {
+      return NextResponse.json({ error: 'Garden not found' }, { status: 404 });
+    }
+    const isCreator = garden.creatorId === session.user.id;
+    const hasAccess = garden.members.some((member: { userId: string }) => member.userId === session.user.id);
+    if (!isCreator && !hasAccess) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rooms = await prisma.room.findMany({
+      where: { gardenId: params.gardenId },
+      select: { id: true, name: true },
+    });
+    return NextResponse.json(rooms);
+  } catch (error) {
+    console.error('[ROOMS_GET]', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 } 
