@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import RoomList from "./components/RoomList";
 import CreateRoomButton from "./components/CreateRoomButton";
+import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 
 interface GardenPageProps {
   params: {
@@ -88,6 +89,17 @@ export default async function GardenPage({ params }: GardenPageProps) {
     redirect("/gardens");
   }
 
+  const logs = await prisma.log.findMany({
+    where: { gardenId: params.gardenId },
+    orderBy: { logDate: 'desc' },
+    include: {
+      plant: { select: { name: true } },
+      garden: { select: { name: true } },
+      room: { select: { name: true } },
+      zone: { select: { name: true } },
+    },
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -114,6 +126,11 @@ export default async function GardenPage({ params }: GardenPageProps) {
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-emerald-100 mb-4">Rooms</h2>
         <RoomList rooms={garden.rooms} gardenId={params.gardenId} />
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-emerald-100 mb-4">Logs for this Garden</h2>
+        <LogsListWrapper logs={logs} />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import PlantList from './components/PlantList';
 import CreatePlantButton from './components/CreatePlantButton';
 import CreateEquipmentButton from './components/CreateEquipmentButton';
+import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 
 interface PageProps {
   params: {
@@ -64,6 +65,17 @@ export default async function ZonePage({ params }: PageProps) {
     redirect('/gardens');
   }
 
+  const logs = await prisma.log.findMany({
+    where: { zoneId: params.zoneId },
+    orderBy: { logDate: 'desc' },
+    include: {
+      plant: { select: { name: true } },
+      garden: { select: { name: true } },
+      room: { select: { name: true } },
+      zone: { select: { name: true } },
+    },
+  });
+
   return (
     <div className="h-full p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -113,6 +125,11 @@ export default async function ZonePage({ params }: PageProps) {
             zoneId={params.zoneId} 
           />
         </div>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-emerald-100 mb-4">Logs for this Zone</h2>
+        <LogsListWrapper logs={logs} />
       </div>
     </div>
   );
