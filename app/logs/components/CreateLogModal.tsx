@@ -2927,20 +2927,28 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
 
           <div>
             <Label>Plants</Label>
-            {selectedPlantIds.map((plantId, idx) => (
-              <select
-                key={idx}
-                value={plantId}
-                onChange={e => handlePlantChange(idx, e.target.value)}
-                className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary mb-2"
+            <div className="space-y-2">
+              {selectedPlantIds.map((plantId: string, idx: number) => (
+                <select
+                  key={idx}
+                  value={plantId}
+                  onChange={e => handlePlantChange(idx, e.target.value)}
+                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                >
+                  <option value="">Select plant</option>
+                  {plants.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              ))}
+              <Button
+                type="button"
+                onClick={handleAddPlantField}
+                className="bg-garden-600 text-white hover:bg-garden-700 w-full"
               >
-                <option value="">Select plant</option>
-                {plants.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            ))}
-            <Button type="button" onClick={handleAddPlantField} className="mt-2">Add Another Plant</Button>
+                Add Another Plant
+              </Button>
+            </div>
           </div>
 
           {renderTypeSpecificFields()}
