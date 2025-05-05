@@ -7,6 +7,9 @@ import type { User } from "@prisma/client";
 import DeleteButton from '../../components/DeleteButton';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { useState } from 'react';
+import { Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ExtendedGarden {
   id: string;
@@ -39,6 +42,12 @@ interface GardenListProps {
 export function GardenList({ gardens }: GardenListProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const [openModalGardenId, setOpenModalGardenId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [showInviteFormGardenId, setShowInviteFormGardenId] = useState<string | null>(null);
 
   const handleDelete = async (gardenId: string) => {
     try {
@@ -79,21 +88,26 @@ export function GardenList({ gardens }: GardenListProps) {
           key={garden.id}
           className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-emerald-600"
         >
-          <div className="absolute top-0 right-0 z-10" onClick={(e) => e.stopPropagation()}>
-            <div className="p-2">
-              {garden.isPrivate && (
-                <span className="inline-flex items-center rounded-md bg-emerald-950/90 px-2 py-1 text-xs font-medium text-emerald-200">
-                  Private
-                </span>
-              )}
-              {session?.user?.id === garden.createdBy.id && (
-                <DeleteButton
-                  onDelete={() => handleDelete(garden.id)}
-                  itemName="Garden"
-                  small
-                />
-              )}
-            </div>
+          <div className="absolute top-0 right-0 z-10 flex items-center gap-2 p-2" onClick={(e) => e.stopPropagation()}>
+            {garden.isPrivate && (
+              <span className="inline-flex items-center rounded-md bg-emerald-950/90 px-2 py-1 text-xs font-medium text-emerald-200">
+                Private
+              </span>
+            )}
+            <button
+              className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              title="Garden Settings"
+              onClick={() => setOpenModalGardenId(garden.id)}
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+            {session?.user?.id === garden.createdBy.id && (
+              <DeleteButton
+                onDelete={() => handleDelete(garden.id)}
+                itemName="Garden"
+                small
+              />
+            )}
           </div>
           <Link href={`/gardens/${garden.id}`} className="flex-grow">
             <div className="aspect-h-3 aspect-w-4 relative bg-emerald-950 sm:aspect-none sm:h-48">
@@ -128,6 +142,89 @@ export function GardenList({ gardens }: GardenListProps) {
               </div>
             </div>
           </Link>
+          {/* Modal for this garden */}
+          <Dialog open={openModalGardenId === garden.id} onOpenChange={(open) => setOpenModalGardenId(open ? garden.id : null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{garden.name}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 flex flex-col gap-4">
+                {showInviteFormGardenId === garden.id ? (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setInviteLoading(true);
+                      setInviteError('');
+                      setInviteSuccess(false);
+                      try {
+                        const res = await fetch('/api/gardens/invite', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ gardenId: garden.id, email: inviteEmail }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setInviteSuccess(true);
+                          setInviteEmail('');
+                        } else {
+                          setInviteError(data.error || 'Failed to send invite.');
+                        }
+                      } catch (err) {
+                        setInviteError('Failed to send invite.');
+                      } finally {
+                        setInviteLoading(false);
+                      }
+                    }}
+                    className="flex flex-col gap-2"
+                  >
+                    <label htmlFor="invite-email" className="text-sm font-medium text-dark-text-primary">Gmail address to invite:</label>
+                    <input
+                      id="invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      placeholder="user@gmail.com"
+                      className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-blue-400"
+                      required
+                      pattern="^[^@\s]+@gmail\.com$"
+                      disabled={inviteLoading}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-md bg-gray-700 text-white hover:bg-gray-600"
+                        onClick={() => {
+                          setShowInviteFormGardenId(null);
+                          setInviteEmail('');
+                          setInviteError('');
+                          setInviteSuccess(false);
+                        }}
+                        disabled={inviteLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        disabled={inviteLoading || !inviteEmail.match(/^[^@\s]+@gmail\.com$/)}
+                      >
+                        {inviteLoading ? 'Sending...' : 'Send Invite'}
+                      </button>
+                    </div>
+                    {inviteError && <div className="text-red-500 text-sm mt-2">{inviteError}</div>}
+                    {inviteSuccess && <div className="text-green-500 text-sm mt-2">Invite sent!</div>}
+                  </form>
+                ) : (
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                    onClick={() => setShowInviteFormGardenId(garden.id)}
+                  >
+                    Invite to Garden
+                  </button>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       ))}
     </div>
