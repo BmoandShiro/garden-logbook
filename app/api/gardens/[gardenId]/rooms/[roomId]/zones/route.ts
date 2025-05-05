@@ -11,67 +11,38 @@ const createZoneSchema = z.object({
   dimensions: z.string().optional(),
 });
 
-// GET /api/gardens/[gardenId]/rooms/[roomId]/zones - List zones
+// GET /api/gardens/[gardenId]/rooms/[roomId]/zones - List zones for a room
 export async function GET(
-  req: Request,
-  { params }: { params: { gardenId: string; roomId: string } }
+  request: Request,
+  { params }: { params: { gardenId: string, roomId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const garden = await prisma.garden.findUnique({
-      where: {
-        id: params.gardenId,
-      },
-      include: {
-        createdBy: true,
-        members: true,
-      },
+      where: { id: params.gardenId },
+      include: { members: true },
     });
-
     if (!garden) {
-      return new NextResponse('Garden not found', { status: 404 });
+      return NextResponse.json({ error: 'Garden not found' }, { status: 404 });
     }
-
-    // Check if user has access to this garden
     const isCreator = garden.creatorId === session.user.id;
     const hasAccess = garden.members.some((member: { userId: string }) => member.userId === session.user.id);
-
     if (!isCreator && !hasAccess) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get zones for the room
     const zones = await prisma.zone.findMany({
-      where: {
-        roomId: params.roomId
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      where: { roomId: params.roomId },
+      select: { id: true, name: true },
     });
-
     return NextResponse.json(zones);
   } catch (error) {
     console.error('[ZONES_GET]', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

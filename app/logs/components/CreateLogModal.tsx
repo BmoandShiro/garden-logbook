@@ -646,10 +646,10 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
   const router = useRouter();
 
   // Replace locations state with separate states
-  const [gardens, setGardens] = useState([]);
-  const [rooms, setRooms] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [plants, setPlants] = useState([]);
+  const [gardens, setGardens] = useState<{ id: string; name: string }[]>([]);
+  const [rooms, setRooms] = useState<{ id: string; name: string }[]>([]);
+  const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
+  const [plants, setPlants] = useState<{ id: string; name: string }[]>([]);
 
   // Fetch gardens on modal open
   useEffect(() => {
@@ -671,7 +671,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
 
   const handleRoomChange = (roomId: string) => {
     setFormData({ ...formData, roomId, zoneId: '', selectedPlants: [] });
-    fetch(`/api/rooms/${roomId}/zones`)
+    fetch(`/api/gardens/${formData.gardenId}/rooms/${roomId}/zones`)
       .then(res => res.json())
       .then(setZones);
     setPlants([]);
