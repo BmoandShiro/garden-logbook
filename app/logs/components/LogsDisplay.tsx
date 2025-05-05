@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Log, LogType } from '@prisma/client';
 import { format } from 'date-fns';
@@ -55,6 +55,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     endDate: '',
     location: '',
   });
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const { data: logs, isLoading, error, refetch } = useQuery<LogWithLocation[]>({
     queryKey: ['logs', userId, filters],
@@ -111,28 +112,40 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
           >
             Export Database
           </Button>
-          <label htmlFor="import-database" className="inline-block">
-            <input
-              id="import-database"
-              type="file"
-              accept=".csv,.zip"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                // Placeholder for import logic
-                if (e.target.files && e.target.files[0]) {
-                  alert(`Selected file: ${e.target.files[0].name}`);
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".csv,.zip"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                  const res = await fetch('/api/import', {
+                    method: 'POST',
+                    body: formData,
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    alert('Import successful!');
+                  } else {
+                    alert(data.error || 'Import failed.');
+                  }
+                } catch (err) {
+                  alert('Import failed.');
                 }
-              }}
-            />
-            <span>
-              <Button
-                type="button"
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Import Database
-              </Button>
-            </span>
-          </label>
+              }
+            }}
+          />
+          <Button
+            type="button"
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => importInputRef.current?.click()}
+          >
+            Import Database
+          </Button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-garden-600 hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
