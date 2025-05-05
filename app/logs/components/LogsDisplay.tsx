@@ -202,7 +202,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
           <p className="mb-2">Type <b>DELETE ALL</b> to confirm:</p>
           <input
             type="text"
-            className="w-full border rounded px-2 py-1 mb-4"
+            className="w-full border rounded px-2 py-1 mb-4 bg-dark-bg-primary text-white border-dark-border focus:ring-2 focus:ring-garden-400"
             value={deleteConfirmText}
             onChange={e => setDeleteConfirmText(e.target.value)}
             placeholder="DELETE ALL"
