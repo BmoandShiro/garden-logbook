@@ -679,7 +679,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
 
   const handleZoneChange = (zoneId: string) => {
     setFormData({ ...formData, zoneId, selectedPlants: [] });
-    fetch(`/api/zones/${zoneId}/plants`)
+    fetch(`/api/gardens/${formData.gardenId}/rooms/${formData.roomId}/zones/${zoneId}/plants`)
       .then(res => res.json())
       .then(setPlants);
   };
