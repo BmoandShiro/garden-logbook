@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
+import PlantLogsListWrapper from './components/PlantLogsListWrapper';
 
 interface PageProps {
   params: {
@@ -70,6 +71,18 @@ export default async function PlantPage({ params }: PageProps) {
   const daysUntilHarvest = plant.expectedHarvestDate && plant.plantedDate
     ? Math.floor((new Date(plant.expectedHarvestDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     : null;
+
+  // Fetch logs for this plant
+  const logs = await prisma.log.findMany({
+    where: { plantId: params.plantId },
+    orderBy: { logDate: 'desc' },
+    include: {
+      plant: { select: { name: true } },
+      garden: { select: { name: true } },
+      room: { select: { name: true } },
+      zone: { select: { name: true } },
+    },
+  });
 
   return (
     <div className="h-full p-4 space-y-4">
@@ -189,6 +202,12 @@ export default async function PlantPage({ params }: PageProps) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Logs Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-emerald-100 mb-4">Logs for this Plant</h2>
+        <PlantLogsListWrapper logs={logs} />
       </div>
     </div>
   );
