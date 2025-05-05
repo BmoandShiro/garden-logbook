@@ -56,4 +56,46 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { gardenId: string; roomId: string; zoneId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+    const garden = await prisma.garden.findUnique({
+      where: { id: params.gardenId },
+      include: { createdBy: true, members: true },
+    });
+    if (!garden) {
+      return new NextResponse('Garden not found', { status: 404 });
+    }
+    const isCreator = garden.creatorId === session.user.id;
+    const hasAccess = garden.members.some((member: { userId: string }) => member.userId === session.user.id);
+    if (!isCreator && !hasAccess) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+    const body = await request.json();
+    const { name, description, type, dimensions } = body;
+    if (!name || typeof name !== 'string') {
+      return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
+    }
+    const updated = await prisma.zone.update({
+      where: { id: params.zoneId },
+      data: {
+        name,
+        description: description ?? '',
+        type: type ?? '',
+        dimensions: dimensions ?? '',
+      },
+    });
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('[ZONE_PATCH]', error);
+    return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+  }
 } 

@@ -66,4 +66,67 @@ export async function DELETE(
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { gardenId: string; roomId: string; zoneId: string; plantId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    // Check if user has access to this garden
+    const garden = await prisma.garden.findFirst({
+      where: {
+        id: params.gardenId,
+        OR: [
+          { creatorId: session.user.id },
+          {
+            members: {
+              some: {
+                userId: session.user.id
+              }
+            }
+          }
+        ]
+      }
+    });
+    if (!garden) {
+      return NextResponse.json({ error: 'Garden not found or access denied' }, { status: 404 });
+    }
+    // Check if plant exists and belongs to the zone
+    const plant = await prisma.plant.findFirst({
+      where: {
+        id: params.plantId,
+        zoneId: params.zoneId,
+        zone: {
+          room: {
+            gardenId: params.gardenId
+          }
+        }
+      }
+    });
+    if (!plant) {
+      return NextResponse.json({ error: 'Plant not found or access denied' }, { status: 404 });
+    }
+    const body = await request.json();
+    const { name, notes, type } = body;
+    if (!name || typeof name !== 'string') {
+      return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
+    }
+    const updated = await prisma.plant.update({
+      where: { id: params.plantId },
+      data: {
+        name,
+        notes: notes ?? '',
+        type: type ?? '',
+      },
+    });
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('[PLANT_PATCH]', error);
+    return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+  }
 } 
