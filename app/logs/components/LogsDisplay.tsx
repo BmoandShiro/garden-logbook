@@ -130,6 +130,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
                   const data = await res.json();
                   if (res.ok) {
                     alert('Import successful!');
+                    window.location.reload();
                   } else {
                     alert(data.error || 'Import failed.');
                   }
