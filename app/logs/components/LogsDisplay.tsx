@@ -48,6 +48,8 @@ async function fetchLogs(userId: string, filters: any) {
 export default function LogsDisplay({ userId }: LogsDisplayProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const { preferences, updateUnitPreference } = useUserPreferences();
   const [filters, setFilters] = useState({
     type: '',
@@ -180,6 +182,57 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
               });
             }}
           />
+          <div className="mt-6 flex justify-end">
+            <Button
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              Delete All Logs
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete All Logs</DialogTitle>
+          </DialogHeader>
+          <p className="mb-4 text-red-500">This will permanently delete <b>all logs</b> for your account. This action cannot be undone.</p>
+          <p className="mb-2">Type <b>DELETE ALL</b> to confirm:</p>
+          <input
+            type="text"
+            className="w-full border rounded px-2 py-1 mb-4"
+            value={deleteConfirmText}
+            onChange={e => setDeleteConfirmText(e.target.value)}
+            placeholder="DELETE ALL"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteConfirmText !== 'DELETE ALL'}
+              onClick={async () => {
+                const res = await fetch('/api/logs/delete-all', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId }),
+                });
+                if (res.ok) {
+                  setIsDeleteDialogOpen(false);
+                  setIsPreferencesOpen(false);
+                  setDeleteConfirmText('');
+                  window.location.reload();
+                } else {
+                  alert('Failed to delete logs.');
+                }
+              }}
+            >
+              Confirm Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
