@@ -2840,6 +2840,20 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     }
   };
 
+  // Replace MultiSelect for plants with single-select dropdowns
+  const [selectedPlantIds, setSelectedPlantIds] = useState<string[]>([]);
+
+  const handleAddPlantField = () => {
+    setSelectedPlantIds([...selectedPlantIds, '']);
+  };
+
+  const handlePlantChange = (index: number, plantId: string) => {
+    const updated = [...selectedPlantIds];
+    updated[index] = plantId;
+    setSelectedPlantIds(updated);
+    setFormData({ ...formData, selectedPlants: updated.filter(id => id) });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-dark-bg-secondary text-dark-text-primary">
@@ -2912,14 +2926,21 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
           {renderLocationFields()}
 
           <div>
-            <Label htmlFor="plants">Plants</Label>
-            <MultiSelect
-              value={formData.selectedPlants}
-              onChange={value => setFormData({ ...formData, selectedPlants: value })}
-              options={plants.map((p: any) => ({ value: p.id, label: p.name }))}
-              placeholder="Select plants"
-              className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-            />
+            <Label>Plants</Label>
+            {selectedPlantIds.map((plantId, idx) => (
+              <select
+                key={idx}
+                value={plantId}
+                onChange={e => handlePlantChange(idx, e.target.value)}
+                className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary mb-2"
+              >
+                <option value="">Select plant</option>
+                {plants.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            ))}
+            <Button type="button" onClick={handleAddPlantField} className="mt-2">Add Another Plant</Button>
           </div>
 
           {renderTypeSpecificFields()}

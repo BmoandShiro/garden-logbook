@@ -204,7 +204,7 @@ export async function GET(
       where: { zoneId: params.zoneId },
       select: { id: true, name: true },
     });
-    return NextResponse.json(plants);
+    return NextResponse.json(plants ?? []);
   } catch (error) {
     console.error('[PLANTS_GET]', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
