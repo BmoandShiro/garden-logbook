@@ -45,6 +45,7 @@
     "csv-parse": "^5.6.0",
     "csv-stringify": "^6.5.2",
     "csv-writer": "^1.6.0",
+    "cuid": "^3.0.0",
     "date-fns": "^4.1.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.488.0",
