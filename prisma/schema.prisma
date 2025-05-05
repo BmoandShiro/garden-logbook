@@ -320,6 +320,7 @@ model Garden {
   logTemplates LogTemplate[]
   plants       Plant[]
   rooms        Room[]
+  gardenInvites GardenInvite[]
 }
 
 model GardenMember {
@@ -424,6 +425,18 @@ model Seed {
   createdBy     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model GardenInvite {
+  id        String   @id @default(cuid())
+  gardenId  String
+  email     String
+  invitedAt DateTime @default(now())
+  accepted  Boolean  @default(false)
+
+  garden    Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+
+  @@unique([gardenId, email])
 }
 
 enum Role {

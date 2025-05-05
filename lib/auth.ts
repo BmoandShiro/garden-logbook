@@ -84,6 +84,33 @@ export const authOptions: NextAuthOptions = {
               },
             });
           }
+
+          // Auto-link pending garden invites
+          const invites = await db.gardenInvite.findMany({ where: { email: user.email } });
+          for (const invite of invites) {
+            // Add as member if not already
+            const alreadyMember = await db.gardenMember.findUnique({
+              where: {
+                gardenId_userId: {
+                  gardenId: invite.gardenId,
+                  userId: newUser.id,
+                },
+              },
+            });
+            if (!alreadyMember) {
+              await db.gardenMember.create({
+                data: {
+                  gardenId: invite.gardenId,
+                  userId: newUser.id,
+                  permissions: ['VIEW', 'INVITE'],
+                  addedById: newUser.id,
+                },
+              });
+            }
+            // Optionally, delete the invite
+            await db.gardenInvite.delete({ where: { id: invite.id } });
+          }
+
           return true;
         }
 
