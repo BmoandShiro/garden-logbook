@@ -10,6 +10,7 @@ A web application for tracking and managing garden activities. This guide will h
 - [Running the Application](#running-the-application)
 - [Troubleshooting](#troubleshooting)
 - [Database Migration Workflow](#database-migration-workflow)
+- [Authentication Setup](#authentication-setup)
 
 ## What You'll Need
 
@@ -755,3 +756,37 @@ Remember:
 - Never commit `.env` file
 - Backup your database before major changes
 - Test the application after pulling changes
+
+## Authentication Setup
+
+Garden Logbook supports two authentication modes:
+
+### 1. Google/Discord OAuth (Recommended for Tailscale/private use)
+
+- **Step 1:** Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and create or edit an OAuth 2.0 Client ID.
+- **Step 2:** Add your Tailscale/live domain as an authorized redirect URI:
+  ```
+  https://your-tailscale-domain.ts.net/api/auth/callback/google
+  ```
+- **Step 3:** Copy your client ID and secret into your `.env` file (see `.env.example`).
+- **Step 4:** Set `NEXTAUTH_URL` in your `.env` to your Tailscale/live domain (e.g., `https://your-tailscale-domain.ts.net`).
+- **Step 5:** Restart your server after any `.env` changes.
+
+**Security:**
+- Keep your `.env` file private and add it to `.gitignore`.
+- Only you and users on your Tailscale network will be able to use Google sign-in.
+
+### 2. Magic Link (Email) Sign-In (Works for all self-hosters)
+
+- **Step 1:** Configure your SMTP/email settings in `.env` (see `.env.example`).
+- **Step 2:** Users can sign in with a magic link sent to their email address.
+- **Step 3:** No Google Cloud setup required for this mode.
+
+**Note:**
+- If you want to distribute this app for others to self-host, provide them with `.env.example` and these instructions. They can use magic link sign-in out of the box, or set up their own OAuth credentials for Google/Discord if desired.
+
+---
+
+## Example .env
+
+See `.env.example` for a template. Never commit your real `.env` to version control!
