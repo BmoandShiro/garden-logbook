@@ -94,67 +94,71 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-dark-text-primary">Log Entries</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsPreferencesOpen(true)}
-            className="text-dark-text-secondary hover:text-dark-text-primary"
-            title="Unit Preferences"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => {
-              window.location.href = '/api/export';
-            }}
-            className="bg-yellow-600 text-white hover:bg-yellow-700"
-          >
-            Export Database
-          </Button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".csv,.zip"
-            style={{ display: 'none' }}
-            onChange={async (e) => {
-              if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-                const formData = new FormData();
-                formData.append('file', file);
-                try {
-                  const res = await fetch('/api/import', {
-                    method: 'POST',
-                    body: formData,
-                  });
-                  const data = await res.json();
-                  if (res.ok) {
-                    alert('Import successful!');
-                    window.location.reload();
-                  } else {
-                    alert(data.error || 'Import failed.');
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <div className="w-full sm:w-auto mb-2 sm:mb-0">
+          <h2 className="text-xl font-semibold text-dark-text-primary text-center sm:text-left">Log Entries</h2>
+        </div>
+        <div className="w-full max-w-md sm:max-w-none">
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsPreferencesOpen(true)}
+              className="text-dark-text-secondary hover:text-dark-text-primary w-full h-12 sm:w-auto sm:h-12 bg-black flex items-center justify-center rounded-lg"
+              title="Unit Preferences"
+            >
+              <Settings className="h-6 w-6" />
+            </Button>
+            <Button
+              onClick={() => {
+                window.location.href = '/api/export';
+              }}
+              className="bg-yellow-600 text-white hover:bg-yellow-700 w-full h-12 sm:w-auto sm:h-12 rounded-lg"
+            >
+              Export
+            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,.zip"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  try {
+                    const res = await fetch('/api/import', {
+                      method: 'POST',
+                      body: formData,
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      alert('Import successful!');
+                      window.location.reload();
+                    } else {
+                      alert(data.error || 'Import failed.');
+                    }
+                  } catch (err) {
+                    alert('Import failed.');
                   }
-                } catch (err) {
-                  alert('Import failed.');
                 }
-              }
-            }}
-          />
-          <Button
-            type="button"
-            className="bg-blue-600 text-white hover:bg-blue-700"
-            onClick={() => importInputRef.current?.click()}
-          >
-            Import Database
-          </Button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-garden-600 hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
-          >
-            Create Log
-          </button>
+              }}
+            />
+            <Button
+              type="button"
+              className="bg-blue-600 text-white hover:bg-blue-700 w-full h-12 sm:w-auto sm:h-12 rounded-lg"
+              onClick={() => importInputRef.current?.click()}
+            >
+              Import
+            </Button>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center justify-center text-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-garden-600 hover:bg-garden-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 w-full h-12 sm:w-auto sm:h-12 mt-2 sm:mt-0"
+            >
+              Add
+            </button>
+          </div>
         </div>
       </div>
       <LogFilters filters={filters} onFilterChange={setFilters} />
