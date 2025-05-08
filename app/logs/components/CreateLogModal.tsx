@@ -1642,6 +1642,15 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     </div>
   );
 
+  // Add state for supportedPlantIds above renderLSTFields
+  const [supportedPlantIds, setSupportedPlantIds] = useState<string[]>(formData.supportedPlants || []);
+
+  // Keep formData.supportedPlants in sync with supportedPlantIds
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, supportedPlants: supportedPlantIds.filter(Boolean) }));
+    // eslint-disable-next-line
+  }, [supportedPlantIds]);
+
   const renderLSTFields = () => (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -1704,16 +1713,41 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
       </div>
       <div>
         <Label htmlFor="supportedPlants">Trunk Supports</Label>
-        <MultiSelect
-          value={formData.supportedPlants}
-          onChange={(value) => setFormData({ ...formData, supportedPlants: value })}
-          options={plants.map(plant => ({
-            value: plant.id,
-            label: plant.name
-          }))}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-          placeholder="Select plants that received trunk support"
-        />
+        <div className="space-y-2">
+          {supportedPlantIds.map((plantId, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <select
+                value={plantId}
+                onChange={e => {
+                  const updated = [...supportedPlantIds];
+                  updated[idx] = e.target.value;
+                  setSupportedPlantIds(updated);
+                }}
+                className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              >
+                <option value="">Select plant that received trunk support</option>
+                {plants.map(plant => (
+                  <option key={plant.id} value={plant.id}>{plant.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setSupportedPlantIds(supportedPlantIds.filter((_, i) => i !== idx))}
+                className="text-red-500 hover:text-red-700 px-2 py-1 rounded focus:outline-none"
+                aria-label="Remove plant"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            onClick={() => setSupportedPlantIds([...supportedPlantIds, ''])}
+            className="w-full bg-garden-600 text-white hover:bg-garden-700 mt-2"
+          >
+            Add Another Plant
+          </Button>
+        </div>
       </div>
     </div>
   );
