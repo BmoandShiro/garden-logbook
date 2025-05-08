@@ -2963,17 +2963,30 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
             <Label>Plants</Label>
             <div className="space-y-2">
               {selectedPlantIds.map((plantId: string, idx: number) => (
-                <select
-                  key={idx}
-                  value={plantId}
-                  onChange={e => handlePlantChange(idx, e.target.value)}
-                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-                >
-                  <option value="">Select plant</option>
-                  {plants.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                <div key={idx} className="flex items-center gap-2">
+                  <select
+                    value={plantId}
+                    onChange={e => handlePlantChange(idx, e.target.value)}
+                    className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                  >
+                    <option value="">Select plant</option>
+                    {plants.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = selectedPlantIds.filter((_, i) => i !== idx);
+                      setSelectedPlantIds(updated);
+                      setFormData({ ...formData, selectedPlants: updated.filter(id => id) });
+                    }}
+                    className="text-red-500 hover:text-red-700 px-2 py-1 rounded focus:outline-none"
+                    aria-label="Remove plant"
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
               <Button
                 type="button"
