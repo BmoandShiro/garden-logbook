@@ -94,17 +94,17 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="w-full sm:w-auto mb-2 sm:mb-0">
           <h2 className="text-xl font-semibold text-dark-text-primary text-center sm:text-left">Log Entries</h2>
         </div>
-        <div className="w-full max-w-md sm:max-w-none">
-          <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+        <div className="w-full max-w-md sm:max-w-none sm:w-auto sm:flex-1 sm:justify-end sm:flex">
+          <div className="flex flex-col sm:flex-row sm:justify-end items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="icon"
               onClick={() => setIsPreferencesOpen(true)}
-              className="text-dark-text-secondary hover:text-dark-text-primary w-full h-12 sm:w-auto sm:h-12 bg-black flex items-center justify-center rounded-lg"
+              className="text-dark-text-secondary hover:text-dark-text-primary w-full h-12 sm:w-12 sm:h-12 sm:aspect-square bg-black flex items-center justify-center rounded-lg"
               title="Unit Preferences"
             >
               <Settings className="h-6 w-6" />
