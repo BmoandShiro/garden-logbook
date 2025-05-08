@@ -62,8 +62,8 @@ export default function CreateGardenButton() {
       </button>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-dark-bg-secondary rounded-lg p-6 max-w-md w-full ring-1 ring-dark-border shadow-xl">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-dark-bg-secondary rounded-lg p-6 max-w-md w-full ring-1 ring-dark-border shadow-xl z-50">
             <h2 className="text-2xl font-bold mb-4 text-dark-text-primary">Create New Garden</h2>
             {error && (
               <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded text-red-500">
