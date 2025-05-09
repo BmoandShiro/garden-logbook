@@ -175,6 +175,12 @@ export function GardenList({ gardens }: GardenListProps) {
                 >
                   Edit Garden
                 </button>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                  onClick={() => alert('Manage Garden Members (coming soon)')}
+                >
+                  Manage Garden Members
+                </button>
               </div>
             </DialogContent>
           </Dialog>
