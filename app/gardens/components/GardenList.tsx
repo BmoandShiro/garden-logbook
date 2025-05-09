@@ -211,16 +211,15 @@ export function GardenList({ gardens }: GardenListProps) {
                 }}
                 className="flex flex-col gap-2"
               >
-                <label htmlFor="invite-email" className="text-sm font-medium text-dark-text-primary">Gmail address to invite:</label>
+                <label htmlFor="invite-email" className="text-sm font-medium text-dark-text-primary">Email address to invite:</label>
                 <input
                   id="invite-email"
                   type="email"
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
-                  placeholder="user@gmail.com"
+                  placeholder="user@example.com"
                   className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-blue-400"
                   required
-                  pattern="^[^@\s]+@gmail\.com$"
                   disabled={inviteLoading}
                 />
                 <div className="flex gap-2 mt-2">
