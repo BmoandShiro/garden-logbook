@@ -40,6 +40,11 @@ interface LogWithLocation {
   destinationGardenId?: string | null;
   destinationRoomId?: string | null;
   destinationZoneId?: string | null;
+  user?: {
+    id: string;
+    username?: string | null;
+    email?: string | null;
+  };
 }
 
 interface LogsListProps {
@@ -127,6 +132,11 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                       <p className="mt-1 text-sm text-dark-text-secondary">
                         {getLocationString(log)}
                       </p>
+                      {log.user && (
+                        <p className="text-xs text-dark-text-secondary mt-1">
+                          By: {log.user.username || log.user.email || log.user.id}
+                        </p>
+                      )}
                       {log.notes && (
                         <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
                       )}

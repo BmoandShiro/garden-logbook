@@ -18,6 +18,7 @@ model User {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   password          String?
+  username          String?           @unique
   accounts          Account[]
   createdSOPs       CleaningSOP[]
   createdEquipment  Equipment[]

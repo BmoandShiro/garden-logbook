@@ -80,6 +80,7 @@ export async function GET(request: Request) {
         width: true,
         healthRating: true,
         data: true,
+        user: { select: { id: true, username: true, email: true } },
       },
       orderBy: {
         logDate: 'desc',
