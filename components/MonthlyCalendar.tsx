@@ -52,6 +52,10 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const dateFormat = "d";
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  // Year dropdown logic
+  const currentYear = month.getFullYear();
+  const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
+
   // Generate all days to display in the calendar grid
   const rows = [];
   let days = [];
@@ -119,8 +123,20 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <div className="text-4xl sm:text-6xl font-extrabold tracking-tight text-garden-400 uppercase">
-          {format(month, "MMMM yyyy")}
+        <div className="flex items-center gap-2">
+          <div className="text-4xl sm:text-6xl font-extrabold tracking-tight text-garden-400 uppercase">
+            {format(month, "MMMM")}
+          </div>
+          <select
+            value={month.getFullYear()}
+            onChange={e => setMonth(new Date(month.setFullYear(Number(e.target.value))))}
+            className="ml-2 bg-dark-bg-primary text-garden-400 border border-dark-border rounded px-2 py-1 text-lg font-bold focus:outline-none"
+            aria-label="Select year"
+          >
+            {years.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
         <button
           onClick={() => setMonth(addMonths(month, 1))}
