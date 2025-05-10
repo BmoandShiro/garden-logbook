@@ -65,4 +65,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide the default select arrow in all browsers */
+select::-ms-expand {
+  display: none;
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 } 
