@@ -74,6 +74,8 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const [calendarNotes, setCalendarNotes] = useState<any[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [notesError, setNotesError] = useState<string | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<any | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Fetch locations on popover open
   React.useEffect(() => {
@@ -279,11 +281,21 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             }).map((note, idx) => (
               <div
                 key={"note-" + note.id}
-                className={`bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate ${note.private ? 'border border-garden-400' : ''}`}
+                className={`relative bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate flex items-center ${note.private ? 'border border-garden-400' : ''}`}
                 title={note.note}
               >
-                {note.note}
-                {note.private && <span className="ml-1 text-garden-400">(Private)</span>}
+                <span className="flex-1 truncate">{note.note}{note.private && <span className="ml-1 text-garden-400">(Private)</span>}</span>
+                <button
+                  className="ml-2 p-0.5 rounded hover:bg-dark-bg-primary text-garden-400 hover:text-red-500 focus:outline-none"
+                  aria-label="Delete note"
+                  onClick={() => openDeleteModal(note)}
+                  tabIndex={0}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="2"/>
+                    <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
@@ -336,6 +348,21 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     setSelectedRoom("");
     setSelectedZone("");
     setIsPrivate(false);
+  }
+
+  function openDeleteModal(note: any) {
+    setNoteToDelete(note);
+    setShowDeleteModal(true);
+  }
+  function closeDeleteModal() {
+    setNoteToDelete(null);
+    setShowDeleteModal(false);
+  }
+  async function handleDeleteNote() {
+    if (!noteToDelete) return;
+    // Backend call will be added later
+    setCalendarNotes(prev => prev.filter(n => n.id !== noteToDelete.id));
+    closeDeleteModal();
   }
 
   return (
@@ -407,6 +434,29 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
       <div className="flex flex-col gap-0.5">
         {rows}
       </div>
+      {/* Delete confirmation modal */}
+      {showDeleteModal && noteToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-dark-bg-primary border border-dark-border rounded-lg shadow-lg p-6 min-w-[300px]">
+            <div className="mb-4 text-lg text-dark-text-primary font-bold">Delete Note</div>
+            <div className="mb-6 text-dark-text-secondary">Are you sure you want to delete this note?</div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-1 rounded bg-dark-bg-secondary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-primary"
+                onClick={closeDeleteModal}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-1 rounded bg-red-600 text-white font-bold hover:bg-red-700"
+                onClick={handleDeleteNote}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
