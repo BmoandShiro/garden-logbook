@@ -4,9 +4,10 @@ import { Plus } from "lucide-react";
 
 interface CalendarProps {
   month?: Date; // Defaults to current month if not provided
+  logsByDate?: { [date: string]: { id: string; title: string; notes?: string }[] };
 }
 
-export const MonthlyCalendar: React.FC<CalendarProps> = ({ month }) => {
+export const MonthlyCalendar: React.FC<CalendarProps> = ({ month, logsByDate }) => {
   const today = new Date();
   const currentMonth = month || today;
   const monthStart = startOfMonth(currentMonth);
@@ -28,6 +29,8 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month }) => {
       formattedDate = format(day, dateFormat);
       const isCurrentMonth = isSameMonth(day, monthStart);
       const isToday = isSameDay(day, today);
+      const dateKey = format(day, "yyyy-MM-dd");
+      const logs = logsByDate?.[dateKey] || [];
 
       days.push(
         <div
@@ -49,8 +52,15 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month }) => {
           </button>
           <div className="font-bold text-lg mb-2 text-garden-400">{formattedDate}</div>
           <div className="w-full flex-1 flex flex-col gap-1">
-            {/* Example placeholder for reminders/thumbnails */}
-            {/* <div className="bg-garden-400 text-white rounded px-1 py-0.5 text-xs truncate">Reminder</div> */}
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="bg-garden-400 text-white rounded px-1 py-0.5 text-xs truncate"
+                title={log.notes || log.title}
+              >
+                {log.title}
+              </div>
+            ))}
           </div>
         </div>
       );
