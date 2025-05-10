@@ -29,6 +29,7 @@ export default function CalendarPage() {
       id: log.id,
       title: log.type || "Log",
       notes: log.notes,
+      type: log.type,
     });
     return acc;
   }, {});
