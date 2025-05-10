@@ -446,7 +446,7 @@ model GardenInvite {
 
 model CalendarNote {
   id        String   @id @default(cuid())
-  date      DateTime
+  date      String
   note      String
   user      User     @relation(fields: [userId], references: [id])
   userId    String

@@ -90,9 +90,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     if (!session?.user) return;
     setLoadingNotes(true);
     setNotesError(null);
-    const start = startOfMonth(month);
-    const end = endOfMonth(month);
-    fetch(`/api/calendar-notes?date=${start.toISOString()}`)
+    fetch(`/api/calendar-notes`)
       .then(res => res.json())
       .then(data => {
         setCalendarNotes(Array.isArray(data) ? data : []);
@@ -277,8 +275,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             ))}
             {/* Custom note pills from backend */}
             {calendarNotes.filter(note => {
-              const noteDate = format(new Date(note.date), "yyyy-MM-dd");
-              return noteDate === dateKey;
+              return note.date === dateKey;
             }).map((note, idx) => (
               <div
                 key={"note-" + note.id}

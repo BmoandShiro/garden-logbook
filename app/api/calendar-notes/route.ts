@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   try {
     const created = await prisma.calendarNote.create({
       data: {
-        date: new Date(date),
+        date, // string YYYY-MM-DD
         note,
         userId: session.user.id,
         gardenId: gardenId || undefined,
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const { searchParams } = new URL(request.url);
-  const date = searchParams.get('date'); // optional, ISO string
+  const date = searchParams.get('date'); // optional, YYYY-MM-DD
   const gardenId = searchParams.get('gardenId');
   const roomId = searchParams.get('roomId');
   const zoneId = searchParams.get('zoneId');
@@ -55,11 +55,7 @@ export async function GET(request: Request) {
       ],
     };
     if (date) {
-      // Find notes for the same day
-      const day = new Date(date);
-      const nextDay = new Date(day);
-      nextDay.setDate(day.getDate() + 1);
-      where.date = { gte: day, lt: nextDay };
+      where.date = date;
     }
     if (gardenId) where.gardenId = gardenId;
     if (roomId) where.roomId = roomId;
