@@ -71,6 +71,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const [isPrivate, setIsPrivate] = useState(false);
 
   const popoverContainerRef = useRef<HTMLDivElement>(null);
+  const [calendarNotes, setCalendarNotes] = useState<any[]>([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
 
   // Fetch locations on popover open
   React.useEffect(() => {
@@ -81,6 +84,25 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
         .catch(() => setLocations([]));
     }
   }, [popoverFor, session, locations.length]);
+
+  // Fetch notes for the current month
+  React.useEffect(() => {
+    if (!session?.user) return;
+    setLoadingNotes(true);
+    setNotesError(null);
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+    fetch(`/api/calendar-notes?date=${start.toISOString()}`)
+      .then(res => res.json())
+      .then(data => {
+        setCalendarNotes(Array.isArray(data) ? data : []);
+        setLoadingNotes(false);
+      })
+      .catch(() => {
+        setNotesError('Failed to load notes');
+        setLoadingNotes(false);
+      });
+  }, [month, session]);
 
   // Filtered dropdown options
   const gardens = locations.filter(loc => loc.type === "garden");
@@ -253,14 +275,18 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                 {log.title}
               </Link>
             ))}
-            {/* Custom note pills */}
-            {customNotes[dateKey]?.map((note, idx) => (
+            {/* Custom note pills from backend */}
+            {calendarNotes.filter(note => {
+              const noteDate = format(new Date(note.date), "yyyy-MM-dd");
+              return noteDate === dateKey;
+            }).map((note, idx) => (
               <div
-                key={"custom-" + idx}
-                className="bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate"
-                title={note}
+                key={"note-" + note.id}
+                className={`bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate ${note.private ? 'border border-garden-400' : ''}`}
+                title={note.note}
               >
-                {note}
+                {note.note}
+                {note.private && <span className="ml-1 text-garden-400">(Private)</span>}
               </div>
             ))}
           </div>
@@ -276,19 +302,35 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     days = [];
   }
 
-  function handleAddNote() {
+  async function handleAddNote() {
     if (!noteText.trim()) return;
-    // Here you would send the note to the backend instead of just local state
-    setCustomNotes(prev => ({
-      ...prev,
-      [popoverFor!]: [...(prev[popoverFor!] || []), noteText.trim() + (isPrivate ? " (Private)" : "")],
-    }));
-    setPopoverFor(null);
-    setNoteText("");
-    setSelectedGarden("");
-    setSelectedRoom("");
-    setSelectedZone("");
-    setIsPrivate(false);
+    if (!session?.user) return;
+    const payload = {
+      date: popoverFor,
+      note: noteText.trim(),
+      gardenId: selectedGarden || undefined,
+      roomId: selectedRoom || undefined,
+      zoneId: selectedZone || undefined,
+      private: isPrivate,
+    };
+    try {
+      const res = await fetch('/api/calendar-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to save note');
+      const saved = await res.json();
+      setCalendarNotes(prev => [...prev, saved]);
+      setPopoverFor(null);
+      setNoteText("");
+      setSelectedGarden("");
+      setSelectedRoom("");
+      setSelectedZone("");
+      setIsPrivate(false);
+    } catch (err) {
+      alert('Failed to save note');
+    }
   }
   function handleCancelNote() {
     setPopoverFor(null);

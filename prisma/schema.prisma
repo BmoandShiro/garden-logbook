@@ -36,6 +36,7 @@ model User {
   strains           Strain[]
   createdZones      Zone[]
   seeds             Seed[]
+  calendarNotes     CalendarNote[]
 }
 
 model Account {
@@ -295,6 +296,7 @@ model Room {
   createdBy        User              @relation("RoomCreator", fields: [creatorId], references: [id])
   garden           Garden            @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   zones            Zone[]
+  calendarNotes    CalendarNote[]
 }
 
 model VerificationToken {
@@ -322,6 +324,7 @@ model Garden {
   plants       Plant[]
   rooms        Room[]
   gardenInvites GardenInvite[]
+  calendarNotes CalendarNote[]
 }
 
 model GardenMember {
@@ -408,6 +411,7 @@ model Zone {
   plants      Plant[]
   createdBy   User        @relation(fields: [creatorId], references: [id])
   room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  calendarNotes CalendarNote[]
 }
 
 model Seed {
@@ -438,6 +442,22 @@ model GardenInvite {
   garden    Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
 
   @@unique([gardenId, email])
+}
+
+model CalendarNote {
+  id        String   @id @default(cuid())
+  date      DateTime
+  note      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  garden    Garden?  @relation(fields: [gardenId], references: [id])
+  gardenId  String?
+  room      Room?    @relation(fields: [roomId], references: [id])
+  roomId    String?
+  zone      Zone?    @relation(fields: [zoneId], references: [id])
+  zoneId    String?
+  private   Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 enum Role {
