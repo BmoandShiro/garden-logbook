@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Menu } from '@headlessui/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Trash, Trash2 } from 'lucide-react';
 
 interface Garden {
   id: string;
@@ -66,8 +67,8 @@ export default function ManageGardensButton({ gardens, userId }: ManageGardensBu
     <>
       <div className="relative">
         <Menu>
-          <Menu.Button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-            Delete Garden
+          <Menu.Button className="inline-flex items-center justify-center p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 group">
+            <Trash2 className="h-8 w-8 text-red-600 group-hover:text-red-700 transition-colors" />
           </Menu.Button>
           <Menu.Items className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-emerald-900 ring-1 ring-black ring-opacity-5 divide-y divide-emerald-800 focus:outline-none z-50">
             <div className="py-1">
