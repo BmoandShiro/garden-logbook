@@ -360,9 +360,16 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   }
   async function handleDeleteNote() {
     if (!noteToDelete) return;
-    // Backend call will be added later
-    setCalendarNotes(prev => prev.filter(n => n.id !== noteToDelete.id));
-    closeDeleteModal();
+    try {
+      const res = await fetch(`/api/calendar-notes?id=${noteToDelete.id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete note');
+      setCalendarNotes(prev => prev.filter(n => n.id !== noteToDelete.id));
+      closeDeleteModal();
+    } catch (err) {
+      alert('Failed to delete note');
+    }
   }
 
   return (

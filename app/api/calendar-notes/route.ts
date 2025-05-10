@@ -69,4 +69,32 @@ export async function GET(request: Request) {
     console.error('[CALENDAR_NOTE_GET]', error);
     return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
   }
+}
+
+// DELETE: Delete a calendar note by id
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: 'Note id is required' }, { status: 400 });
+  }
+  try {
+    // Only allow the creator to delete
+    const note = await prisma.calendarNote.findUnique({ where: { id } });
+    if (!note) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+    if (note.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    await prisma.calendarNote.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[CALENDAR_NOTE_DELETE]', error);
+    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 });
+  }
 } 
