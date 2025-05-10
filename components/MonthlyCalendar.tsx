@@ -45,6 +45,10 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const [month, setMonth] = useState<Date>(initialMonth || new Date());
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const yearButtonRef = useRef<HTMLButtonElement>(null);
+  const [customNotes, setCustomNotes] = useState<{ [date: string]: string[] }>({});
+  const [popoverFor, setPopoverFor] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState("");
+  const popoverInputRef = useRef<HTMLInputElement>(null);
   const today = new Date();
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(monthStart);
@@ -64,12 +68,17 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
       if (yearButtonRef.current && !yearButtonRef.current.contains(e.target as Node)) {
         setYearDropdownOpen(false);
       }
+      // Close popover if clicking outside
+      if (popoverFor && popoverInputRef.current && !popoverInputRef.current.contains(e.target as Node)) {
+        setPopoverFor(null);
+        setNoteText("");
+      }
     }
-    if (yearDropdownOpen) {
+    if (yearDropdownOpen || popoverFor) {
       document.addEventListener("mousedown", handleClick);
     }
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [yearDropdownOpen]);
+  }, [yearDropdownOpen, popoverFor]);
 
   // Generate all days to display in the calendar grid
   const rows = [];
@@ -100,9 +109,66 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           <button
             className="absolute top-2 right-2 p-0 m-0 w-6 h-6 flex items-center justify-center text-garden-400 hover:text-garden-500 focus:outline-none"
             aria-label="Add"
+            onClick={() => {
+              setPopoverFor(dateKey);
+              setTimeout(() => popoverInputRef.current?.focus(), 50);
+            }}
           >
             <Plus className="w-5 h-5" />
           </button>
+          {/* Popover for adding a note */}
+          {popoverFor === dateKey && (
+            <div className="absolute z-50 top-10 right-2 bg-dark-bg-secondary border border-dark-border rounded shadow-lg p-2 flex flex-col gap-2 w-48">
+              <input
+                ref={popoverInputRef}
+                type="text"
+                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border focus:outline-none"
+                placeholder="Add a note..."
+                value={noteText}
+                onChange={e => setNoteText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && noteText.trim()) {
+                    setCustomNotes(prev => ({
+                      ...prev,
+                      [dateKey]: [...(prev[dateKey] || []), noteText.trim()]
+                    }));
+                    setPopoverFor(null);
+                    setNoteText("");
+                  } else if (e.key === "Escape") {
+                    setPopoverFor(null);
+                    setNoteText("");
+                  }
+                }}
+              />
+              <div className="flex gap-2 justify-end">
+                <button
+                  className="px-2 py-1 rounded bg-garden-400 text-dark-bg-primary font-bold hover:bg-garden-500"
+                  disabled={!noteText.trim()}
+                  onClick={() => {
+                    if (noteText.trim()) {
+                      setCustomNotes(prev => ({
+                        ...prev,
+                        [dateKey]: [...(prev[dateKey] || []), noteText.trim()]
+                      }));
+                      setPopoverFor(null);
+                      setNoteText("");
+                    }
+                  }}
+                >
+                  Add
+                </button>
+                <button
+                  className="px-2 py-1 rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-secondary"
+                  onClick={() => {
+                    setPopoverFor(null);
+                    setNoteText("");
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
           <div className="font-bold text-lg mb-2 text-garden-400">{formattedDate}</div>
           <div className="w-full flex-1 flex flex-col gap-1">
             {logs.map((log) => (
@@ -114,6 +180,16 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
               >
                 {log.title}
               </Link>
+            ))}
+            {/* Custom note pills */}
+            {customNotes[dateKey]?.map((note, idx) => (
+              <div
+                key={"custom-" + idx}
+                className="bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate"
+                title={note}
+              >
+                {note}
+              </div>
             ))}
           </div>
         </div>
