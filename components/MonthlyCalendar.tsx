@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay } from "date-fns";
-import { Plus } from "lucide-react";
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 function getLogColor(type: string) {
   switch (type) {
@@ -41,10 +41,10 @@ interface CalendarProps {
   logsByDate?: { [date: string]: { id: string; title: string; notes?: string; type?: string }[] };
 }
 
-export const MonthlyCalendar: React.FC<CalendarProps> = ({ month, logsByDate }) => {
+export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, logsByDate }) => {
+  const [month, setMonth] = useState<Date>(initialMonth || new Date());
   const today = new Date();
-  const currentMonth = month || today;
-  const monthStart = startOfMonth(currentMonth);
+  const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday
   const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
@@ -111,10 +111,24 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month, logsByDate }) 
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      <div className="text-center mb-4">
+      <div className="text-center mb-4 flex items-center justify-center gap-4">
+        <button
+          onClick={() => setMonth(subMonths(month, 1))}
+          className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
+          aria-label="Previous Month"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
         <div className="text-4xl sm:text-6xl font-extrabold tracking-tight text-garden-400 uppercase">
-          {format(monthStart, "MMMM yyyy")}
+          {format(month, "MMMM yyyy")}
         </div>
+        <button
+          onClick={() => setMonth(addMonths(month, 1))}
+          className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
+          aria-label="Next Month"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
       </div>
       <div className="grid grid-cols-7 mb-2">
         {daysOfWeek.map((day) => (
