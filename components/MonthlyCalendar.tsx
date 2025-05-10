@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { Plus, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 function getLogColor(type: string) {
   switch (type) {
@@ -62,16 +63,44 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const currentYear = month.getFullYear();
   const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
 
+  const { data: session } = useSession();
+  const [locations, setLocations] = useState<any[]>([]);
+  const [selectedGarden, setSelectedGarden] = useState<string>("");
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [selectedZone, setSelectedZone] = useState<string>("");
+  const [isPrivate, setIsPrivate] = useState(false);
+
+  const popoverContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch locations on popover open
+  React.useEffect(() => {
+    if (popoverFor && session?.user?.id && locations.length === 0) {
+      fetch(`/api/locations?userId=${session.user.id}`)
+        .then(res => res.json())
+        .then(setLocations)
+        .catch(() => setLocations([]));
+    }
+  }, [popoverFor, session, locations.length]);
+
+  // Filtered dropdown options
+  const gardens = locations.filter(loc => loc.type === "garden");
+  const rooms = locations.filter(loc => loc.type === "room" && (!selectedGarden || loc.path[0] === gardens.find(g => g.id === selectedGarden)?.name));
+  const zones = locations.filter(loc => loc.type === "zone" && (!selectedRoom || loc.path[1] === rooms.find(r => r.id === selectedRoom)?.name));
+
   // Close dropdown on outside click
   React.useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (yearButtonRef.current && !yearButtonRef.current.contains(e.target as Node)) {
         setYearDropdownOpen(false);
       }
-      // Close popover if clicking outside
-      if (popoverFor && popoverInputRef.current && !popoverInputRef.current.contains(e.target as Node)) {
+      // Close popover if clicking outside the popover container
+      if (popoverFor && popoverContainerRef.current && !popoverContainerRef.current.contains(e.target as Node)) {
         setPopoverFor(null);
         setNoteText("");
+        setSelectedGarden("");
+        setSelectedRoom("");
+        setSelectedZone("");
+        setIsPrivate(false);
       }
     }
     if (yearDropdownOpen || popoverFor) {
@@ -118,7 +147,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           </button>
           {/* Popover for adding a note */}
           {popoverFor === dateKey && (
-            <div className="absolute z-50 top-10 right-2 bg-dark-bg-secondary border border-dark-border rounded shadow-lg p-2 flex flex-col gap-2 w-48">
+            <div ref={popoverContainerRef} className="absolute z-50 top-10 right-2 bg-dark-bg-secondary border border-dark-border rounded shadow-lg p-2 flex flex-col gap-2 w-64">
               <input
                 ref={popoverInputRef}
                 type="text"
@@ -128,41 +157,84 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                 onChange={e => setNoteText(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === "Enter" && noteText.trim()) {
-                    setCustomNotes(prev => ({
-                      ...prev,
-                      [dateKey]: [...(prev[dateKey] || []), noteText.trim()]
-                    }));
-                    setPopoverFor(null);
-                    setNoteText("");
+                    handleAddNote();
                   } else if (e.key === "Escape") {
-                    setPopoverFor(null);
-                    setNoteText("");
+                    handleCancelNote();
                   }
                 }}
               />
+              {/* Garden/Room/Zone dropdowns */}
+              <select
+                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
+                value={selectedGarden}
+                onChange={e => {
+                  setSelectedGarden(e.target.value);
+                  setSelectedRoom("");
+                  setSelectedZone("");
+                }}
+              >
+                <option value="">All Gardens</option>
+                {gardens.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+              <select
+                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
+                value={selectedRoom}
+                onChange={e => {
+                  setSelectedRoom(e.target.value);
+                  setSelectedZone("");
+                }}
+                disabled={!selectedGarden}
+              >
+                <option value="">All Rooms</option>
+                {rooms.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+              <select
+                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
+                value={selectedZone}
+                onChange={e => setSelectedZone(e.target.value)}
+                disabled={!selectedRoom}
+              >
+                <option value="">All Zones</option>
+                {zones.map(z => (
+                  <option key={z.id} value={z.id}>{z.name}</option>
+                ))}
+              </select>
+              <label className="flex items-center gap-2 mt-1 cursor-pointer select-none group">
+                <span className="relative inline-block w-5 h-5 align-middle">
+                  <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={e => setIsPrivate(e.target.checked)}
+                    className="opacity-0 absolute w-5 h-5 cursor-pointer z-10"
+                    tabIndex={0}
+                  />
+                  <span className={`block w-5 h-5 rounded bg-dark-bg-primary border border-dark-border transition-colors duration-150 ${isPrivate ? 'border-garden-400' : ''}`}></span>
+                  {isPrivate && (
+                    <span className="absolute left-0 top-0 w-5 h-5 flex items-center justify-center pointer-events-none">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="3" y1="3" x2="13" y2="13" stroke="#22c55e" strokeWidth="2"/>
+                        <line x1="13" y1="3" x2="3" y2="13" stroke="#22c55e" strokeWidth="2"/>
+                      </svg>
+                    </span>
+                  )}
+                </span>
+                <span className="text-dark-text-secondary">Private (only you can see this note)</span>
+              </label>
               <div className="flex gap-2 justify-end">
                 <button
                   className="px-2 py-1 rounded bg-garden-400 text-dark-bg-primary font-bold hover:bg-garden-500"
                   disabled={!noteText.trim()}
-                  onClick={() => {
-                    if (noteText.trim()) {
-                      setCustomNotes(prev => ({
-                        ...prev,
-                        [dateKey]: [...(prev[dateKey] || []), noteText.trim()]
-                      }));
-                      setPopoverFor(null);
-                      setNoteText("");
-                    }
-                  }}
+                  onClick={handleAddNote}
                 >
                   Add
                 </button>
                 <button
                   className="px-2 py-1 rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-secondary"
-                  onClick={() => {
-                    setPopoverFor(null);
-                    setNoteText("");
-                  }}
+                  onClick={handleCancelNote}
                 >
                   Cancel
                 </button>
@@ -202,6 +274,29 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
       </div>
     );
     days = [];
+  }
+
+  function handleAddNote() {
+    if (!noteText.trim()) return;
+    // Here you would send the note to the backend instead of just local state
+    setCustomNotes(prev => ({
+      ...prev,
+      [popoverFor!]: [...(prev[popoverFor!] || []), noteText.trim() + (isPrivate ? " (Private)" : "")],
+    }));
+    setPopoverFor(null);
+    setNoteText("");
+    setSelectedGarden("");
+    setSelectedRoom("");
+    setSelectedZone("");
+    setIsPrivate(false);
+  }
+  function handleCancelNote() {
+    setPopoverFor(null);
+    setNoteText("");
+    setSelectedGarden("");
+    setSelectedRoom("");
+    setSelectedZone("");
+    setIsPrivate(false);
   }
 
   return (
