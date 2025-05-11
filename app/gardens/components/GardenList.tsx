@@ -60,6 +60,10 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
     gardens.forEach(g => { initial[g.id] = true; });
     return initial;
   });
+  const [openManageMembersGardenId, setOpenManageMembersGardenId] = useState<string | null>(null);
+  const [removeLoading, setRemoveLoading] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; memberName: string } | null>(null);
 
   const handleDelete = async (gardenId: string) => {
     try {
@@ -184,7 +188,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                 </button>
                 <button
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
-                  onClick={() => alert('Manage Garden Members (coming soon)')}
+                  onClick={() => setOpenManageMembersGardenId(garden.id)}
                 >
                   Manage Garden Members
                 </button>
@@ -379,6 +383,104 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               )}
             </div>
           )}
+          {/* Manage Members Modal for this garden */}
+          <Dialog open={openManageMembersGardenId === garden.id} onOpenChange={(open) => setOpenManageMembersGardenId(open ? garden.id : null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Manage Members of {garden.name}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 flex flex-col gap-4">
+                {garden.members.length === 0 ? (
+                  <div className="text-emerald-300/70">No members in this garden.</div>
+                ) : (
+                  <ul className="divide-y divide-emerald-800">
+                    {garden.members.map((member) => (
+                      <li key={member.id} className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          {member.image ? (
+                            <img src={member.image} alt={member.name || member.email || 'Member'} className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-emerald-800 flex items-center justify-center text-emerald-200 text-sm font-bold">
+                              {member.name ? member.name[0] : member.email ? member.email[0] : '?'}
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-emerald-100 font-medium">{member.name || 'No name'}</div>
+                            <div className="text-emerald-300/70 text-xs">{member.email}</div>
+                          </div>
+                        </div>
+                        {member.id !== garden.createdBy.id && (
+                          <button
+                            className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+                            disabled={removeLoading === member.id}
+                            onClick={() => setConfirmRemove({ memberId: member.id, memberName: member.name || member.email || 'this member' })}
+                          >
+                            {removeLoading === member.id ? 'Removing...' : 'Remove'}
+                          </button>
+                        )}
+                        {member.id === garden.createdBy.id && (
+                          <span className="text-xs text-emerald-400 ml-2">Creator</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {removeError && <div className="text-red-500 text-sm mt-2">{removeError}</div>}
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover"
+                    onClick={() => setOpenManageMembersGardenId(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+              {/* Confirm Remove Dialog */}
+              {confirmRemove && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                  <div className="bg-emerald-900 p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+                    <h3 className="text-lg font-medium text-emerald-100 mb-4">Remove Member</h3>
+                    <p className="text-emerald-200 mb-6">Are you sure you want to remove <span className="font-bold">{confirmRemove.memberName}</span> from this garden?</p>
+                    <div className="flex justify-end gap-4">
+                      <button
+                        onClick={() => setConfirmRemove(null)}
+                        className="px-4 py-2 text-sm font-medium text-emerald-100 hover:text-white focus:outline-none"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setRemoveLoading(confirmRemove.memberId);
+                          setRemoveError(null);
+                          try {
+                            const res = await fetch(`/api/gardens/${garden.id}/members/${confirmRemove.memberId}`, {
+                              method: 'DELETE',
+                            });
+                            const data = await res.json();
+                            if (!res.ok) {
+                              throw new Error(data.error || 'Failed to remove member');
+                            }
+                            setConfirmRemove(null);
+                            setOpenManageMembersGardenId(null);
+                            router.refresh();
+                            toast.success('Member removed successfully');
+                          } catch (err) {
+                            setRemoveError(err instanceof Error ? err.message : 'Failed to remove member');
+                          } finally {
+                            setRemoveLoading(null);
+                          }
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        disabled={removeLoading === confirmRemove.memberId}
+                      >
+                        {removeLoading === confirmRemove.memberId ? 'Removing...' : 'Remove'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       ))}
     </div>
