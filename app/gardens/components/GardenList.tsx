@@ -67,6 +67,8 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; memberName: string } | null>(null);
   const [showInvites, setShowInvites] = useState(false);
+  const [cancelInviteLoading, setCancelInviteLoading] = useState<string | null>(null);
+  const [cancelInviteError, setCancelInviteError] = useState<string | null>(null);
 
   const handleDelete = async (gardenId: string) => {
     try {
@@ -509,15 +511,35 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       {garden.gardenInvites.map((invite: any) => (
                         <li key={invite.id} className="flex items-center justify-between py-1">
                           <span className="text-emerald-200 text-sm">{invite.email}</span>
-                          <button
-                            className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
-                            onClick={async () => {
-                              await fetch(`/api/gardens/${garden.id}/invites/${invite.id}`, { method: 'DELETE' });
-                              router.refresh();
-                            }}
-                          >
-                            Cancel
-                          </button>
+                          <div className="flex flex-col items-end">
+                            <button
+                              className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                              disabled={cancelInviteLoading === invite.id}
+                              onClick={async () => {
+                                setCancelInviteLoading(invite.id);
+                                setCancelInviteError(null);
+                                try {
+                                  const res = await fetch(`/api/gardens/${garden.id}/invites/${invite.id}`, { method: 'DELETE' });
+                                  if (!res.ok) {
+                                    const data = await res.json();
+                                    throw new Error(data.error || 'Failed to cancel invite');
+                                  }
+                                  toast.success('Invite cancelled');
+                                  router.refresh();
+                                } catch (err) {
+                                  setCancelInviteError(err instanceof Error ? err.message : 'Failed to cancel invite');
+                                  toast.error(err instanceof Error ? err.message : 'Failed to cancel invite');
+                                } finally {
+                                  setCancelInviteLoading(null);
+                                }
+                              }}
+                            >
+                              {cancelInviteLoading === invite.id ? 'Cancelling...' : 'Cancel'}
+                            </button>
+                            {cancelInviteError && cancelInviteLoading === null && (
+                              <div className="text-red-500 text-xs mt-1">{cancelInviteError}</div>
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>
