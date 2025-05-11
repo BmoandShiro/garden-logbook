@@ -89,8 +89,13 @@ export default async function GardenPage({ params }: GardenPageProps) {
     redirect("/gardens");
   }
 
+  // Only show logs for rooms the user has access to in this garden
+  const accessibleRoomIds = garden.rooms.map((room: { id: string }) => room.id);
   const logs = await prisma.log.findMany({
-    where: { gardenId: params.gardenId },
+    where: {
+      gardenId: params.gardenId,
+      roomId: { in: accessibleRoomIds }
+    },
     orderBy: { logDate: 'desc' },
     include: {
       plant: { select: { name: true } },
