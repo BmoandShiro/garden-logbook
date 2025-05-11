@@ -152,7 +152,7 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
         className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Create Room
+        Create Room / Plot
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
@@ -182,7 +182,7 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
               >
                 <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-gray-900 p-6 text-left align-middle shadow-xl transition-all border border-gray-800">
                   <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-emerald-100">
-                    Create New Room
+                    Create New Room / Plot
                   </Dialog.Title>
 
                   <form onSubmit={handleSubmit} className="mt-4 space-y-6">
