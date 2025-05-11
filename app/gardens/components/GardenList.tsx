@@ -29,6 +29,7 @@ interface ExtendedGarden {
     name: string | null;
     email: string | null;
     image: string | null;
+    user?: User;
   }[];
   _count: {
     rooms: number;
@@ -394,35 +395,40 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                   <div className="text-emerald-300/70">No members in this garden.</div>
                 ) : (
                   <ul className="divide-y divide-emerald-800">
-                    {garden.members.map((member) => (
-                      <li key={member.id} className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-3">
-                          {member.image ? (
-                            <img src={member.image} alt={member.name || member.email || 'Member'} className="h-8 w-8 rounded-full object-cover" />
-                          ) : (
-                            <div className="h-8 w-8 rounded-full bg-emerald-800 flex items-center justify-center text-emerald-200 text-sm font-bold">
-                              {member.name ? member.name[0] : member.email ? member.email[0] : '?'}
+                    {garden.members.map((member) => {
+                      const user = member.user || member;
+                      return (
+                        <li key={user.id} className="flex items-center justify-between py-2">
+                          <div className="flex items-center gap-3">
+                            {user.image ? (
+                              <img src={user.image} alt={user.name || user.email || 'Member'} className="h-8 w-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="h-8 w-8 rounded-full bg-emerald-800 flex items-center justify-center text-emerald-200 text-sm font-bold">
+                                {user.name?.[0] || user.email?.[0] || '?'}
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-emerald-100 font-medium">{user.name || user.email || 'Unknown member'}</div>
+                              {user.email && user.name && (
+                                <div className="text-emerald-300/70 text-xs">{user.email}</div>
+                              )}
                             </div>
-                          )}
-                          <div>
-                            <div className="text-emerald-100 font-medium">{member.name || 'No name'}</div>
-                            <div className="text-emerald-300/70 text-xs">{member.email}</div>
                           </div>
-                        </div>
-                        {member.id !== garden.createdBy.id && (
-                          <button
-                            className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 text-sm font-medium disabled:opacity-50"
-                            disabled={removeLoading === member.id}
-                            onClick={() => setConfirmRemove({ memberId: member.id, memberName: member.name || member.email || 'this member' })}
-                          >
-                            {removeLoading === member.id ? 'Removing...' : 'Remove'}
-                          </button>
-                        )}
-                        {member.id === garden.createdBy.id && (
-                          <span className="text-xs text-emerald-400 ml-2">Creator</span>
-                        )}
-                      </li>
-                    ))}
+                          {user.id !== (garden.createdBy.id || '') && (
+                            <button
+                              className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+                              disabled={removeLoading === user.id}
+                              onClick={() => setConfirmRemove({ memberId: user.id, memberName: user.name || user.email || 'this member' })}
+                            >
+                              {removeLoading === user.id ? 'Removing...' : 'Remove'}
+                            </button>
+                          )}
+                          {user.id === (garden.createdBy.id || '') && (
+                            <span className="text-xs text-emerald-400 ml-2">Creator</span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {removeError && <div className="text-red-500 text-sm mt-2">{removeError}</div>}

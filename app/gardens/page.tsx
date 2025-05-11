@@ -37,7 +37,18 @@ export default async function GardensPage() {
           image: true
         }
       },
-      members: true,
+      members: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
+        }
+      },
       _count: {
         select: {
           rooms: true,
