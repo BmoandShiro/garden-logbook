@@ -63,12 +63,12 @@ export default function DeleteButton({ onDelete, itemName, small = false }: Dele
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-gray-900 p-6 text-left align-middle shadow-xl transition-all border border-gray-800">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-red-400">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-dark-bg-secondary p-6 text-left align-middle shadow-xl transition-all border border-dark-border">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-red-500">
                     Delete {itemName}
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-300">
+                    <p className="text-sm text-dark-text-secondary">
                       Are you sure you want to delete this {itemName.toLowerCase()}? This action cannot be undone.
                     </p>
                   </div>
@@ -77,7 +77,7 @@ export default function DeleteButton({ onDelete, itemName, small = false }: Dele
                     <button
                       type="button"
                       onClick={() => setIsOpen(false)}
-                      className="rounded-md bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                      className="rounded-md bg-dark-bg-primary border border-dark-border px-4 py-2 text-sm font-medium text-dark-text-secondary hover:bg-dark-bg-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
                       disabled={isDeleting}
                     >
                       Cancel
@@ -86,7 +86,7 @@ export default function DeleteButton({ onDelete, itemName, small = false }: Dele
                       type="button"
                       onClick={handleDelete}
                       disabled={isDeleting}
-                      className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:bg-red-800 disabled:cursor-not-allowed"
+                      className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:bg-red-800 disabled:cursor-not-allowed"
                     >
                       {isDeleting ? 'Deleting...' : 'Delete'}
                     </button>
