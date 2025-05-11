@@ -35,6 +35,7 @@ interface ExtendedGarden {
     rooms: number;
     members: number;
   };
+  gardenInvites?: { id: string; email: string }[];
 }
 
 interface GardenListProps {
@@ -65,6 +66,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; memberName: string } | null>(null);
+  const [showInvites, setShowInvites] = useState(false);
 
   const handleDelete = async (gardenId: string) => {
     try {
@@ -391,6 +393,58 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                 <DialogTitle>Manage Members of {garden.name}</DialogTitle>
               </DialogHeader>
               <div className="mt-4 flex flex-col gap-4">
+                {/* Invite Member Form */}
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setInviteLoading(true);
+                    setInviteError('');
+                    setInviteSuccess(false);
+                    try {
+                      const res = await fetch('/api/gardens/invite', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ gardenId: garden.id, email: inviteEmail }),
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setInviteSuccess(true);
+                        setInviteEmail('');
+                      } else {
+                        setInviteError(data.error || 'Failed to send invite.');
+                      }
+                    } catch (err) {
+                      setInviteError('Failed to send invite.');
+                    } finally {
+                      setInviteLoading(false);
+                    }
+                  }}
+                  className="flex flex-col gap-2 mb-4"
+                >
+                  <label htmlFor="invite-email" className="text-sm font-medium text-dark-text-primary">Invite by email:</label>
+                  <input
+                    id="invite-email"
+                    type="email"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-blue-400"
+                    required
+                    disabled={inviteLoading}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                      disabled={inviteLoading}
+                    >
+                      {inviteLoading ? 'Inviting...' : 'Send Invite'}
+                    </button>
+                  </div>
+                  {inviteError && <div className="text-red-500 text-sm mt-1">{inviteError}</div>}
+                  {inviteSuccess && <div className="text-green-500 text-sm mt-1">Invite sent!</div>}
+                </form>
+                {/* Members List */}
                 {garden.members.length === 0 ? (
                   <div className="text-emerald-300/70">No members in this garden.</div>
                 ) : (
@@ -441,6 +495,35 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                   </button>
                 </div>
               </div>
+              {/* Pending Invites Dropdown */}
+              {garden.gardenInvites && garden.gardenInvites.length > 0 && (
+                <div className="mb-2">
+                  <button
+                    className="text-blue-400 hover:underline text-sm mb-1"
+                    onClick={() => setShowInvites((v) => !v)}
+                  >
+                    {showInvites ? 'Hide' : 'Show'} Pending Invites ({garden.gardenInvites.length})
+                  </button>
+                  {showInvites && (
+                    <ul className="bg-dark-bg-secondary border border-dark-border rounded-md p-2 mt-1 divide-y divide-dark-border">
+                      {garden.gardenInvites.map((invite: any) => (
+                        <li key={invite.id} className="flex items-center justify-between py-1">
+                          <span className="text-emerald-200 text-sm">{invite.email}</span>
+                          <button
+                            className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
+                            onClick={async () => {
+                              await fetch(`/api/gardens/${garden.id}/invites/${invite.id}`, { method: 'DELETE' });
+                              router.refresh();
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               {/* Confirm Remove Dialog */}
               {confirmRemove && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">

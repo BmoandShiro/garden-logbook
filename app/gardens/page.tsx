@@ -49,6 +49,10 @@ export default async function GardensPage() {
           }
         }
       },
+      gardenInvites: {
+        where: { accepted: false },
+        select: { id: true, email: true }
+      },
       _count: {
         select: {
           rooms: true,
