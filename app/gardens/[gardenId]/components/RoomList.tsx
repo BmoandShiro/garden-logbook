@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Settings } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
+import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 
 interface Room {
   id: string;
@@ -34,9 +35,10 @@ interface Room {
 interface RoomListProps {
   rooms: Room[];
   gardenId: string;
+  logsByRoomId?: Record<string, any[]>;
 }
 
-export default function RoomList({ rooms, gardenId }: RoomListProps) {
+export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProps) {
   const router = useRouter();
   const [openEditModalRoomId, setOpenEditModalRoomId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({ name: '', description: '', type: '', dimensions: '' });
@@ -246,6 +248,14 @@ export default function RoomList({ rooms, gardenId }: RoomListProps) {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Recent Logs for this room/plot */}
+          {logsByRoomId && logsByRoomId[room.id] && logsByRoomId[room.id].length > 0 && (
+            <div className="p-4 border-t border-emerald-800 bg-dark-bg-secondary">
+              <div className="text-sm font-semibold text-emerald-100 mb-2">Recent Logs</div>
+              <LogsListWrapper logs={logsByRoomId[room.id]} />
+            </div>
+          )}
         </div>
       ))}
     </div>

@@ -91,6 +91,24 @@ export default async function GardenPage({ params }: GardenPageProps) {
 
   // Only show logs for rooms the user has access to in this garden
   const accessibleRoomIds = garden.rooms.map((room: { id: string }) => room.id);
+
+  // Fetch 3 most recent logs for each room
+  const logsByRoomId: Record<string, any[]> = {};
+  for (const room of garden.rooms) {
+    logsByRoomId[room.id] = await prisma.log.findMany({
+      where: { roomId: room.id },
+      orderBy: { logDate: 'desc' },
+      take: 3,
+      include: {
+        plant: { select: { name: true } },
+        garden: { select: { name: true } },
+        room: { select: { name: true } },
+        zone: { select: { name: true } },
+      },
+    });
+  }
+
+  // All-encompassing logs for this garden (all rooms)
   const logs = await prisma.log.findMany({
     where: {
       gardenId: params.gardenId,
@@ -130,7 +148,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-emerald-100 mb-4">Rooms / Plots</h2>
-        <RoomList rooms={garden.rooms} gardenId={params.gardenId} />
+        <RoomList rooms={garden.rooms} gardenId={params.gardenId} logsByRoomId={logsByRoomId} />
       </div>
 
       <div className="mt-8">
