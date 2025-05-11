@@ -124,7 +124,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
       </div>
 
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-emerald-100 mb-4">Rooms</h2>
+        <h2 className="text-xl font-semibold text-emerald-100 mb-4">Rooms / Plots</h2>
         <RoomList rooms={garden.rooms} gardenId={params.gardenId} />
       </div>
 
