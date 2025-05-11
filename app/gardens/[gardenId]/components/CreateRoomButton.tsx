@@ -170,7 +170,7 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
+            <div className="flex min-h-full items-start justify-center p-4 pt-24">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
@@ -180,7 +180,7 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-dark-bg-primary p-6 text-left align-middle shadow-xl transition-all border border-dark-border">
+                <Dialog.Panel className="w-full max-w-2xl max-h-[90vh] overflow-y-auto transform overflow-hidden rounded-2xl bg-dark-bg-primary p-6 text-left align-middle shadow-xl transition-all border border-dark-border">
                   <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-dark-text-primary">
                     Create New Room / Plot
                   </Dialog.Title>
