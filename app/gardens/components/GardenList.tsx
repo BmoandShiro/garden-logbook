@@ -8,7 +8,7 @@ import DeleteButton from '../../components/DeleteButton';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { Settings, Plus } from 'lucide-react';
+import { Settings, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 
@@ -55,6 +55,11 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [showInviteFormGardenId, setShowInviteFormGardenId] = useState<string | null>(null);
+  const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    gardens.forEach(g => { initial[g.id] = true; });
+    return initial;
+  });
 
   const handleDelete = async (gardenId: string) => {
     try {
@@ -360,8 +365,18 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
           {/* Recent Logs for this garden */}
           {logsByGardenId[garden.id] && logsByGardenId[garden.id].length > 0 && (
             <div className="p-4 border-t border-emerald-800 bg-dark-bg-secondary">
-              <h4 className="text-sm font-semibold text-emerald-100 mb-2">Recent Logs</h4>
-              <LogsListWrapper logs={logsByGardenId[garden.id]} />
+              <button
+                className="flex items-center w-full text-left text-sm font-semibold text-emerald-100 mb-2 focus:outline-none"
+                onClick={() => setExpandedLogs(prev => ({ ...prev, [garden.id]: !prev[garden.id] }))}
+                aria-expanded={expandedLogs[garden.id]}
+                aria-controls={`logs-list-${garden.id}`}
+              >
+                <span className="flex-1">Recent Logs</span>
+                {expandedLogs[garden.id] ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+              </button>
+              {expandedLogs[garden.id] && (
+                <div id={`logs-list-${garden.id}`}> <LogsListWrapper logs={logsByGardenId[garden.id]} /> </div>
+              )}
             </div>
           )}
         </div>

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import CreateGardenButton from "./components/CreateGardenButton";
 import ManageGardensButton from "./components/ManageGardensButton";
 import { GardenList } from "./components/GardenList";
+import LogsListWrapper from "@/app/logs/components/LogsListWrapper";
 
 export default async function GardensPage() {
   const session = await getServerSession(authOptions);
@@ -65,6 +66,21 @@ export default async function GardensPage() {
     });
   }
 
+  // Fetch 15 most recent logs across all gardens the user can access
+  const allRecentLogs = await prisma.log.findMany({
+    where: {
+      gardenId: { in: gardens.map((g: { id: string }) => g.id) }
+    },
+    orderBy: { logDate: 'desc' },
+    take: 15,
+    include: {
+      plant: { select: { name: true } },
+      garden: { select: { name: true } },
+      room: { select: { name: true } },
+      zone: { select: { name: true } },
+    },
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -76,6 +92,14 @@ export default async function GardensPage() {
       </div>
       
       <GardenList gardens={gardens} logsByGardenId={logsByGardenId} />
+
+      {/* All Recent Logs section */}
+      <div className="mt-12 max-w-2xl mx-auto">
+        <h2 className="text-xl font-bold text-emerald-100 mb-4">All Recent Logs</h2>
+        <div className="bg-dark-bg-secondary border border-emerald-800 rounded-lg p-4">
+          <LogsListWrapper logs={allRecentLogs} />
+        </div>
+      </div>
     </div>
   );
 } 
