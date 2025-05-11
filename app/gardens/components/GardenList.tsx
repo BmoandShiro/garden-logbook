@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { Settings, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 
 interface ExtendedGarden {
   id: string;
@@ -37,9 +38,10 @@ interface ExtendedGarden {
 
 interface GardenListProps {
   gardens: ExtendedGarden[];
+  logsByGardenId: Record<string, any[]>;
 }
 
-export function GardenList({ gardens }: GardenListProps) {
+export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [openModalGardenId, setOpenModalGardenId] = useState<string | null>(null);
@@ -355,6 +357,13 @@ export function GardenList({ gardens }: GardenListProps) {
               </form>
             </DialogContent>
           </Dialog>
+          {/* Recent Logs for this garden */}
+          {logsByGardenId[garden.id] && logsByGardenId[garden.id].length > 0 && (
+            <div className="p-4 border-t border-emerald-800 bg-dark-bg-secondary">
+              <h4 className="text-sm font-semibold text-emerald-100 mb-2">Recent Logs</h4>
+              <LogsListWrapper logs={logsByGardenId[garden.id]} />
+            </div>
+          )}
         </div>
       ))}
     </div>

@@ -49,6 +49,22 @@ export default async function GardensPage() {
     }
   });
 
+  // Fetch recent logs for each garden
+  const logsByGardenId: Record<string, any[]> = {};
+  for (const garden of gardens) {
+    logsByGardenId[garden.id] = await prisma.log.findMany({
+      where: { gardenId: garden.id },
+      orderBy: { logDate: 'desc' },
+      take: 3,
+      include: {
+        plant: { select: { name: true } },
+        garden: { select: { name: true } },
+        room: { select: { name: true } },
+        zone: { select: { name: true } },
+      },
+    });
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -59,7 +75,7 @@ export default async function GardensPage() {
         </div>
       </div>
       
-      <GardenList gardens={gardens} />
+      <GardenList gardens={gardens} logsByGardenId={logsByGardenId} />
     </div>
   );
 } 
