@@ -180,18 +180,18 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-gray-900 p-6 text-left align-middle shadow-xl transition-all border border-gray-800">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-emerald-100">
+                <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-dark-bg-primary p-6 text-left align-middle shadow-xl transition-all border border-dark-border">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-dark-text-primary">
                     Create New Room / Plot
                   </Dialog.Title>
 
                   <form onSubmit={handleSubmit} className="mt-4 space-y-6">
                     {/* Basic Details Section */}
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium text-emerald-200">Basic Details</h4>
+                      <h4 className="text-sm font-medium text-garden-400">Basic Details</h4>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="name" className="block text-sm text-emerald-300">
+                          <label htmlFor="name" className="block text-sm text-dark-text-secondary">
                             Name
                           </label>
                           <input
@@ -199,12 +199,12 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                             id="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="mt-1 block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                             required
                           />
                         </div>
                         <div>
-                          <label htmlFor="type" className="block text-sm text-emerald-300">
+                          <label htmlFor="type" className="block text-sm text-dark-text-secondary">
                             Type
                           </label>
                           <input
@@ -212,12 +212,12 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                             id="type"
                             value={type}
                             onChange={(e) => setType(e.target.value)}
-                            className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="mt-1 block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                           />
                         </div>
                       </div>
                       <div>
-                        <label htmlFor="description" className="block text-sm text-emerald-300">
+                        <label htmlFor="description" className="block text-sm text-dark-text-secondary">
                           Description
                         </label>
                         <textarea
@@ -225,11 +225,11 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           rows={3}
-                          className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                          className="mt-1 block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                         />
                       </div>
                       <div>
-                        <label htmlFor="dimensions" className="block text-sm text-emerald-300">
+                        <label htmlFor="dimensions" className="block text-sm text-dark-text-secondary">
                           Dimensions
                         </label>
                         <input
@@ -238,7 +238,7 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                           value={dimensions}
                           onChange={(e) => setDimensions(e.target.value)}
                           placeholder="e.g., 10ft x 12ft"
-                          className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                          className="mt-1 block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                         />
                       </div>
                     </div>
@@ -246,11 +246,11 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                     {/* Equipment Section */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium text-emerald-200">Equipment</h4>
+                        <h4 className="text-sm font-medium text-garden-400">Equipment</h4>
                         <button
                           type="button"
                           onClick={addEquipment}
-                          className="text-sm text-emerald-500 hover:text-emerald-400"
+                          className="text-sm text-garden-400 hover:text-garden-300"
                         >
                           + Add Equipment
                         </button>
@@ -262,14 +262,14 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                             value={item.name}
                             onChange={(e) => updateEquipment(index, 'name', e.target.value)}
                             placeholder="Equipment name"
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                           />
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => updateEquipment(index, 'description', e.target.value)}
                             placeholder="Equipment description"
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                           />
                         </div>
                       ))}
@@ -278,11 +278,11 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                     {/* Cleaning SOPs Section */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium text-emerald-200">Cleaning SOPs</h4>
+                        <h4 className="text-sm font-medium text-garden-400">Cleaning SOPs</h4>
                         <button
                           type="button"
                           onClick={addCleaningSOP}
-                          className="text-sm text-emerald-500 hover:text-emerald-400"
+                          className="text-sm text-garden-400 hover:text-garden-300"
                         >
                           + Add SOP
                         </button>
@@ -294,19 +294,19 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                             value={sop.title}
                             onChange={(e) => updateCleaningSOP(index, 'title', e.target.value)}
                             placeholder="SOP title"
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                           />
                           <textarea
                             value={sop.description}
                             onChange={(e) => updateCleaningSOP(index, 'description', e.target.value)}
                             placeholder="SOP description"
                             rows={2}
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                           />
                           <select
                             value={sop.frequency}
                             onChange={(e) => updateCleaningSOP(index, 'frequency', e.target.value)}
-                            className="block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500"
+                            className="block w-full rounded-md bg-dark-bg-secondary border-dark-border text-dark-text-primary focus:border-garden-400 focus:ring-garden-400"
                           >
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
@@ -321,34 +321,34 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                     {/* Maintenance Tasks Section */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium text-emerald-200">Maintenance Tasks</h4>
+                        <h4 className="text-sm font-medium text-garden-400">Maintenance Tasks</h4>
                         <button
                           type="button"
                           onClick={addMaintenanceTask}
-                          className="text-sm text-emerald-500 hover:text-emerald-400"
+                          className="text-sm text-garden-400 hover:text-garden-300"
                         >
                           Add Task
                         </button>
                       </div>
                       {maintenanceTasks.map((task, index) => (
-                        <div key={index} className="space-y-4 p-4 bg-gray-800/50 rounded-lg">
+                        <div key={index} className="space-y-4 p-4 bg-dark-bg-secondary rounded-lg">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-sm text-emerald-300">Title</label>
+                              <label className="block text-sm text-dark-text-secondary">Title</label>
                               <input
                                 type="text"
                                 value={task.title}
                                 onChange={(e) => updateMaintenanceTask(index, 'title', e.target.value)}
-                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                                className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary"
                                 required
                               />
                             </div>
                             <div>
-                              <label className="block text-sm text-emerald-300">Frequency</label>
+                              <label className="block text-sm text-dark-text-secondary">Frequency</label>
                               <select
                                 value={task.frequency}
                                 onChange={(e) => updateMaintenanceTask(index, 'frequency', e.target.value)}
-                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                                className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary"
                               >
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
@@ -360,21 +360,21 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-sm text-emerald-300">Description</label>
+                            <label className="block text-sm text-dark-text-secondary">Description</label>
                             <textarea
                               value={task.description}
                               onChange={(e) => updateMaintenanceTask(index, 'description', e.target.value)}
                               rows={2}
-                              className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                              className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm text-emerald-300">Next Due Date</label>
+                            <label className="block text-sm text-dark-text-secondary">Next Due Date</label>
                             <input
                               type="date"
                               value={task.nextDueDate}
                               onChange={(e) => updateMaintenanceTask(index, 'nextDueDate', e.target.value)}
-                              className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-emerald-100"
+                              className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary"
                               required
                             />
                           </div>
@@ -386,16 +386,16 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                       <button
                         type="button"
                         onClick={() => setIsOpen(false)}
-                        className="rounded-md bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                        className="rounded-md bg-dark-bg-secondary px-4 py-2 text-sm font-medium text-dark-text-secondary hover:bg-dark-bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-border focus-visible:ring-offset-2"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:bg-emerald-800 disabled:cursor-not-allowed"
+                        className="rounded-md bg-garden-400 px-4 py-2 text-sm font-bold text-dark-bg-primary hover:bg-garden-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-garden-400 focus-visible:ring-offset-2 disabled:bg-garden-800 disabled:cursor-not-allowed"
                       >
-                        {isSubmitting ? 'Creating...' : 'Create Room'}
+                        {isSubmitting ? 'Creating...' : 'Create Room / Plot'}
                       </button>
                     </div>
                   </form>
