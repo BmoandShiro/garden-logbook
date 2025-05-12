@@ -3,10 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { gardenId: string; roomId: string; zoneId: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ gardenId: string; roomId: string; zoneId: string }> }) {
+  const params = await context.params;
+  const { gardenId, roomId, zoneId } = params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -16,7 +15,7 @@ export async function DELETE(
 
     const garden = await prisma.garden.findUnique({
       where: {
-        id: params.gardenId,
+        id: gardenId,
       },
       include: {
         createdBy: true,
@@ -39,8 +38,8 @@ export async function DELETE(
     // Delete the zone
     await prisma.zone.delete({
       where: {
-        id: params.zoneId,
-        roomId: params.roomId
+        id: zoneId,
+        roomId: roomId
       }
     });
 

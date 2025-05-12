@@ -15,10 +15,9 @@ type GardenWithMembers = Prisma.GardenGetPayload<{
   };
 }>;
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { gardenId: string; roomId: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ gardenId: string; roomId: string }> }) {
+  const params = await context.params;
+  const { gardenId, roomId } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -26,7 +25,7 @@ export async function DELETE(
     }
 
     const garden = await prisma.garden.findUnique({
-      where: { id: params.gardenId },
+      where: { id: gardenId },
       include: {
         members: {
           where: { userId: session.user.id },
@@ -48,15 +47,15 @@ export async function DELETE(
     }
 
     const room = await prisma.room.findUnique({
-      where: { id: params.roomId }
+      where: { id: roomId }
     });
 
-    if (!room || room.gardenId !== params.gardenId) {
+    if (!room || room.gardenId !== gardenId) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
     await prisma.room.delete({
-      where: { id: params.roomId }
+      where: { id: roomId }
     });
 
     return NextResponse.json({ message: 'Room deleted successfully' });

@@ -11,38 +11,30 @@ export async function POST(request: Request) {
     }
     // Check if user exists
     const user = await prisma.user.findUnique({ where: { email } });
-    if (user) {
-      // Check if already a member
-      const existingMember = await prisma.gardenMember.findUnique({
-        where: {
-          gardenId_userId: {
-            gardenId,
-            userId: user.id,
-          },
-        },
-      });
-      if (existingMember) {
-        console.warn('[INVITE] User is already a member:', email);
-        return NextResponse.json({ error: 'User is already a member of this garden.' }, { status: 400 });
-      }
-      // Add as member (default permissions: VIEW, INVITE)
-      await prisma.gardenMember.create({
-        data: {
+    // Always create a pending invite (delete any old one first)
+    const existingInvite = await prisma.gardenInvite.findUnique({
+      where: {
+        gardenId_email: {
           gardenId,
-          userId: user.id,
-          permissions: ['VIEW', 'INVITE'],
-          addedById: user.id, // You may want to use the inviter's ID if available
+          email,
         },
-      });
-      console.log('[INVITE] User added as member:', email);
-      // Create a notification for the user
+      },
+    });
+    if (existingInvite) {
+      await prisma.gardenInvite.delete({ where: { id: existingInvite.id } });
+      console.log('[INVITE] Deleted old invite for:', email);
+    }
+    const invite = await prisma.gardenInvite.create({
+      data: {
+        gardenId,
+        email,
+      },
+    });
+    console.log('[INVITE] Created invite:', invite);
+    // If user exists, create a notification for them
+    if (user) {
       try {
         const garden = await prisma.garden.findUnique({ where: { id: gardenId } });
-        // Find the invite for this user and garden
-        const invite = await prisma.gardenInvite.findFirst({
-          where: { gardenId, email: user.email, accepted: false },
-          orderBy: { invitedAt: 'desc' },
-        });
         await prisma.notification.create({
           data: {
             userId: user.id,
@@ -50,46 +42,16 @@ export async function POST(request: Request) {
             title: 'You have been invited to a garden!',
             message: `You have been invited to join the garden "${garden?.name ?? gardenId}".`,
             link: `/gardens/${gardenId}`,
-            meta: invite ? { inviteId: invite.id } : undefined,
+            meta: { inviteId: invite.id },
           },
         });
         console.log('[INVITE] Notification created for user:', email);
       } catch (notifError) {
         console.error('[INVITE] Failed to create notification for user:', email, notifError);
       }
-      // TODO: Optionally send notification email to existing user
-      return NextResponse.json({ success: true, message: 'User added as member.' });
-    } else {
-      // Not a user yet, check for existing invite
-      const existingInvite = await prisma.gardenInvite.findUnique({
-        where: {
-          gardenId_email: {
-            gardenId,
-            email,
-          },
-        },
-      });
-      if (existingInvite) {
-        await prisma.gardenInvite.delete({ where: { id: existingInvite.id } });
-        console.log('[INVITE] Deleted old invite for:', email);
-      }
-      const invite = await prisma.gardenInvite.create({
-        data: {
-          gardenId,
-          email,
-        },
-      });
-      console.log('[INVITE] Created invite for new user:', invite);
-      // TODO: Send invite email here. Log before and after sending.
-      try {
-        console.log('[INVITE] Attempting to send invite email to:', email);
-        // await sendInviteEmail(email, gardenId); // Uncomment and implement this function
-        console.log('[INVITE] Invite email sent successfully to:', email);
-      } catch (emailError) {
-        console.error('[INVITE] Failed to send invite email:', email, emailError);
-      }
-      return NextResponse.json({ success: true, message: 'Invite created for new user.' });
     }
+    // TODO: Optionally send invite email here
+    return NextResponse.json({ success: true, message: 'Invite created.' });
   } catch (error) {
     console.error('Invite error:', error);
     return NextResponse.json({ error: 'Failed to send invite' }, { status: 500 });

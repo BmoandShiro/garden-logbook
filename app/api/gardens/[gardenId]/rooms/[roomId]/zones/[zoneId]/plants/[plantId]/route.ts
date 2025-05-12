@@ -3,10 +3,9 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { gardenId: string; roomId: string; zoneId: string; plantId: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ gardenId: string; roomId: string; zoneId: string; plantId: string }> }) {
+  const params = await context.params;
+  const { gardenId, roomId, zoneId, plantId } = params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -17,7 +16,7 @@ export async function DELETE(
     // Check if user has access to this garden
     const garden = await prisma.garden.findFirst({
       where: {
-        id: params.gardenId,
+        id: gardenId,
         OR: [
           { creatorId: session.user.id },
           {
@@ -38,11 +37,11 @@ export async function DELETE(
     // Check if plant exists and belongs to the zone
     const plant = await prisma.plant.findFirst({
       where: {
-        id: params.plantId,
-        zoneId: params.zoneId,
+        id: plantId,
+        zoneId: zoneId,
         zone: {
           room: {
-            gardenId: params.gardenId
+            gardenId: gardenId
           }
         }
       }
@@ -53,12 +52,10 @@ export async function DELETE(
     }
 
     await prisma.plant.delete({
-      where: {
-        id: params.plantId
-      }
+      where: { id: plantId },
     });
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[PLANTS_DELETE] Error deleting plant:', error);
     return NextResponse.json({ 

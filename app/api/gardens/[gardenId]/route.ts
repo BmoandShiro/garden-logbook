@@ -3,10 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { gardenId: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ gardenId: string }> }) {
+  const params = await context.params;
+  const { gardenId } = params;
   try {
     const session = await getServerSession(authOptions);
     console.log('Session data:', session?.user);
@@ -18,7 +17,7 @@ export async function DELETE(
 
     // First check if the garden exists and if the user is the creator
     const garden = await prisma.garden.findUnique({
-      where: { id: params.gardenId },
+      where: { id: gardenId },
       select: { creatorId: true }
     });
 
@@ -26,7 +25,7 @@ export async function DELETE(
     console.log('Comparing creatorId:', garden?.creatorId, 'with userId:', session.user.id);
 
     if (!garden) {
-      console.log('Garden not found:', params.gardenId);
+      console.log('Garden not found:', gardenId);
       return new NextResponse('Garden not found', { status: 404 });
     }
 
@@ -39,9 +38,7 @@ export async function DELETE(
 
     // Delete the garden - cascading deletes will handle related records
     await prisma.garden.delete({
-      where: {
-        id: params.gardenId
-      }
+      where: { id: gardenId },
     });
 
     console.log('Garden deleted successfully');
@@ -52,17 +49,16 @@ export async function DELETE(
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { gardenId: string } }
-) {
+export async function PATCH(request: Request, context: { params: Promise<{ gardenId: string }> }) {
+  const params = await context.params;
+  const { gardenId } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
     const garden = await prisma.garden.findUnique({
-      where: { id: params.gardenId },
+      where: { id: gardenId },
       select: { creatorId: true }
     });
     if (!garden) {
@@ -76,8 +72,8 @@ export async function PATCH(
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
     }
-    const updated = await prisma.garden.update({
-      where: { id: params.gardenId },
+    const updatedGarden = await prisma.garden.update({
+      where: { id: gardenId },
       data: {
         name,
         description: description ?? '',
@@ -85,24 +81,23 @@ export async function PATCH(
         isPrivate: typeof isPrivate === 'boolean' ? isPrivate : true,
       },
     });
-    return NextResponse.json(updated);
+    return NextResponse.json(updatedGarden);
   } catch (error) {
     console.error('[GARDEN_PATCH]', error);
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }
 
-export async function DELETE_member(
-  request: NextRequest,
-  { params }: { params: { gardenId: string; memberId: string } }
-) {
+export async function DELETE_member(request: Request, context: { params: Promise<{ gardenId: string; memberId: string }> }) {
+  const params = await context.params;
+  const { gardenId, memberId } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const garden = await prisma.garden.findUnique({
-      where: { id: params.gardenId },
+      where: { id: gardenId },
       select: { creatorId: true },
     });
     if (!garden) {
@@ -111,15 +106,23 @@ export async function DELETE_member(
     if (garden.creatorId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (params.memberId === garden.creatorId) {
+    if (memberId === garden.creatorId) {
       return NextResponse.json({ error: 'Cannot remove the garden creator' }, { status: 400 });
     }
     // Remove the member from the garden
     await prisma.garden.update({
-      where: { id: params.gardenId },
+      where: { id: gardenId },
       data: {
         members: {
-          disconnect: { id: params.memberId },
+          disconnect: { id: memberId },
+        },
+      },
+    });
+    await prisma.gardenMember.delete({
+      where: {
+        gardenId_userId: {
+          gardenId: gardenId,
+          userId: memberId,
         },
       },
     });

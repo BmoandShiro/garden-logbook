@@ -15,6 +15,7 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [declining, setDeclining] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInvites();
@@ -35,6 +36,13 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
     setAccepting(null);
   }
 
+  async function declineInvite(inviteId: string) {
+    setDeclining(inviteId);
+    await fetch(`/api/gardens/invites/${inviteId}/decline`, { method: "POST" });
+    setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+    setDeclining(null);
+  }
+
   if (loading) return null;
   if (invites.length === 0) return null;
 
@@ -49,13 +57,22 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
                 <span className="font-semibold text-emerald-200">{invite.garden.name}</span>
                 <span className="ml-2 text-xs text-dark-text-secondary">Invited: {new Date(invite.invitedAt).toLocaleDateString()}</span>
               </div>
-              <button
-                onClick={() => acceptInvite(invite.id)}
-                disabled={accepting === invite.id}
-                className="ml-4 px-3 py-1 rounded bg-garden-600 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
-              >
-                {accepting === invite.id ? "Accepting..." : "Accept"}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => acceptInvite(invite.id)}
+                  disabled={accepting === invite.id || declining === invite.id}
+                  className="px-3 py-1 rounded bg-garden-600 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
+                >
+                  {accepting === invite.id ? "Accepting..." : "Accept"}
+                </button>
+                <button
+                  onClick={() => declineInvite(invite.id)}
+                  disabled={declining === invite.id || accepting === invite.id}
+                  className="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-500 disabled:opacity-50"
+                >
+                  {declining === invite.id ? "Declining..." : "Decline"}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

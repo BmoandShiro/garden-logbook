@@ -88,6 +88,8 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
       {/* Pending Invites Dropdown */}
+      <PendingInvitesWrapper />
+      {/* Pending Invites Dropdown */}
       {pendingInvites.length > 0 && (
         <Disclosure defaultOpen={pendingOpen}>
           {({ open }) => (

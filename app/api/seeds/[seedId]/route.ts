@@ -3,10 +3,10 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { seedId: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ seedId: string }> }) {
+  const params = await context.params;
+  const { seedId } = params;
+
   try {
     const session = await getServerSession(authOptions);
 
@@ -16,7 +16,7 @@ export async function DELETE(
 
     const seed = await prisma.seed.findUnique({
       where: {
-        id: params.seedId,
+        id: seedId,
       },
     });
 
@@ -30,7 +30,7 @@ export async function DELETE(
 
     await prisma.seed.delete({
       where: {
-        id: params.seedId,
+        id: seedId,
       },
     });
 

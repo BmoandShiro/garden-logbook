@@ -4,10 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // DELETE /api/gardens/[gardenId]/invites/[inviteId]
-export async function DELETE(
-  request: Request,
-  { params }: { params: { gardenId: string; inviteId: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ gardenId: string; inviteId: string }> }) {
+  const params = await context.params;
+  const { gardenId, inviteId } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -15,7 +14,7 @@ export async function DELETE(
     }
     // Check if the user is the garden creator
     const garden = await prisma.garden.findUnique({
-      where: { id: params.gardenId },
+      where: { id: gardenId },
       select: { creatorId: true }
     });
     if (!garden) {
@@ -26,7 +25,7 @@ export async function DELETE(
     }
     // Delete the invite
     await prisma.gardenInvite.delete({
-      where: { id: params.inviteId }
+      where: { id: inviteId }
     });
     return NextResponse.json({ success: true });
   } catch (error) {

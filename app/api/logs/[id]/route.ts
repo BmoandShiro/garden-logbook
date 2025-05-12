@@ -24,13 +24,12 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params;
+  const { id } = params;
   try {
     const deleted = await db.log.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
     if (!deleted) {
       return NextResponse.json({ error: 'Log not found' }, { status: 404 });

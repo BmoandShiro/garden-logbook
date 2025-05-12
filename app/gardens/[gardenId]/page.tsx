@@ -19,6 +19,7 @@ interface GardenMember {
 }
 
 export default async function GardenPage({ params }: GardenPageProps) {
+  const { gardenId } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -27,7 +28,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
 
   const garden = await prisma.garden.findUnique({
     where: {
-      id: params.gardenId,
+      id: gardenId,
     },
     include: {
       createdBy: {
@@ -112,7 +113,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
   // All-encompassing logs for this garden (all rooms)
   const logs = await prisma.log.findMany({
     where: {
-      gardenId: params.gardenId,
+      gardenId: gardenId,
       roomId: { in: accessibleRoomIds }
     },
     orderBy: { logDate: 'desc' },
@@ -130,7 +131,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-emerald-100">{garden.name}</h1>
-          <CreateRoomButton gardenId={params.gardenId} />
+          <CreateRoomButton gardenId={gardenId} />
         </div>
         {garden.description && (
           <p className="mt-2 text-emerald-300/70">{garden.description}</p>
@@ -150,7 +151,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-emerald-100 mb-4">Rooms / Plots</h2>
-        <RoomList rooms={garden.rooms} gardenId={params.gardenId} logsByRoomId={logsByRoomId} />
+        <RoomList rooms={garden.rooms} gardenId={gardenId} logsByRoomId={logsByRoomId} />
       </div>
 
       <div className="mt-8">
