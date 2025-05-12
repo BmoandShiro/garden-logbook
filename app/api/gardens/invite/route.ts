@@ -38,6 +38,11 @@ export async function POST(request: Request) {
       // Create a notification for the user
       try {
         const garden = await prisma.garden.findUnique({ where: { id: gardenId } });
+        // Find the invite for this user and garden
+        const invite = await prisma.gardenInvite.findFirst({
+          where: { gardenId, email: user.email, accepted: false },
+          orderBy: { invitedAt: 'desc' },
+        });
         await prisma.notification.create({
           data: {
             userId: user.id,
@@ -45,6 +50,7 @@ export async function POST(request: Request) {
             title: 'You have been invited to a garden!',
             message: `You have been invited to join the garden "${garden?.name ?? gardenId}".`,
             link: `/gardens/${gardenId}`,
+            meta: invite ? { inviteId: invite.id } : undefined,
           },
         });
         console.log('[INVITE] Notification created for user:', email);

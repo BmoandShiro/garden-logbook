@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PendingInvitesWrapper from '../components/PendingInvitesWrapper';
+import { Disclosure } from '@headlessui/react';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
 // Define Notification type
 interface Notification {
@@ -12,6 +14,7 @@ interface Notification {
   title: string;
   message: string;
   link?: string;
+  meta?: { inviteId?: string };
   read: boolean;
   createdAt: string;
 }
@@ -21,6 +24,9 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const router = useRouter();
+  const [accepting, setAccepting] = useState<string | null>(null);
+  const [declining, setDeclining] = useState<string | null>(null);
+  const [pendingOpen, setPendingOpen] = useState(true);
 
   useEffect(() => {
     fetchNotifications();
@@ -61,9 +67,85 @@ export default function NotificationsPage() {
     setNotifications((prev) => prev.map(n => ({ ...n, read: true })));
   }
 
+  async function acceptInvite(inviteId: string, notificationId: string) {
+    setAccepting(inviteId);
+    await fetch(`/api/gardens/invites/${inviteId}/accept`, { method: 'POST' });
+    setNotifications((prev) => prev.filter(n => n.meta?.inviteId !== inviteId));
+    setAccepting(null);
+  }
+
+  async function declineInvite(inviteId: string, notificationId: string) {
+    setDeclining(inviteId);
+    await fetch(`/api/gardens/invites/${inviteId}/decline`, { method: 'POST' });
+    setNotifications((prev) => prev.filter(n => n.meta?.inviteId !== inviteId));
+    setDeclining(null);
+  }
+
+  // Group pending invite notifications
+  const pendingInvites = notifications.filter(n => n.type === 'invite' && n.meta?.inviteId);
+  const otherNotifications = notifications.filter(n => !(n.type === 'invite' && n.meta?.inviteId));
+
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
-      <PendingInvitesWrapper />
+      {/* Pending Invites Dropdown */}
+      {pendingInvites.length > 0 && (
+        <Disclosure defaultOpen={pendingOpen}>
+          {({ open }) => (
+            <div className="mb-6">
+              <Disclosure.Button
+                className="flex items-center justify-between w-full px-4 py-2 bg-dark-bg-secondary border border-garden-600 rounded-lg shadow-md focus:outline-none"
+                onClick={() => setPendingOpen(!open)}
+              >
+                <span className="font-bold text-garden-400">Pending Garden Invites</span>
+                <span className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white">
+                    {pendingInvites.length}
+                  </span>
+                  {open ? (
+                    <ChevronUpIcon className="h-5 w-5 text-garden-400" />
+                  ) : (
+                    <ChevronDownIcon className="h-5 w-5 text-garden-400" />
+                  )}
+                </span>
+              </Disclosure.Button>
+              <Disclosure.Panel>
+                <ul className="space-y-2 mt-2">
+                  {pendingInvites.map((n) => (
+                    <li
+                      key={n.id}
+                      className={`p-4 rounded border transition flex items-center justify-between bg-dark-bg-primary border-garden-600`}
+                    >
+                      <div>
+                        <div className="font-semibold text-emerald-200">{n.title}</div>
+                        <div className="text-dark-text-primary mt-1">{n.message}</div>
+                        <div className="text-xs text-dark-text-secondary mt-1">{new Date(n.createdAt).toLocaleString()}</div>
+                      </div>
+                      {n.meta?.inviteId && (
+                        <>
+                          <button
+                            onClick={() => acceptInvite(n.meta?.inviteId ?? '', n.id)}
+                            disabled={accepting === n.meta?.inviteId || declining === n.meta?.inviteId}
+                            className="ml-4 px-3 py-1 rounded bg-garden-600 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
+                          >
+                            {accepting === n.meta?.inviteId ? 'Accepting...' : 'Accept'}
+                          </button>
+                          <button
+                            onClick={() => declineInvite(n.meta?.inviteId ?? '', n.id)}
+                            disabled={declining === n.meta?.inviteId || accepting === n.meta?.inviteId}
+                            className="ml-2 px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-500 disabled:opacity-50"
+                          >
+                            {declining === n.meta?.inviteId ? 'Declining...' : 'Decline'}
+                          </button>
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Disclosure.Panel>
+            </div>
+          )}
+        </Disclosure>
+      )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-garden-400">Notifications</h1>
         <div className="flex gap-2 items-center">
@@ -86,11 +168,11 @@ export default function NotificationsPage() {
       </div>
       {loading ? (
         <div className="text-dark-text-secondary">Loading notifications...</div>
-      ) : notifications.length === 0 ? (
+      ) : otherNotifications.length === 0 ? (
         <div className="text-dark-text-secondary">No notifications yet.</div>
       ) : (
         <ul className="space-y-2">
-          {notifications.map((n) => (
+          {otherNotifications.map((n) => (
             <li
               key={n.id}
               className={`p-4 rounded border transition cursor-pointer ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'}`}
