@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import CleanupOrphanedPlantsButton from '../components/CleanupOrphanedPlantsButton';
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -11,14 +12,8 @@ export default async function Dashboard() {
     redirect('/auth/signin');
   }
 
-  const totalPlantCount = await prisma.plant.count({
-    where: {
-      userId: session.user.id
-    }
-  });
-
   // Fetch gardens where user is creator or member directly with Prisma
-  const gardensList = await prisma.garden.findMany({
+  const gardensList: any[] = await prisma.garden.findMany({
     where: {
       OR: [
         { creatorId: session.user.id },
@@ -39,6 +34,18 @@ export default async function Dashboard() {
       members: true,
       rooms: true,
       _count: { select: { rooms: true, members: true } }
+    }
+  });
+
+  // Count all plants in gardens the user is a member of or creator of, even if nested in zones/rooms
+  const gardenIds = gardensList.map(g => g.id);
+  const totalPlantCount = await prisma.plant.count({
+    where: {
+      zone: {
+        room: {
+          gardenId: { in: gardenIds }
+        }
+      }
     }
   });
 
@@ -119,6 +126,9 @@ export default async function Dashboard() {
                   )}
                 </div>
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <CleanupOrphanedPlantsButton />
             </div>
           </div>
         </div>
