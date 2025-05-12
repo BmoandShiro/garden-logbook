@@ -35,6 +35,22 @@ export async function POST(request: Request) {
         },
       });
       console.log('[INVITE] User added as member:', email);
+      // Create a notification for the user
+      try {
+        const garden = await prisma.garden.findUnique({ where: { id: gardenId } });
+        await prisma.notification.create({
+          data: {
+            userId: user.id,
+            type: 'invite',
+            title: 'You have been invited to a garden!',
+            message: `You have been invited to join the garden "${garden?.name ?? gardenId}".`,
+            link: `/gardens/${gardenId}`,
+          },
+        });
+        console.log('[INVITE] Notification created for user:', email);
+      } catch (notifError) {
+        console.error('[INVITE] Failed to create notification for user:', email, notifError);
+      }
       // TODO: Optionally send notification email to existing user
       return NextResponse.json({ success: true, message: 'User added as member.' });
     } else {

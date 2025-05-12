@@ -3,10 +3,11 @@
 import { Fragment } from 'react';
 import { usePathname } from 'next/navigation';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, BellIcon } from '@heroicons/react/24/outline';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -24,6 +25,21 @@ function classNames(...classes: string[]) {
 export function Navigation() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchUnread() {
+      if (!session?.user) return;
+      try {
+        const res = await fetch('/api/notifications?unread=true');
+        const data = await res.json();
+        setUnreadCount(data.notifications?.length || 0);
+      } catch (e) {
+        setUnreadCount(0);
+      }
+    }
+    fetchUnread();
+  }, [session?.user]);
 
   return (
     <Disclosure as="nav" className="bg-dark-bg-secondary shadow-lg ring-1 ring-dark-border relative z-50">
@@ -56,6 +72,16 @@ export function Navigation() {
                 </div>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                {session?.user && (
+                  <Link href="/notifications" className="relative group mr-4" aria-label="Notifications">
+                    <BellIcon className="h-7 w-7 text-dark-text-secondary group-hover:text-garden-400 transition-colors" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white border-2 border-dark-bg-secondary shadow">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
                 {session?.user ? (
                   <Menu as="div" className="relative ml-3">
                     <Menu.Button className="flex rounded-full bg-dark-bg-secondary text-sm focus:outline-none focus:ring-2 focus:ring-garden-500 focus:ring-offset-2">
