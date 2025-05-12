@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import PendingInvitesWrapper from '../components/PendingInvitesWrapper';
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import PendingInvitesWrapper from '../components/PendingInvitesWrapper';
 
 // Define Notification type
 interface Notification {
@@ -89,65 +89,6 @@ export default function NotificationsPage() {
     <div className="max-w-2xl mx-auto py-8 px-4">
       {/* Pending Invites Dropdown */}
       <PendingInvitesWrapper />
-      {/* Pending Invites Dropdown */}
-      {pendingInvites.length > 0 && (
-        <Disclosure defaultOpen={pendingOpen}>
-          {({ open }) => (
-            <div className="mb-6">
-              <Disclosure.Button
-                className="flex items-center justify-between w-full px-4 py-2 bg-dark-bg-secondary border border-garden-600 rounded-lg shadow-md focus:outline-none"
-                onClick={() => setPendingOpen(!open)}
-              >
-                <span className="font-bold text-garden-400">Pending Garden Invites</span>
-                <span className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white">
-                    {pendingInvites.length}
-                  </span>
-                  {open ? (
-                    <ChevronUpIcon className="h-5 w-5 text-garden-400" />
-                  ) : (
-                    <ChevronDownIcon className="h-5 w-5 text-garden-400" />
-                  )}
-                </span>
-              </Disclosure.Button>
-              <Disclosure.Panel>
-                <ul className="space-y-2 mt-2">
-                  {pendingInvites.map((n) => (
-                    <li
-                      key={n.id}
-                      className={`p-4 rounded border transition flex items-center justify-between bg-dark-bg-primary border-garden-600`}
-                    >
-                      <div>
-                        <div className="font-semibold text-emerald-200">{n.title}</div>
-                        <div className="text-dark-text-primary mt-1">{n.message}</div>
-                        <div className="text-xs text-dark-text-secondary mt-1">{new Date(n.createdAt).toLocaleString()}</div>
-                      </div>
-                      {n.meta?.inviteId && (
-                        <>
-                          <button
-                            onClick={() => acceptInvite(n.meta?.inviteId ?? '', n.id)}
-                            disabled={accepting === n.meta?.inviteId || declining === n.meta?.inviteId}
-                            className="ml-4 px-3 py-1 rounded bg-garden-600 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
-                          >
-                            {accepting === n.meta?.inviteId ? 'Accepting...' : 'Accept'}
-                          </button>
-                          <button
-                            onClick={() => declineInvite(n.meta?.inviteId ?? '', n.id)}
-                            disabled={declining === n.meta?.inviteId || accepting === n.meta?.inviteId}
-                            className="ml-2 px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-500 disabled:opacity-50"
-                          >
-                            {declining === n.meta?.inviteId ? 'Declining...' : 'Decline'}
-                          </button>
-                        </>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </Disclosure.Panel>
-            </div>
-          )}
-        </Disclosure>
-      )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-garden-400">Notifications</h1>
         <div className="flex gap-2 items-center">
