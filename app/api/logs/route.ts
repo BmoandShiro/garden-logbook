@@ -32,9 +32,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'You can only view your own logs' }, { status: 401 });
     }
 
-    // Build the where clause based on filters
+    // 1. Get all gardens where the user is a member or creator
+    const gardens = await db.garden.findMany({
+      where: {
+        OR: [
+          { creatorId: userId },
+          { members: { some: { userId } } },
+        ],
+      },
+      select: { id: true },
+    });
+    const gardenIds = gardens.map(g => g.id);
+
+    // 2. Get log visibility preferences for this user
+    const prefs = await db.gardenLogVisibilityPreference.findMany({
+      where: { userId },
+    });
+    const hiddenGardenIds = prefs.filter(p => !p.showLogs).map(p => p.gardenId);
+    const visibleGardenIds = gardenIds.filter(id => !hiddenGardenIds.includes(id));
+
+    // 3. Build the where clause based on filters and visible gardens
     const where: any = {
-      userId,
+      gardenId: { in: visibleGardenIds },
     };
 
     if (type) {
@@ -59,8 +78,6 @@ export async function GET(request: Request) {
         { plant: { name: { contains: location, mode: 'insensitive' } } },
       ];
     }
-
-    console.log('Fetching logs with query:', where);
 
     const logs = await db.log.findMany({
       where,
@@ -88,26 +105,9 @@ export async function GET(request: Request) {
       take: 50,
     });
 
-    console.log(`Found ${logs.length} logs`);
     return NextResponse.json(logs);
   } catch (error: any) {
     console.error('Error fetching logs:', error);
-    
-    // Handle Prisma-specific errors
-    if (error.code) {
-      switch (error.code) {
-        case 'P2002':
-          return NextResponse.json({ error: 'Database constraint violation' }, { status: 400 });
-        case 'P2025':
-          return NextResponse.json({ error: 'Record not found' }, { status: 404 });
-        default:
-          return NextResponse.json(
-            { error: `Database error: ${error.message || 'Unknown error'}` },
-            { status: 500 }
-          );
-      }
-    }
-
     return NextResponse.json(
       { error: error.message || 'Failed to fetch logs' },
       { status: 500 }
