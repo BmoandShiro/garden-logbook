@@ -182,7 +182,20 @@ export default function NotificationsPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="font-semibold text-garden-400">{n.title}</div>
-                <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setNotifications((prev) => prev.filter((notif) => notif.id !== n.id));
+                      await fetch(`/api/notifications/${n.id}`, { method: "DELETE" });
+                    }}
+                    className="ml-2 px-2 py-1 rounded bg-dark-bg-secondary text-dark-text-secondary text-xs font-bold hover:bg-dark-bg-primary border border-dark-border"
+                    title="Clear this notification"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
               <div className="text-dark-text-primary mt-1">{n.message}</div>
               {n.link && (

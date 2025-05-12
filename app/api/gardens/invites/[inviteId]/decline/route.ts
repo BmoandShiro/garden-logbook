@@ -22,5 +22,15 @@ export async function POST(request: Request, { params }: { params: { inviteId: s
     return NextResponse.json({ error: 'Invite already accepted' }, { status: 400 });
   }
   await prisma.gardenInvite.delete({ where: { id: invite.id } });
+  // Add info notification for decline
+  await prisma.notification.create({
+    data: {
+      userId: session.user.id,
+      type: 'info',
+      title: 'Invite Declined',
+      message: `You declined an invite to the garden "${invite.gardenId}".`,
+      link: `/gardens/${invite.gardenId}`,
+    },
+  });
   return NextResponse.json({ success: true });
 } 

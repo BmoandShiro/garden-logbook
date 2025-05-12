@@ -45,5 +45,15 @@ export async function POST(request: Request, { params }: { params: { inviteId: s
     where: { id: invite.id },
     data: { accepted: true },
   });
+  // Add info notification for acceptance
+  await prisma.notification.create({
+    data: {
+      userId: session.user.id,
+      type: 'info',
+      title: 'Invite Accepted',
+      message: `You accepted an invite to the garden "${invite.garden.name}".`,
+      link: `/gardens/${invite.gardenId}`,
+    },
+  });
   return NextResponse.json({ success: true });
 } 

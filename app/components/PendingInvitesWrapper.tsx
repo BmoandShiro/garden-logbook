@@ -33,6 +33,7 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
     setAccepting(inviteId);
     await fetch(`/api/gardens/invites/${inviteId}/accept`, { method: "POST" });
     setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+    await fetch(`/api/notifications?inviteId=${inviteId}`, { method: "DELETE" });
     setAccepting(null);
   }
 
@@ -40,6 +41,7 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
     setDeclining(inviteId);
     await fetch(`/api/gardens/invites/${inviteId}/decline`, { method: "POST" });
     setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+    await fetch(`/api/notifications?inviteId=${inviteId}`, { method: "DELETE" });
     setDeclining(null);
   }
 
@@ -57,7 +59,7 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
                 <span className="font-semibold text-emerald-200">{invite.garden.name}</span>
                 <span className="ml-2 text-xs text-dark-text-secondary">Invited: {new Date(invite.invitedAt).toLocaleDateString()}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <button
                   onClick={() => acceptInvite(invite.id)}
                   disabled={accepting === invite.id || declining === invite.id}
@@ -71,6 +73,16 @@ export default function PendingInvitesWrapper({ className = "" }: { className?: 
                   className="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-500 disabled:opacity-50"
                 >
                   {declining === invite.id ? "Declining..." : "Decline"}
+                </button>
+                <button
+                  onClick={async () => {
+                    setInvites((prev) => prev.filter((i) => i.id !== invite.id));
+                    await fetch(`/api/notifications?inviteId=${invite.id}`, { method: "DELETE" });
+                  }}
+                  className="ml-2 px-2 py-1 rounded bg-dark-bg-secondary text-dark-text-secondary text-xs font-bold hover:bg-dark-bg-primary border border-dark-border"
+                  title="Clear this invite"
+                >
+                  ×
                 </button>
               </div>
             </li>
