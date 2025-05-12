@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import PendingInvitesWrapper from '../components/PendingInvitesWrapper';
 
 // Define Notification type
 interface Notification {
@@ -62,6 +63,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
+      <PendingInvitesWrapper />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-garden-400">Notifications</h1>
         <div className="flex gap-2 items-center">

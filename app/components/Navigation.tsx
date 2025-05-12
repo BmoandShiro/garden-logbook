@@ -194,6 +194,20 @@ export function Navigation() {
                 </Disclosure.Button>
               ))}
             </div>
+            {session?.user && (
+              <Link
+                href="/notifications"
+                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-dark-text-secondary hover:bg-dark-bg-primary hover:text-dark-text-primary"
+              >
+                <BellIcon className="h-6 w-6" />
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
             <div className="border-t border-dark-border pb-3 pt-4">
               {session?.user ? (
                 <>

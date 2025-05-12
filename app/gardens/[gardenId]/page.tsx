@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import RoomList from "./components/RoomList";
 import CreateRoomButton from "./components/CreateRoomButton";
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
+import PendingInvitesWrapper from '../../components/PendingInvitesWrapper';
 
 interface GardenPageProps {
   params: {
@@ -125,6 +126,7 @@ export default async function GardenPage({ params }: GardenPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <PendingInvitesWrapper />
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-emerald-100">{garden.name}</h1>
