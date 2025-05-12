@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Settings, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
+import LogToggleButton from './LogToggleButton';
 
 interface ExtendedGarden {
   id: string;
@@ -122,6 +123,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
             >
               <Plus className="h-5 w-5" />
             </button>
+            <LogToggleButton gardenId={garden.id} />
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
               title="Garden Settings"

@@ -475,6 +475,14 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id])
 }
 
+model GardenLogVisibilityPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  gardenId  String
+  showLogs  Boolean  @default(true)
+  @@unique([userId, gardenId])
+}
+
 enum Role {
   ADMIN
   USER
