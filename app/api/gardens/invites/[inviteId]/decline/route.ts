@@ -4,13 +4,15 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // POST /api/gardens/invites/[inviteId]/decline
-export async function POST(request: Request, { params }: { params: { inviteId: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ inviteId: string }> }) {
+  const params = await context.params;
+  const { inviteId } = params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const invite = await prisma.gardenInvite.findUnique({
-    where: { id: params.inviteId },
+    where: { id: inviteId },
   });
   if (!invite) {
     return NextResponse.json({ error: 'Invite not found' }, { status: 404 });
