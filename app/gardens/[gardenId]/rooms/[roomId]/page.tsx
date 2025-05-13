@@ -89,7 +89,7 @@ export default async function RoomPage({ params }: PageProps) {
   return (
     <div className="h-full p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-garden-400">{room.name}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-emerald-100">{room.name}</h1>
         <CreateZoneButton roomId={params.roomId} gardenId={params.gardenId} />
       </div>
       
@@ -175,7 +175,7 @@ export default async function RoomPage({ params }: PageProps) {
       </div>
 
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-garden-400 mb-4">Logs for this Room</h2>
+        <h2 className="text-xl font-semibold text-emerald-100 mb-4">Logs for this Room</h2>
         <LogsListWrapper logs={logs} />
       </div>
     </div>
