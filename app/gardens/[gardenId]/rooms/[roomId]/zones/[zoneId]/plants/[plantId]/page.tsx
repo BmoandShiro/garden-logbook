@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import PlantLogsListWrapper from './components/PlantLogsListWrapper';
+import InlinePlantEditForm from './components/InlinePlantEditForm';
+import { Plant } from '@prisma/client';
 
 interface PageProps {
   params: {
@@ -99,6 +101,10 @@ export default async function PlantPage({ params }: PageProps) {
           <div className="p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
             <h2 className="text-xl font-semibold mb-4 text-emerald-100">Plant Details</h2>
             
+            {isCreator && (
+              <InlinePlantEditForm plant={plant} params={params} />
+            )}
+
             <div className="space-y-3">
               <div>
                 <p className="text-sm font-medium text-emerald-100">Strain</p>
