@@ -50,7 +50,7 @@ export default function EditPlantModal({ plant, params }: { plant: any, params: 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Plant</DialogTitle>
+            <DialogTitle className="text-emerald-100 font-bold">Edit Plant</DialogTitle>
           </DialogHeader>
           {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
           <PlantForm

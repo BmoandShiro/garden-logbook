@@ -5,6 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { format, parseISO, isValid } from 'date-fns';
 
 export interface PlantFormValues {
   name: string;
@@ -18,6 +22,38 @@ export interface PlantFormValues {
   growingSeasonEnd?: string;
   onlyTriggerAlertsDuringSeason?: boolean;
   sensitivities?: any;
+}
+
+function DatePickerField({ value, onChange, placeholder }: { value: string; onChange: (val: string) => void; placeholder?: string }) {
+  const [open, setOpen] = useState(false);
+  const date = value ? parseISO(value) : undefined;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={
+            'w-full justify-start text-left font-normal bg-emerald-950 border-emerald-800 text-emerald-100 hover:bg-emerald-900 hover:text-emerald-200' +
+            (!value ? ' text-emerald-400' : '')
+          }
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date && isValid(date) ? format(date, 'MM/dd/yyyy') : <span>{placeholder || 'Pick a date'}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0 bg-emerald-950 border-emerald-800 text-emerald-100" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={d => {
+            if (d) onChange(d.toISOString().slice(0, 10));
+            setOpen(false);
+          }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export default function PlantForm({
@@ -89,7 +125,7 @@ export default function PlantForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name" className="text-emerald-100 font-bold">Name</Label>
         <Input
           id="name"
           name="name"
@@ -100,7 +136,7 @@ export default function PlantForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="strainName">Strain</Label>
+        <Label htmlFor="strainName" className="text-emerald-100 font-bold">Strain</Label>
         <Input
           id="strainName"
           name="strainName"
@@ -110,7 +146,7 @@ export default function PlantForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="species">Species</Label>
+        <Label htmlFor="species" className="text-emerald-100 font-bold">Species</Label>
         <Input
           id="species"
           name="species"
@@ -121,7 +157,7 @@ export default function PlantForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="variety">Variety (optional)</Label>
+        <Label htmlFor="variety" className="text-emerald-100 font-bold">Variety (optional)</Label>
         <Input
           id="variety"
           name="variety"
@@ -131,27 +167,15 @@ export default function PlantForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="plantedDate">Planting Date (optional)</Label>
-        <Input
-          id="plantedDate"
-          name="plantedDate"
-          type="date"
-          value={form.plantedDate || ''}
-          onChange={handleChange}
-        />
+        <Label htmlFor="plantedDate" className="text-emerald-100 font-bold">Planting Date (optional)</Label>
+        <DatePickerField value={form.plantedDate || ''} onChange={val => setForm(f => ({ ...f, plantedDate: val }))} placeholder="mm/dd/yyyy" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="expectedHarvestDate">Expected Harvest Date (optional)</Label>
-        <Input
-          id="expectedHarvestDate"
-          name="expectedHarvestDate"
-          type="date"
-          value={form.expectedHarvestDate || ''}
-          onChange={handleChange}
-        />
+        <Label htmlFor="expectedHarvestDate" className="text-emerald-100 font-bold">Expected Harvest Date (optional)</Label>
+        <DatePickerField value={form.expectedHarvestDate || ''} onChange={val => setForm(f => ({ ...f, expectedHarvestDate: val }))} placeholder="mm/dd/yyyy" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes (optional)</Label>
+        <Label htmlFor="notes" className="text-emerald-100 font-bold">Notes (optional)</Label>
         <Textarea
           id="notes"
           name="notes"
@@ -166,25 +190,11 @@ export default function PlantForm({
         <div className="flex gap-4 items-end">
           <div>
             <Label htmlFor="growingSeasonStart">Growing Season Start</Label>
-            <Input
-              id="growingSeasonStart"
-              name="growingSeasonStart"
-              type="date"
-              value={form.growingSeasonStart || ''}
-              onChange={handleChange}
-              className="bg-emerald-950 border-emerald-800 text-emerald-100 focus:ring-emerald-600"
-            />
+            <DatePickerField value={form.growingSeasonStart || ''} onChange={val => setForm(f => ({ ...f, growingSeasonStart: val }))} placeholder="mm/dd/yyyy" />
           </div>
           <div>
             <Label htmlFor="growingSeasonEnd">Growing Season End</Label>
-            <Input
-              id="growingSeasonEnd"
-              name="growingSeasonEnd"
-              type="date"
-              value={form.growingSeasonEnd || ''}
-              onChange={handleChange}
-              className="bg-emerald-950 border-emerald-800 text-emerald-100 focus:ring-emerald-600"
-            />
+            <DatePickerField value={form.growingSeasonEnd || ''} onChange={val => setForm(f => ({ ...f, growingSeasonEnd: val }))} placeholder="mm/dd/yyyy" />
           </div>
           <div className="flex flex-col justify-end">
             <Label className="mb-1">Alerts Only During Season</Label>
@@ -255,21 +265,11 @@ export default function PlantForm({
               </div>
               <div className="flex-1 flex flex-col max-w-xs">
                 <Label className="mb-1">Start</Label>
-                <Input
-                  type="date"
-                  value={window.start}
-                  onChange={e => updateFrostWindow(idx, { start: e.target.value })}
-                  className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 focus:ring-emerald-600"
-                />
+                <DatePickerField value={window.start} onChange={val => updateFrostWindow(idx, { start: val })} placeholder="mm/dd/yyyy" />
               </div>
               <div className="flex-1 flex flex-col max-w-xs">
                 <Label className="mb-1">End</Label>
-                <Input
-                  type="date"
-                  value={window.end}
-                  onChange={e => updateFrostWindow(idx, { end: e.target.value })}
-                  className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 focus:ring-emerald-600"
-                />
+                <DatePickerField value={window.end} onChange={val => updateFrostWindow(idx, { end: val })} placeholder="mm/dd/yyyy" />
               </div>
             </div>
             <div className="flex items-center gap-2">
