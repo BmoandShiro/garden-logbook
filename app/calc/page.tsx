@@ -8,7 +8,7 @@ export default function CalculatorPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-4 mb-8">
-        <h1 className="text-3xl font-semibold text-dark-text-primary">
+        <h1 className="text-3xl font-semibold text-emerald-100">
           Grow Calculators
         </h1>
         <p className="text-dark-text-secondary">

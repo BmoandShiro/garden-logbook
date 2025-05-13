@@ -13,7 +13,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 
-interface LogWithLocation extends Log {
+interface LogWithLocation {
+  id: string;
+  logDate: string | Date;
+  type: LogType;
+  stage?: string | null;
+  notes?: string | null;
+  plantId?: string | null;
   plant?: {
     name: string;
   };
@@ -25,6 +31,27 @@ interface LogWithLocation extends Log {
   };
   zone?: {
     name: string;
+  };
+  temperature?: number | null | undefined;
+  temperatureUnit?: string | null | undefined;
+  humidity?: number | null | undefined;
+  waterAmount?: number | null | undefined;
+  waterUnit?: string | null | undefined;
+  height?: number | null | undefined;
+  heightUnit?: string | null | undefined;
+  width?: number | null | undefined;
+  widthUnit?: string | null | undefined;
+  healthRating?: number | null | undefined;
+  data?: any;
+  nutrientWaterTemperature?: number | null | undefined;
+  nutrientWaterTemperatureUnit?: string | null | undefined;
+  destinationGardenId?: string | null | undefined;
+  destinationRoomId?: string | null | undefined;
+  destinationZoneId?: string | null | undefined;
+  user?: {
+    id: string;
+    username?: string | null;
+    email?: string | null;
   };
 }
 
@@ -96,7 +123,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="w-full sm:w-auto mb-2 sm:mb-0">
-          <h2 className="text-xl font-semibold text-dark-text-primary text-center sm:text-left">Log Entries</h2>
+          <h2 className="text-xl font-semibold text-emerald-100 text-center sm:text-left">Log Entries</h2>
         </div>
         <div className="w-full max-w-md sm:max-w-none sm:w-auto sm:flex-1 sm:justify-end sm:flex">
           <div className="flex flex-col sm:flex-row sm:justify-end items-center gap-2 w-full sm:w-auto">

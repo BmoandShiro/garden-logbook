@@ -33,7 +33,7 @@ export default async function SeedsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-dark-text-primary">Seeds</h1>
+        <h1 className="text-2xl font-semibold text-emerald-100">Seeds</h1>
         <CreateSeedButton />
       </div>
       <SeedList seeds={seeds} />

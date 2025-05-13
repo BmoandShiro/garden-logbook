@@ -53,7 +53,7 @@ export default async function Dashboard() {
     <div className="py-10">
       <header>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-dark-text-primary">Dashboard</h1>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-emerald-100">Dashboard</h1>
         </div>
       </header>
       <main>
@@ -85,7 +85,7 @@ export default async function Dashboard() {
             </div>
             {/* Gardens List Section */}
             <div className="mt-8">
-              <h2 className="text-xl font-semibold text-dark-text-primary mb-4">Your Gardens</h2>
+              <h2 className="text-xl font-semibold text-emerald-100 mb-4">Your Gardens</h2>
               <div className="rounded-lg bg-dark-bg-secondary overflow-hidden shadow ring-1 ring-dark-border">
                 <div className="p-6">
                   {gardensList.length > 0 ? (
@@ -113,7 +113,7 @@ export default async function Dashboard() {
             </div>
             {/* Recent Plants Section */}
             <div className="mt-8">
-              <h2 className="text-xl font-semibold text-dark-text-primary mb-4">Recent Plants</h2>
+              <h2 className="text-xl font-semibold text-emerald-100 mb-4">Recent Plants</h2>
               <div className="rounded-lg bg-dark-bg-secondary overflow-hidden shadow ring-1 ring-dark-border">
                 <div className="p-6">
                   {totalPlantCount > 0 ? (
