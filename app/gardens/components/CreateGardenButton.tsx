@@ -12,7 +12,8 @@ export default function CreateGardenButton() {
     name: '',
     description: '',
     isPrivate: true,
-    imageUrl: ''
+    imageUrl: '',
+    zipcode: '',
   });
   const router = useRouter();
 
@@ -109,6 +110,27 @@ export default function CreateGardenButton() {
                     value={formData.imageUrl}
                     onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                     className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="zipcode" className="block text-sm font-medium text-dark-text-primary">
+                    US Zipcode
+                  </label>
+                  <input
+                    type="text"
+                    id="zipcode"
+                    value={formData.zipcode}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d{0,5}$/.test(value)) {
+                        setFormData({ ...formData, zipcode: value });
+                      }
+                    }}
+                    maxLength={5}
+                    pattern="\d{5}"
+                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="e.g. 90210"
                   />
                 </div>
 

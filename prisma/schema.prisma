@@ -314,6 +314,7 @@ model Garden {
   description  String?
   isPrivate    Boolean        @default(true)
   imageUrl     String?
+  zipcode      String?        // US Zipcode
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   creatorId    String

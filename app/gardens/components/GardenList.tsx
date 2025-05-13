@@ -37,6 +37,7 @@ interface ExtendedGarden {
     members: number;
   };
   gardenInvites?: { id: string; email: string }[];
+  zipcode?: string;
 }
 
 interface GardenListProps {
@@ -50,7 +51,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
   const [openModalGardenId, setOpenModalGardenId] = useState<string | null>(null);
   const [openInviteModalGardenId, setOpenInviteModalGardenId] = useState<string | null>(null);
   const [openEditModalGardenId, setOpenEditModalGardenId] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState({ name: '', description: '', imageUrl: '', isPrivate: true });
+  const [editFormData, setEditFormData] = useState({ name: '', description: '', imageUrl: '', isPrivate: true, zipcode: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -187,6 +188,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       description: garden.description || '',
                       imageUrl: garden.imageUrl || '',
                       isPrivate: garden.isPrivate,
+                      zipcode: garden.zipcode || '',
                     });
                     setOpenEditModalGardenId(garden.id);
                   }}
@@ -339,6 +341,26 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     value={editFormData.imageUrl}
                     onChange={(e) => setEditFormData({ ...editFormData, imageUrl: e.target.value })}
                     className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-zipcode" className="block text-sm font-medium text-dark-text-primary">
+                    US Zipcode
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-zipcode"
+                    value={editFormData.zipcode}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d{0,5}$/.test(value)) {
+                        setEditFormData({ ...editFormData, zipcode: value });
+                      }
+                    }}
+                    maxLength={5}
+                    pattern="\d{5}"
+                    className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="e.g. 90210"
                   />
                 </div>
                 <div className="flex items-center">

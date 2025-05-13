@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log('Request body:', body);
 
-    const { name, description, isPrivate, imageUrl } = body;
+    const { name, description, isPrivate, imageUrl, zipcode } = body;
 
     if (!name) {
       console.log('Validation error: Name is required');
@@ -105,6 +105,7 @@ export async function POST(req: Request) {
       description,
       isPrivate,
       imageUrl,
+      zipcode,
       creatorId: session.user.id
     });
 
@@ -115,6 +116,7 @@ export async function POST(req: Request) {
         description,
         isPrivate: isPrivate ?? true,
         imageUrl,
+        zipcode,
         creatorId: session.user.id,
         members: {
           create: {

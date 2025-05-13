@@ -68,7 +68,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ garde
       return new NextResponse('Forbidden', { status: 403 });
     }
     const body = await request.json();
-    const { name, description, imageUrl, isPrivate } = body;
+    const { name, description, imageUrl, isPrivate, zipcode } = body;
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
     }
@@ -79,6 +79,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ garde
         description: description ?? '',
         imageUrl: imageUrl ?? '',
         isPrivate: typeof isPrivate === 'boolean' ? isPrivate : true,
+        zipcode: zipcode ?? '',
       },
     });
     return NextResponse.json(updatedGarden);

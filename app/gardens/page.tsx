@@ -28,7 +28,13 @@ export default async function GardensPage() {
         }
       ]
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      imageUrl: true,
+      isPrivate: true,
+      zipcode: true,
       createdBy: {
         select: {
           id: true,
