@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PlantForm, { PlantFormValues } from './PlantForm';
 
-export default function InlinePlantEditForm({ plant, params }: { plant: any, params: any }) {
+export default function EditPlantModal({ plant, params }: { plant: any, params: any }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
