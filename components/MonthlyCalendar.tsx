@@ -713,23 +713,24 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
               ) : (
                 <>
                   {selectedDayDetails.logs.map((log, idx) => (
-                    <div key={log.id || idx} className="rounded bg-dark-bg-primary border border-garden-700 p-2 text-xs mb-2">
+                    <Link key={log.id || idx} href={`/logs/${log.id}`} className="block rounded bg-dark-bg-primary border border-garden-700 p-2 text-xs mb-2 hover:bg-dark-bg-hover transition-colors">
                       <div className="font-bold mb-1 flex items-center gap-2">
                         <span className={getLogColor(log.type || '') + ' w-2 h-2 rounded-full inline-block'}></span>
                         <span>{log.type || 'Log'}</span>
                       </div>
                       <div className="text-sm">{log.notes}</div>
-                    </div>
+                    </Link>
                   ))}
                   {selectedDayDetails.alerts && selectedDayDetails.alerts.details && selectedDayDetails.alerts.details.length > 0 && (
-                    <div className="rounded bg-dark-bg-primary border border-red-700 p-2 text-xs mb-2">
-                      <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
-                        <span>Weather Alert</span>
-                      </div>
-                      {/* Show alert details here as needed */}
-                      <div className="text-sm">{selectedDayDetails.alerts.details.length} alert(s)</div>
-                    </div>
+                    selectedDayDetails.alerts.details.map((alert: any, idx: number) => (
+                      <Link key={alert.id || idx} href={alert.plantId && alert.gardenId ? `/gardens/${alert.gardenId}/plants/${alert.plantId}` : '#'} className="block rounded bg-dark-bg-primary border border-red-700 p-2 text-xs mb-2 hover:bg-dark-bg-hover transition-colors">
+                        <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+                          <span>Weather Alert</span>
+                        </div>
+                        <div className="text-sm">{alert.message ? alert.message.slice(0, 120) + (alert.message.length > 120 ? '…' : '') : 'Alert details'}</div>
+                      </Link>
+                    ))
                   )}
                 </>
               )}
