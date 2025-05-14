@@ -359,6 +359,41 @@ export async function processWeatherAlerts() {
           }
         }
         message += '\nPlease take necessary precautions to protect your plant.';
+
+        // Log the active alert for the plant, but prevent duplicates in the last 4 hours
+        const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+        const existingLog = await prisma.log.findFirst({
+          where: {
+            plantId: plant.id,
+            type: 'WEATHER_ALERT',
+            notes: message,
+            logDate: { gte: fourHoursAgo }
+          }
+        });
+        if (!existingLog) {
+          await prisma.log.create({
+            data: {
+              plantId: plant.id,
+              userId: plant.userId,
+              gardenId: plant.garden?.id ?? plant.gardenId ?? null,
+              roomId: plant.roomId ?? null,
+              zoneId: plant.zoneId ?? null,
+              type: 'WEATHER_ALERT',
+              stage: plant.stage ?? 'VEGETATIVE',
+              notes: message,
+              logDate: new Date(),
+              data: {
+                alertTypes: currentAlertTypes,
+                currentAlerts,
+                weatherInfo: triggeredWeatherInfo,
+                severity: Math.max(...Object.values(currentAlerts).map(a => a.severity ?? 1)),
+              }
+            }
+          });
+        } else {
+          console.log(`[WEATHER_ALERTS] Skipping duplicate WEATHER_ALERT log for plant ${plant.id} in last 4 hours.`);
+        }
+
         // Deduplicate: check if a grouped notification for this plant already exists in the last 12 hours
         const existing = await prisma.notification.findFirst({
           where: {
