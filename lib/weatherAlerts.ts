@@ -394,13 +394,13 @@ export async function processWeatherAlerts() {
           console.log(`[WEATHER_ALERTS] Skipping duplicate WEATHER_ALERT log for plant ${plant.id} in last 4 hours.`);
         }
 
-        // Deduplicate: check if a grouped notification for this plant already exists in the last 12 hours
+        // Deduplicate: check if a grouped notification for this plant already exists in the last 4 hours
         const existing = await prisma.notification.findFirst({
           where: {
             userId: plant.userId,
             type: 'WEATHER_ALERT',
             meta: { path: ['plantId'], equals: plant.id },
-            createdAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+            createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) }
           },
           orderBy: { createdAt: 'desc' }
         });
@@ -630,7 +630,7 @@ async function maybeSendOrUpdateAlert(
   severity: number
 ) {
   const now = new Date();
-  const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+  const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
   const today = now.toISOString().slice(0, 10);
 
   // Format weather data for display

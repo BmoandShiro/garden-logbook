@@ -93,7 +93,7 @@ export default async function Dashboard() {
       where: {
         type: 'WEATHER_ALERT',
         meta: { path: ['gardenId'], equals: gardenId },
-        createdAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+        createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) }
       }
     });
     for (const alert of currentAlerts) {
@@ -111,7 +111,7 @@ export default async function Dashboard() {
       where: {
         type: 'WEATHER_FORECAST_ALERT',
         meta: { path: ['gardenId'], equals: gardenId },
-        createdAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+        createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) }
       }
     });
     for (const alert of forecastedAlerts) {

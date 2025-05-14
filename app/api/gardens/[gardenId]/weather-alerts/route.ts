@@ -18,12 +18,12 @@ export async function GET(request: Request, context: { params: Promise<{ gardenI
   if (plantIds.length === 0) {
     return NextResponse.json({ alerts: [] });
   }
-  // Find all WEATHER_ALERT notifications for these plants in the last 12 hours
-  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+  // Find all WEATHER_ALERT notifications for these plants in the last 4 hours
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
   const alerts = await prisma.notification.findMany({
     where: {
       type: 'WEATHER_ALERT',
-      createdAt: { gte: twelveHoursAgo }
+      createdAt: { gte: fourHoursAgo }
     },
     orderBy: { createdAt: 'desc' }
   });
