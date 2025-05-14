@@ -369,7 +369,7 @@ async function maybeSendOrUpdateAlert(
       stage: plant.stage ?? 'VEGETATIVE',
       notes: logMessage,
       logDate: now,
-      meta: {
+      data: {
         alertType: type,
         severity,
         weatherInfo
