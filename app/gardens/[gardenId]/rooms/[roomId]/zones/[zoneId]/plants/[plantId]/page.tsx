@@ -33,18 +33,17 @@ export default async function PlantPage({ params }: PageProps) {
           room: {
             include: {
               garden: {
-                include: {
+                select: {
+                  id: true,
+                  creatorId: true,
                   members: {
-                    include: {
-                      user: true
-                    }
-                  },
-                  createdBy: true
+                    select: { userId: true }
+                  }
                 }
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
       user: true
     }
@@ -86,6 +85,9 @@ export default async function PlantPage({ params }: PageProps) {
     },
   });
 
+  // Log the plant object for debugging
+  console.log('Plant object:', plant);
+
   return (
     <div className="h-full p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -101,7 +103,8 @@ export default async function PlantPage({ params }: PageProps) {
           <div className="p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
             <h2 className="text-xl font-semibold mb-4 text-emerald-100">Plant Details</h2>
             
-            {isCreator && (
+            {/* Defensive check for nested objects before rendering EditPlantModal */}
+            {isCreator && plant.zone && plant.zone.room && plant.zone.room.garden && (
               <EditPlantModal 
                 plant={plant}
                 gardenId={plant.zone.room.garden.id}

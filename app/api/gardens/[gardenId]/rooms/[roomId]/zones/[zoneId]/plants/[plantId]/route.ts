@@ -111,22 +111,25 @@ export async function PATCH(request: Request, context: { params: Promise<{ garde
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
     }
+    const updateData: any = {
+      name,
+      notes: notes ?? '',
+      growingSeasonStart: growingSeasonStart || null,
+      growingSeasonEnd: growingSeasonEnd || null,
+      onlyTriggerAlertsDuringSeason: typeof onlyTriggerAlertsDuringSeason === 'boolean' ? onlyTriggerAlertsDuringSeason : false,
+      sensitivities: sensitivities || null,
+      species: species || undefined,
+      variety: variety || undefined,
+      strainName: strainName || undefined,
+      startDate: plantedDate ? new Date(plantedDate) : undefined,
+      harvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : undefined,
+    };
+    if (type === 'REGULAR' || type === 'ZONE_PLANT') {
+      updateData.type = type;
+    }
     const updated = await prisma.plant.update({
       where: { id: params.plantId },
-      data: {
-        name,
-        notes: notes ?? '',
-        type: type ?? '',
-        growingSeasonStart: growingSeasonStart || null,
-        growingSeasonEnd: growingSeasonEnd || null,
-        onlyTriggerAlertsDuringSeason: typeof onlyTriggerAlertsDuringSeason === 'boolean' ? onlyTriggerAlertsDuringSeason : false,
-        sensitivities: sensitivities || null,
-        species: species || undefined,
-        variety: variety || undefined,
-        strainName: strainName || undefined,
-        startDate: plantedDate ? new Date(plantedDate) : undefined,
-        harvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : undefined,
-      },
+      data: updateData,
     });
     return NextResponse.json(updated);
   } catch (error) {
