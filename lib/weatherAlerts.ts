@@ -361,13 +361,13 @@ export async function processWeatherAlerts() {
         message += '\nPlease take necessary precautions to protect your plant.';
 
         // Log the active alert for the plant, but prevent duplicates in the last 4 hours
-        const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+        const dedupWindow = new Date(Date.now() - (3 * 60 + 50) * 60 * 1000); // 3 hours 50 minutes
         const existingLog = await prisma.log.findFirst({
           where: {
             plantId: plant.id,
             type: 'WEATHER_ALERT',
             notes: message,
-            logDate: { gte: fourHoursAgo }
+            logDate: { gte: dedupWindow }
           }
         });
         if (!existingLog) {
@@ -665,94 +665,14 @@ async function maybeSendOrUpdateAlert(
   await prisma.log.create({
     data: {
       plantId: plant.id,
-      userId: plant.userId,
-      gardenId: plant.garden?.id ?? plant.gardenId ?? null,
-      roomId: plant.roomId ?? null,
-      zoneId: plant.zoneId ?? null,
       type: 'WEATHER_ALERT',
-      stage: plant.stage ?? 'VEGETATIVE',
       notes: logMessage,
-      logDate: now,
+      logDate: new Date(),
       data: {
         alertType: type,
+        weatherInfo,
         severity,
-        weatherInfo
       }
     }
   });
-
-  // Find the most recent notification for this plant+type in the last 12 hours
-  const existing = await prisma.notification.findFirst({
-    where: {
-      userId: plant.userId,
-      type: 'WEATHER_ALERT',
-      meta: { path: ['plantId'], equals: plant.id },
-      createdAt: { gte: twelveHoursAgo },
-      message: { contains: type }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  if (existing) {
-    // If the new severity is worse, update the notification
-    const prevSeverity = existing.meta?.severity ?? null;
-    if (prevSeverity !== null && severity > prevSeverity) {
-      await prisma.notification.update({
-        where: { id: existing.id },
-        data: {
-          title: `⚠️ Weather Alert: ${type} for ${plant.name} (Severity Increased)`,
-          message: `The weather conditions for ${plant.name} in ${garden.name} (${garden.zipcode}) have worsened:\n\n` +
-            `• Alert Type: ${type}\n` +
-            `• Current Conditions: ${weatherInfo.conditions}\n` +
-            `• Temperature: ${weatherInfo.temperature}\n` +
-            `• Humidity: ${weatherInfo.humidity}\n` +
-            `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-            `• Precipitation: ${weatherInfo.precipitation}\n\n` +
-            `Please take necessary precautions to protect your plant.`,
-          meta: { 
-            ...existing.meta, 
-            severity, 
-            updatedAt: now,
-            weatherInfo,
-            gardenName: garden.name,
-            roomName,
-            zoneName
-          }
-        }
-      });
-    }
-    // Otherwise, do not send a new notification
-    return;
-  }
-
-  // No recent notification, send a new one
-  const userIds = await getAllGardenUserIds(garden.id, plant.userId);
-  await Promise.all(userIds.map(userId =>
-    prisma.notification.create({
-      data: {
-        userId,
-        type: 'WEATHER_ALERT',
-        title: `⚠️ Weather Alert: ${type} for ${plant.name}`,
-        message: `Weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:\n\n` +
-          `• Alert Type: ${type}\n` +
-          `• Current Conditions: ${weatherInfo.conditions}\n` +
-          `• Temperature: ${weatherInfo.temperature}\n` +
-          `• Humidity: ${weatherInfo.humidity}\n` +
-          `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-          `• Precipitation: ${weatherInfo.precipitation}\n\n` +
-          `Please take necessary precautions to protect your plant.`,
-        link: `/gardens/${garden.id}/plants/${plant.id}`,
-        meta: { 
-          plantId: plant.id, 
-          alertType: type, 
-          date: today, 
-          severity,
-          weatherInfo,
-          gardenName: garden.name,
-          roomName,
-          zoneName
-        }
-      }
-    })
-  ));
-} 
+}
