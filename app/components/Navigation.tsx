@@ -40,7 +40,7 @@ export function Navigation() {
       }
     }
     fetchUnread();
-  }, [session?.user]);
+  }, [session?.user, pathname]);
 
   return (
     <Disclosure as="nav" className="bg-dark-bg-secondary shadow-lg ring-1 ring-dark-border relative z-50">
