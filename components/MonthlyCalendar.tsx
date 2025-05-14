@@ -46,8 +46,7 @@ interface CalendarProps {
   monthChange?: (newMonth: Date) => void;
 }
 
-// Helper to color and style forecasted alert sections (copied from NotificationsList.tsx)
-function renderForecastedMessage(message: string) {
+export function renderForecastedMessage(message: string) {
   const sectionOrder = [
     { key: 'Heat', color: 'text-red-400' },
     { key: 'Frost', color: 'text-sky-300' },

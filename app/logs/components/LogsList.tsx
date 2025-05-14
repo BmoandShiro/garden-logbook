@@ -6,6 +6,7 @@ import DeleteLogButton from './DeleteLogButton';
 import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, convertTemperature, convertVolume, convertLength, formatMeasurement } from '@/lib/units';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import Link from 'next/link';
+import { renderForecastedMessage } from '@/components/MonthlyCalendar';
 
 interface LogWithLocation {
   id: string;
@@ -52,13 +53,16 @@ interface LogsListProps {
   onLogDeleted?: () => void;
 }
 
-const getLogIcon = (type: LogType) => {
-  const icons: Record<LogType, string> = {
+const getLogIcon = (type: string) => {
+  const icons: Record<string, string> = {
     WATERING: '💧',
     ENVIRONMENTAL: '🌡️',
     LST: '🎋',
+    HST: '🌿',
     HARVEST: '🌾',
+    DRYING: '🏜️',
     PEST_STRESS_DISEASE: '🐛',
+    PEST_DISEASE: '🐛',
     TRANSPLANT: '🪴',
     TRANSFER: '🔄',
     GERMINATION: '🌱',
@@ -68,7 +72,9 @@ const getLogIcon = (type: LogType) => {
     STRESS: '⚠️',
     EQUIPMENT: '🔧',
     CUSTOM: '📝',
-    DRYING: '🏜️'
+    FLUSHING: '🚿',
+    GENERAL: '📝',
+    WEATHER_ALERT: '⛈️',
   };
   return icons[type] || '📝';
 };
@@ -81,6 +87,32 @@ const getLocationString = (log: LogWithLocation) => {
   if (log.plant?.name) parts.push(log.plant.name);
   return parts.join(' → ');
 };
+
+const weatherAlertColors: Record<string, string> = {
+  Heat: 'text-red-400',
+  Frost: 'text-sky-300',
+  Drought: 'text-orange-400',
+  Wind: 'text-gray-300',
+  Flood: 'text-amber-700',
+  HeavyRain: 'text-blue-700',
+};
+
+function renderCondensedWeatherAlert(message: string) {
+  // Extract each section and value from the message
+  const sectionRegex = /• (Heat|Frost|Drought|Wind|Flood|HeavyRain):\s*([\s\S]*?)(?=\n• |$)/g;
+  const badges: React.ReactNode[] = [];
+  let match;
+  while ((match = sectionRegex.exec(message)) !== null) {
+    const key = match[1];
+    const value = match[2].split('\n')[0].trim();
+    if (value && value !== 'None') {
+      badges.push(
+        <span key={key} className={`inline-block mr-3 font-semibold ${weatherAlertColors[key]}`}>{key}: {value}</span>
+      );
+    }
+  }
+  return badges.length > 0 ? <div className="flex flex-wrap items-center mt-2 text-sm">{badges}</div> : null;
+}
 
 export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
   const { preferences } = useUserPreferences();
@@ -117,7 +149,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                 <Link href={`/logs/${log.id}`} className="flex-1 min-w-0 block">
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0 h-10 w-10 rounded-full bg-garden-100 flex items-center justify-center">
-                      {getLogIcon(log.type)}
+                      {getLogIcon(log.type.toString())}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
@@ -138,7 +170,11 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                         </p>
                       )}
                       {log.notes && (
-                        <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
+                        (String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT') ? (
+                          renderCondensedWeatherAlert(log.notes)
+                        ) : (
+                          <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
+                        )
                       )}
                       <div className="mt-2 flex flex-wrap gap-2">
                         {log.type !== 'ENVIRONMENTAL' && log.temperature !== null && log.temperature !== undefined && (
