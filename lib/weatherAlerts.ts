@@ -129,7 +129,6 @@ export async function processWeatherAlerts() {
 
   console.log(`[WEATHER_ALERTS] Found ${plants.length} plants to check`);
 
-  // Group plants by garden to track overall status and alerts
   const gardenStatus = new Map<string, {
     hasAlerts: boolean;
     alertCount: number;
@@ -163,15 +162,11 @@ export async function processWeatherAlerts() {
     }
 
     try {
-      // Fetch user notification preference
       const notificationPeriod = await getUserWeatherNotificationPeriod(plant.userId);
-      // Fetch full forecast
       const { lat, lon } = await getLatLonForZip(garden.zipcode);
       const response = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
       const data = await response.json();
-      if (!data.properties || !data.properties.forecast) {
-        throw new Error(`No forecast found for zipcode ${garden.zipcode} (lat/lon: ${lat},${lon}). Response: ${JSON.stringify(data)}`);
-      }
+      if (!data.properties || !data.properties.forecast) continue;
       const forecastUrl = data.properties.forecast;
       const forecastResponse = await fetch(forecastUrl);
       const forecastData = await forecastResponse.json();
@@ -182,9 +177,11 @@ export async function processWeatherAlerts() {
       let triggeredType: string | null = null;
       let triggeredWeatherInfo: any = null;
 
+      // --- Group forecasted alerts by type ---
+      const forecastedAlerts: Record<string, Array<{ period: any, weather: Weather, severity: number }>> = {};
+
       for (const idx of periodIndexes) {
         const period = periods[idx];
-        // Map to Weather interface
         const weather: Weather = {
           temperature: period.temperature,
           humidity: period.relativeHumidity?.value || 0,
@@ -193,7 +190,7 @@ export async function processWeatherAlerts() {
           conditions: period.shortForecast,
           hasFrostAlert: period.temperature <= 32,
           hasFloodAlert: period.probabilityOfPrecipitation?.value > 70,
-          daysWithoutRain: 0 // Not available in forecast
+          daysWithoutRain: 0
         };
         // Only log and send current/active alerts for the first period
         if (idx === 0) {
@@ -235,8 +232,7 @@ export async function processWeatherAlerts() {
             triggeredWeatherInfo = weather;
           }
         } else {
-          // For future periods, only send deduplicated forecast notifications
-          // Check each sensitivity type
+          // --- Group forecasted alerts for future periods ---
           const alertTypes: { type: string; triggered: boolean; severity: number }[] = [];
           if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
             alertTypes.push({ type: 'heat', triggered: true, severity: weather.temperature });
@@ -257,58 +253,59 @@ export async function processWeatherAlerts() {
             alertTypes.push({ type: 'heavyRain', triggered: true, severity: weather.precipitation });
           }
           for (const alert of alertTypes) {
-            // Deduplicate: check if a notification for this plant, type, and period start time already exists
-            const periodStart = period.startTime;
-            const existing = await prisma.notification.findFirst({
-              where: {
-                userId: plant.userId,
-                type: 'WEATHER_FORECAST_ALERT',
-                meta: {
-                  path: ['plantId'], equals: plant.id
-                },
-                createdAt: { gte: new Date(periodStart) },
-                message: { contains: alert.type }
-              },
-              orderBy: { createdAt: 'desc' }
-            });
-            if (!existing) {
-              await prisma.notification.create({
-                data: {
-                  userId: plant.userId,
-                  type: 'WEATHER_FORECAST_ALERT',
-                  title: `⏳ Forecasted Weather Alert: ${alert.type} for ${plant.name}`,
-                  message: `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name}:
-
-` +
-                    `• Alert Type: ${alert.type}
-` +
-                    `• Forecasted For: ${period.name} (${period.startTime})
-` +
-                    `• Conditions: ${weather.conditions}
-` +
-                    `• Temperature: ${weather.temperature}°F
-` +
-                    `• Humidity: ${weather.humidity}%
-` +
-                    `• Wind Speed: ${weather.windSpeed} mph
-` +
-                    `• Precipitation: ${weather.precipitation ?? 'N/A'}
-
-` +
-                    `Please prepare in advance to protect your plant.`,
-                  link: `/gardens/${garden.id}/plants/${plant.id}`,
-                  meta: {
-                    plantId: plant.id,
-                    alertType: alert.type,
-                    forecastPeriod: period.name,
-                    forecastStart: period.startTime,
-                    severity: alert.severity,
-                    weatherInfo: weather
-                  }
-                }
-              });
-            }
+            if (!forecastedAlerts[alert.type]) forecastedAlerts[alert.type] = [];
+            forecastedAlerts[alert.type].push({ period, weather, severity: alert.severity });
           }
+        }
+      }
+
+      // --- After looping, send grouped forecasted alert notification if any ---
+      const alertTypes = Object.keys(forecastedAlerts);
+      if (alertTypes.length > 0) {
+        // Build grouped message
+        let message = `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name}:
+\n`;
+        for (const type of alertTypes) {
+          message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:\n`;
+          for (const entry of forecastedAlerts[type]) {
+            message += `    - ${entry.period.name} (${entry.period.startTime}): `;
+            if (type === 'heat') message += `${entry.weather.temperature}°F`;
+            else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
+            else if (type === 'heavyRain') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
+            else if (type === 'frost') message += `${entry.weather.temperature}°F`;
+            else if (type === 'flood') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
+            else message += `${entry.severity}`;
+            message += '\n';
+          }
+        }
+        message += '\nPlease prepare in advance to protect your plant.';
+
+        // Deduplicate: check if a grouped notification for this plant and forecast window already exists
+        const existing = await prisma.notification.findFirst({
+          where: {
+            userId: plant.userId,
+            type: 'WEATHER_FORECAST_ALERT',
+            meta: { path: ['plantId'], equals: plant.id },
+            createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) } // last 4 hours
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        if (!existing) {
+          await prisma.notification.create({
+            data: {
+              userId: plant.userId,
+              type: 'WEATHER_FORECAST_ALERT',
+              title: `⏳ Forecasted Weather Alerts for ${plant.name}`,
+              message,
+              link: `/gardens/${garden.id}/plants/${plant.id}`,
+              meta: {
+                plantId: plant.id,
+                alertTypes,
+                forecastedAlerts,
+                forecastWindow: notificationPeriod
+              }
+            }
+          });
         }
       }
 
