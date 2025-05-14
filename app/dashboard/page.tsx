@@ -77,6 +77,55 @@ export default async function Dashboard() {
   });
   const totalStrains = uniqueStrains.length;
 
+  // Fetch current and forecasted weather alerts for all gardens
+  const alertTypes = ['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'];
+  let currentAlertCounts: Record<string, number> = {};
+  let forecastedAlertCounts: Record<string, number> = {};
+  alertTypes.forEach(type => {
+    currentAlertCounts[type] = 0;
+    forecastedAlertCounts[type] = 0;
+  });
+  let totalCurrentAlerts = 0;
+  let totalForecastedAlerts = 0;
+  for (const gardenId of gardenIds) {
+    // Current alerts
+    const currentAlerts = await prisma.notification.findMany({
+      where: {
+        type: 'WEATHER_ALERT',
+        meta: { path: ['gardenId'], equals: gardenId },
+        createdAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+      }
+    });
+    for (const alert of currentAlerts) {
+      if (alert.meta?.alertTypes) {
+        for (const t of alert.meta.alertTypes) {
+          if (alertTypes.includes(t)) {
+            currentAlertCounts[t]++;
+            totalCurrentAlerts++;
+          }
+        }
+      }
+    }
+    // Forecasted alerts
+    const forecastedAlerts = await prisma.notification.findMany({
+      where: {
+        type: 'WEATHER_FORECAST_ALERT',
+        meta: { path: ['gardenId'], equals: gardenId },
+        createdAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+      }
+    });
+    for (const alert of forecastedAlerts) {
+      if (alert.meta?.alertTypes) {
+        for (const t of alert.meta.alertTypes) {
+          if (alertTypes.includes(t)) {
+            forecastedAlertCounts[t]++;
+            totalForecastedAlerts++;
+          }
+        }
+      }
+    }
+  }
+
   return (
     <div className="py-10">
       <header>
@@ -104,6 +153,30 @@ export default async function Dashboard() {
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Strains</h3>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{totalStrains}</p>
                 <p className="mt-2 text-sm text-dark-text-secondary">Unique strains in your gardens</p>
+              </div>
+              <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
+                <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Current Weather Alerts</h3>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-red-400">{totalCurrentAlerts}</p>
+                <div className="mt-2 text-sm text-dark-text-secondary">
+                  {alertTypes.map(type => (
+                    <div key={type} className="flex items-center gap-2">
+                      <span className="capitalize">{type}:</span>
+                      <span className="font-semibold text-red-300">{currentAlertCounts[type]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
+                <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Forecasted Weather Alerts</h3>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-yellow-400">{totalForecastedAlerts}</p>
+                <div className="mt-2 text-sm text-dark-text-secondary">
+                  {alertTypes.map(type => (
+                    <div key={type} className="flex items-center gap-2">
+                      <span className="capitalize">{type}:</span>
+                      <span className="font-semibold text-yellow-300">{forecastedAlertCounts[type]}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Your Gardens</h3>

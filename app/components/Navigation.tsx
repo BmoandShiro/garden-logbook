@@ -179,20 +179,24 @@ export function Navigation() {
 
           <Disclosure.Panel className="sm:hidden">
             <div className="space-y-1 pb-3 pt-2">
-              {navigation.map((item) => (
-                <Disclosure.Button
-                  key={item.name}
-                  as={Link}
-                  href={item.href}
-                  className={classNames(
-                    pathname === item.href
-                      ? 'border-garden-500 bg-garden-50 text-garden-700'
-                      : 'border-transparent text-dark-text-secondary hover:border-dark-text-secondary hover:bg-dark-bg-primary hover:text-dark-text-primary',
-                    'block border-l-4 py-2 pl-3 pr-4 text-base font-medium'
+              {navigation.map((item, idx) => (
+                <Fragment key={item.name}>
+                  <Disclosure.Button
+                    as={Link}
+                    href={item.href}
+                    className={classNames(
+                      pathname === item.href
+                        ? 'border-garden-500 bg-garden-50 text-garden-700'
+                        : 'border-transparent text-dark-text-secondary hover:border-dark-text-secondary hover:bg-dark-bg-primary hover:text-dark-text-primary',
+                      'block border-l-4 py-2 pl-3 pr-4 text-base font-medium'
+                    )}
+                  >
+                    {item.name}
+                  </Disclosure.Button>
+                  {item.name === 'Calendar' && (
+                    <div className="my-1 border-t border-dark-border" />
                   )}
-                >
-                  {item.name}
-                </Disclosure.Button>
+                </Fragment>
               ))}
             </div>
             {session?.user && (
