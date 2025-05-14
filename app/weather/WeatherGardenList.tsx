@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Cloud, CloudSun, CloudLightning, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, addHours, differenceInSeconds } from 'date-fns';
 
 export interface WeatherStatus {
   hasAlerts: boolean;
@@ -30,6 +30,7 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
   const [saving, setSaving] = useState(false);
   const [activeAlerts, setActiveAlerts] = useState<Record<string, any[]>>({});
   const [alertsLoading, setAlertsLoading] = useState<Record<string, boolean>>({});
+  const [timers, setTimers] = useState<Record<string, string>>({});
 
   // Fetch current preference on mount
   useEffect(() => {
@@ -40,22 +41,49 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
       });
   }, [userId]);
 
-  const toggle = async (id: string) => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newTimers: Record<string, string> = {};
+      gardens.forEach(garden => {
+        const lastChecked = garden.weatherStatus?.lastChecked;
+        if (lastChecked) {
+          const nextCheck = addHours(new Date(lastChecked), 4);
+          const now = new Date();
+          let diff = Math.max(0, differenceInSeconds(nextCheck, now));
+          const hours = Math.floor(diff / 3600);
+          diff -= hours * 3600;
+          const minutes = Math.floor(diff / 60);
+          const seconds = diff - minutes * 60;
+          newTimers[garden.id] = `${hours}h ${minutes}m ${seconds}s`;
+        } else {
+          newTimers[garden.id] = '';
+        }
+      });
+      setTimers(newTimers);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [gardens]);
+
+  const toggle = (id: string) => {
     setExpanded(e => ({ ...e, [id]: !e[id] }));
-    // If expanding and haven't loaded alerts yet, fetch them
-    if (!expanded[id]) {
-      setAlertsLoading(a => ({ ...a, [id]: true }));
-      try {
-        const res = await fetch(`/api/gardens/${id}/weather-alerts`);
-        const data = await res.json();
-        setActiveAlerts(a => ({ ...a, [id]: data.alerts || [] }));
-      } catch (e) {
-        setActiveAlerts(a => ({ ...a, [id]: [] }));
-      } finally {
-        setAlertsLoading(a => ({ ...a, [id]: false }));
-      }
-    }
   };
+
+  useEffect(() => {
+    gardens.forEach(garden => {
+      setAlertsLoading(a => ({ ...a, [garden.id]: true }));
+      fetch(`/api/gardens/${garden.id}/weather-alerts`)
+        .then(res => res.json())
+        .then(data => {
+          setActiveAlerts(a => ({ ...a, [garden.id]: data.alerts || [] }));
+        })
+        .catch(() => {
+          setActiveAlerts(a => ({ ...a, [garden.id]: [] }));
+        })
+        .finally(() => {
+          setAlertsLoading(a => ({ ...a, [garden.id]: false }));
+        });
+    });
+  }, [gardens]);
 
   async function handleRunWeatherCheck() {
     setLoading(true);
@@ -147,6 +175,12 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
                 {icon}
                 <span className="text-lg font-semibold text-emerald-100">{garden.name}</span>
                 <span className="text-sm text-emerald-300/70">{summary}</span>
+                {status?.lastChecked && (
+                  <span className="ml-4 text-xs text-emerald-300/70">Last checked: {format(new Date(status.lastChecked), 'PPpp')}</span>
+                )}
+                {status?.lastChecked && (
+                  <span className="ml-2 text-xs text-emerald-200">Next check in: {timers[garden.id]}</span>
+                )}
               </div>
               <button className="ml-2 text-emerald-300/70 hover:text-emerald-100">
                 {expanded[garden.id] ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
