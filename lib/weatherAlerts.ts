@@ -103,8 +103,19 @@ export async function processWeatherAlerts() {
 
   console.log(`[WEATHER_ALERTS] Found ${plants.length} plants to check`);
 
-  // Group plants by garden to track overall status
-  const gardenStatus = new Map<string, { hasAlerts: boolean; alertCount: number }>();
+  // Group plants by garden to track overall status and alerts
+  const gardenStatus = new Map<string, {
+    hasAlerts: boolean;
+    alertCount: number;
+    lastChecked: Date;
+    alerts: Array<{
+      plantId: string;
+      plantName: string;
+      alertType: string;
+      weatherInfo: any;
+      timestamp: string;
+    }>;
+  }>();
 
   for (const plant of plants) {
     // Debug log for plant and garden
@@ -131,38 +142,65 @@ export async function processWeatherAlerts() {
       console.log(`[WEATHER_ALERTS] Weather data received for ${garden.zipcode}:`, weather);
 
       let hasAlerts = false;
+      let triggeredType: string | null = null;
+      let triggeredWeatherInfo: any = null;
 
       // Check each sensitivity type
       if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
         await maybeSendOrUpdateAlert(plant, garden, 'heat', weather, weather.temperature);
         hasAlerts = true;
+        triggeredType = 'heat';
+        triggeredWeatherInfo = weather;
       }
       if (sensitivities.frost?.enabled && weather.hasFrostAlert && isTodayInFrostWindow(plant)) {
         await maybeSendOrUpdateAlert(plant, garden, 'frost', weather, 1);
         hasAlerts = true;
+        triggeredType = 'frost';
+        triggeredWeatherInfo = weather;
       }
       if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
         await maybeSendOrUpdateAlert(plant, garden, 'wind', weather, weather.windSpeed);
         hasAlerts = true;
+        triggeredType = 'wind';
+        triggeredWeatherInfo = weather;
       }
       if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
         await maybeSendOrUpdateAlert(plant, garden, 'drought', weather, weather.daysWithoutRain);
         hasAlerts = true;
+        triggeredType = 'drought';
+        triggeredWeatherInfo = weather;
       }
       if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
         await maybeSendOrUpdateAlert(plant, garden, 'flood', weather, 1);
         hasAlerts = true;
+        triggeredType = 'flood';
+        triggeredWeatherInfo = weather;
       }
       if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
         await maybeSendOrUpdateAlert(plant, garden, 'heavyRain', weather, weather.precipitation);
         hasAlerts = true;
+        triggeredType = 'heavyRain';
+        triggeredWeatherInfo = weather;
       }
 
-      // Update garden status
-      const currentStatus = gardenStatus.get(garden.id) || { hasAlerts: false, alertCount: 0 };
-      if (hasAlerts) {
+      // Update garden status and alerts
+      const currentStatus = gardenStatus.get(garden.id) || {
+        hasAlerts: false,
+        alertCount: 0,
+        lastChecked: new Date(),
+        alerts: []
+      };
+      if (hasAlerts && triggeredType) {
         currentStatus.hasAlerts = true;
         currentStatus.alertCount++;
+        currentStatus.lastChecked = new Date();
+        currentStatus.alerts.push({
+          plantId: plant.id,
+          plantName: plant.name,
+          alertType: triggeredType,
+          weatherInfo: triggeredWeatherInfo,
+          timestamp: new Date().toISOString()
+        });
       }
       gardenStatus.set(garden.id, currentStatus);
 
@@ -179,7 +217,8 @@ export async function processWeatherAlerts() {
         weatherStatus: {
           hasAlerts: status.hasAlerts,
           alertCount: status.alertCount,
-          lastChecked: new Date()
+          lastChecked: status.lastChecked,
+          alerts: status.alerts
         }
       }
     });

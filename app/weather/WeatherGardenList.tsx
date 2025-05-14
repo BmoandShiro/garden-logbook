@@ -8,6 +8,7 @@ export interface WeatherStatus {
   hasAlerts: boolean;
   alertCount: number;
   lastChecked?: string;
+  alerts?: any[];
   [key: string]: any;
 }
 
@@ -88,7 +89,26 @@ export function WeatherGardenList({ gardens }: { gardens: WeatherGarden[] }) {
                 {status && status.hasAlerts ? (
                   <div className="mt-2 text-red-400">
                     <strong>Active Alerts:</strong>
-                    <pre className="bg-emerald-950/60 rounded p-2 mt-1 text-xs text-red-200 overflow-x-auto">{JSON.stringify(status, null, 2)}</pre>
+                    {Array.isArray(status.alerts) && status.alerts.length > 0 ? (
+                      <ul className="space-y-2 mt-2">
+                        {status.alerts.map((alert: any, idx: number) => (
+                          <li key={alert.plantId + alert.alertType + idx} className="bg-emerald-950/60 rounded p-2 text-xs text-red-200">
+                            <div>
+                              <span className="font-semibold">Plant:</span> <Link href={`/gardens/${garden.id}/plants/${alert.plantId}`} className="text-emerald-300 hover:underline">{alert.plantName}</Link>
+                            </div>
+                            <div><span className="font-semibold">Alert Type:</span> {alert.alertType}</div>
+                            <div><span className="font-semibold">Weather:</span> {alert.weatherInfo && (
+                              <span>
+                                {alert.weatherInfo.conditions} | Temp: {alert.weatherInfo.temperature}°F | Humidity: {alert.weatherInfo.humidity}% | Wind: {alert.weatherInfo.windSpeed} mph | Precip: {alert.weatherInfo.precipitation ?? 'N/A'}
+                              </span>
+                            )}</div>
+                            <div><span className="font-semibold">Time:</span> {alert.timestamp ? format(new Date(alert.timestamp), 'PPpp') : ''}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div>No detailed alert info available.</div>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-2 text-green-400">No active weather alerts.</div>
