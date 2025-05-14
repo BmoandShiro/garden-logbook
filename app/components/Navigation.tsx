@@ -16,6 +16,7 @@ const navigation = [
   { name: 'Seeds', href: '/seeds' },
   { name: 'Calc', href: '/calc' },
   { name: 'Calendar', href: '/calendar' },
+  { name: 'Weather', href: '/weather' },
 ];
 
 function classNames(...classes: string[]) {

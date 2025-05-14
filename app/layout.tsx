@@ -4,6 +4,7 @@ import { Providers } from './providers';
 import { Navigation } from './components/Navigation';
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
+import Link from 'next/link';
 
 const inter = Inter({ subsets: ['latin'] });
 
