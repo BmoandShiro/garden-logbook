@@ -71,6 +71,8 @@ model Plant {
   name        String
   strainName  String?
   strainId    String?
+  species     String?
+  variety     String?
   stage       Stage      @default(VEGETATIVE)
   location    String?
   startDate   DateTime   @default(now())
@@ -92,6 +94,10 @@ model Plant {
   zone        Zone?      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   logEntries  LogEntry[] @relation("LogEntryToPlant")
   tags        Tag[]      @relation("PlantToTag")
+  growingSeasonStart            String?
+  growingSeasonEnd              String?
+  onlyTriggerAlertsDuringSeason Boolean   @default(false)
+  sensitivities                 Json?
 }
 
 model Strain {

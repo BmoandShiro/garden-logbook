@@ -149,6 +149,48 @@ export default async function PlantPage({ params }: PageProps) {
                   {plant.user.name || plant.user.email}
                 </p>
               </div>
+
+              {/* Growing Season Control */}
+              {(plant.growingSeasonStart || plant.growingSeasonEnd) && (
+                <div>
+                  <p className="text-sm font-medium text-emerald-100">🌱 Growing Season</p>
+                  <p className="text-emerald-300/70">
+                    {plant.growingSeasonStart && `Start: ${plant.growingSeasonStart}`}<br />
+                    {plant.growingSeasonEnd && `End: ${plant.growingSeasonEnd}`}<br />
+                    {plant.onlyTriggerAlertsDuringSeason && <span>Alerts only during season</span>}
+                  </p>
+                </div>
+              )}
+
+              {/* Weather Sensitivities */}
+              {plant.sensitivities && (
+                <div>
+                  <p className="text-sm font-medium text-emerald-100">🌦️ Weather Sensitivities</p>
+                  <div className="text-emerald-300/70 space-y-1">
+                    {Object.entries(plant.sensitivities).map(([key, value]) => {
+                      const v = value as any;
+                      return v.enabled && (
+                        <div key={key}>
+                          <span className="font-semibold">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>{' '}
+                          {v.threshold && <>Threshold: {v.threshold} {v.unit || ''} </>}
+                          {key === 'drought' && v.days && <>No rain for {v.days} days </>}
+                          {key === 'wind' && v.threshold && <>Wind speed: {v.threshold} {v.unit || ''} </>}
+                          {key === 'frost' && v.windows && v.windows.length > 0 && (
+                            <div>
+                              {v.windows.map((w: any, i: number) => (
+                                <div key={i}>
+                                  {w.label && <span>{w.label}: </span>}
+                                  {w.start} - {w.end} {w.repeat && '(repeats)'}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

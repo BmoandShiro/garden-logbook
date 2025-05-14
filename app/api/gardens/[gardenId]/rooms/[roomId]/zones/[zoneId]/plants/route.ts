@@ -20,7 +20,7 @@ export async function POST(request: Request, context: { params: Promise<{ garden
       userId: session.user.id
     });
 
-    const { name, strainName, species, variety, plantedDate, expectedHarvestDate, notes, type } = body;
+    const { name, strainName, species, variety, plantedDate, expectedHarvestDate, notes, type, growingSeasonStart, growingSeasonEnd, onlyTriggerAlertsDuringSeason, sensitivities } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -74,6 +74,8 @@ export async function POST(request: Request, context: { params: Promise<{ garden
         data: {
           name,
           strainName: strainName || null,
+          species,
+          variety: variety || null,
           notes: notes || null,
           zoneId: zoneId,
           userId: session.user.id,
@@ -81,6 +83,10 @@ export async function POST(request: Request, context: { params: Promise<{ garden
           type: type || 'ZONE_PLANT',
           startDate: plantedDate ? new Date(plantedDate) : undefined,
           harvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : undefined,
+          growingSeasonStart: growingSeasonStart || null,
+          growingSeasonEnd: growingSeasonEnd || null,
+          onlyTriggerAlertsDuringSeason: typeof onlyTriggerAlertsDuringSeason === 'boolean' ? onlyTriggerAlertsDuringSeason : false,
+          sensitivities: sensitivities || null,
         },
       });
 

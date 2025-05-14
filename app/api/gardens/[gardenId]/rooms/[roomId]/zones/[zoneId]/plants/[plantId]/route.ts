@@ -109,7 +109,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Plant not found or access denied' }, { status: 404 });
     }
     const body = await request.json();
-    const { name, notes, type } = body;
+    const { name, notes, type, growingSeasonStart, growingSeasonEnd, onlyTriggerAlertsDuringSeason, sensitivities, species, variety, strainName, plantedDate, expectedHarvestDate } = body;
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
     }
@@ -119,6 +119,15 @@ export async function PATCH(
         name,
         notes: notes ?? '',
         type: type ?? '',
+        growingSeasonStart: growingSeasonStart || null,
+        growingSeasonEnd: growingSeasonEnd || null,
+        onlyTriggerAlertsDuringSeason: typeof onlyTriggerAlertsDuringSeason === 'boolean' ? onlyTriggerAlertsDuringSeason : false,
+        sensitivities: sensitivities || null,
+        species: species || undefined,
+        variety: variety || undefined,
+        strainName: strainName || undefined,
+        startDate: plantedDate ? new Date(plantedDate) : undefined,
+        harvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : undefined,
       },
     });
     return NextResponse.json(updated);
