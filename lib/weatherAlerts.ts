@@ -227,19 +227,44 @@ export async function checkWeatherAlerts() {
   }
 }
 
+// Helper to get lat/lon from zipcode using OpenStreetMap Nominatim
+async function getLatLonForZip(zipcode: string): Promise<{ lat: number, lon: number }> {
+  // Nominatim usage policy: 1 request/sec per IP, so we should be careful
+  const url = `https://nominatim.openstreetmap.org/search?postalcode=${zipcode}&country=us&format=json&limit=1`;
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'garden-logbook/1.0 (your-email@example.com)'
+    }
+  });
+  if (res.status === 429) {
+    // Rate limited
+    throw new Error('Nominatim geocoding rate limit reached (HTTP 429). Try again later.');
+  }
+  if (!res.ok) {
+    throw new Error(`Geocoding failed for zipcode ${zipcode}: HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  if (!data.length) throw new Error(`No lat/lon found for zipcode ${zipcode}`);
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+}
+
 async function fetchWeatherData(zipcode: string): Promise<Weather> {
   try {
-    const response = await fetch(`https://api.weather.gov/points/${zipcode}`);
+    // Convert zipcode to lat/lon
+    const { lat, lon } = await getLatLonForZip(zipcode);
+    // Use lat/lon for NWS API
+    const response = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
     const data = await response.json();
-    
+    // Check for forecast property
+    if (!data.properties || !data.properties.forecast) {
+      throw new Error(`No forecast found for zipcode ${zipcode} (lat/lon: ${lat},${lon}). Response: ${JSON.stringify(data)}`);
+    }
     // Get the forecast URL from the response
     const forecastUrl = data.properties.forecast;
     const forecastResponse = await fetch(forecastUrl);
     const forecastData = await forecastResponse.json();
-    
     // Get the current conditions
     const currentConditions = forecastData.properties.periods[0];
-    
     // Map the API response to our Weather interface
     return {
       temperature: currentConditions.temperature,
@@ -252,7 +277,11 @@ async function fetchWeatherData(zipcode: string): Promise<Weather> {
       daysWithoutRain: 0 // This would need to be calculated based on historical data
     };
   } catch (error) {
-    console.error('Error fetching weather data:', error);
+    if (error instanceof Error && error.message.includes('Nominatim geocoding rate limit')) {
+      console.warn('[WEATHER_ALERTS] Geocoding rate limit hit. Skipping weather check for now.');
+    } else {
+      console.error('Error fetching weather data:', error);
+    }
     throw error;
   }
 }
