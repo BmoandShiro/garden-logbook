@@ -4,6 +4,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSa
 import { Plus, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function getLogColor(type: string) {
   switch (type) {
@@ -206,9 +207,36 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                   >
                     {gardenName}
                   </Link>
-                  <span className="font-semibold text-emerald-400 ml-1">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
-                  <span className="font-semibold text-emerald-300 ml-1">{info.zoneNames.size} zone{info.zoneNames.size !== 1 ? 's' : ''}</span>
-                  <span className="font-semibold text-emerald-600 ml-1">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-semibold text-emerald-400 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {info.roomNames.size > 0 ? Array.from(info.roomNames).join(", ") : "No rooms/plots"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-semibold text-emerald-300 ml-1 cursor-pointer">{info.zoneNames.size} zone{info.zoneNames.size !== 1 ? 's' : ''}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {info.zoneNames.size > 0 ? Array.from(info.zoneNames).join(", ") : "No zones"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-semibold text-emerald-600 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {info.plantNames.size > 0 ? Array.from(info.plantNames).join(", ") : "No plants"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               ))}
             </div>
@@ -584,4 +612,4 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   );
 };
 
-export default MonthlyCalendar; 
+export default MonthlyCalendar;
