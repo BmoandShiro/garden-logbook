@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Log, LogType } from '@prisma/client';
 import { format } from 'date-fns';
@@ -12,6 +12,7 @@ import { Settings } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
+import { useSearchParams } from 'next/navigation';
 
 interface LogWithLocation {
   id: string;
@@ -33,18 +34,18 @@ interface LogWithLocation {
     name: string;
   };
   temperature?: number | null | undefined;
-  temperatureUnit?: string | null | undefined;
+  temperatureUnit?: string | undefined;
   humidity?: number | null | undefined;
   waterAmount?: number | null | undefined;
-  waterUnit?: string | null | undefined;
+  waterUnit?: string | undefined;
   height?: number | null | undefined;
-  heightUnit?: string | null | undefined;
+  heightUnit?: string | undefined;
   width?: number | null | undefined;
-  widthUnit?: string | null | undefined;
+  widthUnit?: string | undefined;
   healthRating?: number | null | undefined;
   data?: any;
   nutrientWaterTemperature?: number | null | undefined;
-  nutrientWaterTemperatureUnit?: string | null | undefined;
+  nutrientWaterTemperatureUnit?: string | undefined;
   destinationGardenId?: string | null | undefined;
   destinationRoomId?: string | null | undefined;
   destinationZoneId?: string | null | undefined;
@@ -85,6 +86,20 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     location: '',
   });
   const importInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+
+  // On mount, initialize filters from query params if present
+  useEffect(() => {
+    const startDate = searchParams.get('startDate') || '';
+    const endDate = searchParams.get('endDate') || '';
+    if (startDate || endDate) {
+      setFilters((prev) => ({
+        ...prev,
+        startDate,
+        endDate,
+      }));
+    }
+  }, [searchParams]);
 
   const { data: logs, isLoading, error, refetch } = useQuery<LogWithLocation[]>({
     queryKey: ['logs', userId, filters],
