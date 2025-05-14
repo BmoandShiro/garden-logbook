@@ -38,6 +38,7 @@ model User {
   seeds             Seed[]
   calendarNotes     CalendarNote[]
   notifications     Notification[]
+  weatherNotificationPeriod String? @default("current")
 }
 
 model Account {
