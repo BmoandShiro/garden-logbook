@@ -163,9 +163,18 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             transition-all
           `}
         >
-          {/* Weather alert badge */}
+          {/* Day number as clickable link to logs page for that day */}
+          <Link
+            href={`/logs?startDate=${format(day, "yyyy-MM-dd")}&endDate=${format(day, "yyyy-MM-dd")}`}
+            className="font-bold text-lg mb-2 text-garden-400 hover:underline focus:outline-none focus:ring-2 focus:ring-garden-400 rounded cursor-pointer w-fit"
+            title={`View logs for ${format(day, "yyyy-MM-dd")}`}
+            prefetch={false}
+          >
+            {formattedDate}
+          </Link>
+          {/* Weather alert badge - moved below day number */}
           {weatherAlert && weatherAlert.totalAlerts > 0 && (
-            <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+            <div className="mt-1 flex items-center gap-1 z-10">
               <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-600 text-xs text-white font-bold shadow">
                 {weatherAlert.totalAlerts} ⚠️
               </span>
@@ -289,7 +298,6 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
               </div>
             </div>
           )}
-          <div className="font-bold text-lg mb-2 text-garden-400">{formattedDate}</div>
           <div className="w-full flex-1 flex flex-col gap-1">
             {logs.map((log) => (
               <Link
