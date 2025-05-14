@@ -173,22 +173,36 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             {formattedDate}
           </Link>
           {/* Weather alert badge - moved below day number */}
-          {weatherAlert && weatherAlert.totalAlerts > 0 && (
-            <div className="mt-1 flex items-center gap-1 z-10">
-              <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-600 text-xs text-white font-bold shadow">
-                {weatherAlert.totalAlerts} ⚠️
-              </span>
-              <button
-                className="ml-1 text-xs text-red-200 hover:text-white underline focus:outline-none"
-                title="View weather alert details"
-                onClick={() => {
-                  setAlertModalDetails(weatherAlert.details);
-                  setAlertModalDate(dateKey);
-                  setAlertModalOpen(true);
-                }}
-              >
-                Details
-              </button>
+          {weatherAlert && weatherAlert.details && weatherAlert.details.length > 0 && (
+            <div className="mt-1 flex flex-col gap-0.5 z-10">
+              {/* Group alerts by gardenName and count affected plants */}
+              {Object.entries(
+                weatherAlert.details.reduce((acc: any, d: any) => {
+                  const garden = d.gardenName || 'Unknown Garden';
+                  if (!acc[garden]) acc[garden] = { count: 0, plantNames: new Set() };
+                  if (d.plantName) acc[garden].plantNames.add(d.plantName);
+                  acc[garden].count++;
+                  return acc;
+                }, {})
+              ).map(([gardenName, info]: any, idx) => (
+                <div key={gardenName} className="flex items-center gap-1 flex-wrap text-xs whitespace-nowrap overflow-hidden text-ellipsis">
+                  <span className="font-bold text-red-500">wAlert</span>
+                  <span className="font-semibold text-emerald-200">{gardenName}</span>
+                  <span className="font-semibold text-emerald-400 ml-1">{info.plantNames.size} plants</span>
+                  <button
+                    className="ml-1 text-xs text-red-300 hover:text-white underline focus:outline-none"
+                    title="View weather alert details"
+                    style={{ padding: 0, background: 'none', border: 'none', minWidth: 0 }}
+                    onClick={() => {
+                      setAlertModalDetails(weatherAlert.details.filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName));
+                      setAlertModalDate(dateKey);
+                      setAlertModalOpen(true);
+                    }}
+                  >
+                    Details
+                  </button>
+                </div>
+              ))}
             </div>
           )}
           {/* Plus icon in the top-right, no background */}
@@ -514,23 +528,42 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             </DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto space-y-4 mt-2">
+            {/* Group modal details by garden */}
             {alertModalDetails.length === 0 ? (
               <div className="text-dark-text-secondary">No details available.</div>
             ) : (
-              alertModalDetails.map((d, idx) => (
-                <div key={idx} className="rounded bg-dark-bg-primary border border-red-700 p-3 text-xs">
-                  <div className="font-bold text-red-300 mb-1">{d.type}{d.alertTypes?.length ? `: ${d.alertTypes.join(", ")}` : ""}</div>
-                  {d.gardenName && <div><span className="font-semibold">Garden:</span> {d.gardenName}</div>}
-                  {d.roomName && <div><span className="font-semibold">Room:</span> {d.roomName}</div>}
-                  {d.zoneName && <div><span className="font-semibold">Zone:</span> {d.zoneName}</div>}
-                  {d.plantName && <div><span className="font-semibold">Plant:</span> {d.plantName}</div>}
-                  {d.createdAt && <div><span className="font-semibold">Time:</span> {format(new Date(d.createdAt), 'PPpp')}</div>}
-                  {d.message && <div className="mt-2 whitespace-pre-line">{d.message}</div>}
-                  {d.alertTypes && d.alertTypes.length > 0 && (
-                    <div className="mt-2">
-                      <span className="font-semibold">Alert Types:</span> {d.alertTypes.join(", ")}
+              Object.entries(
+                alertModalDetails.reduce((acc: any, d: any) => {
+                  const garden = d.gardenName || 'Unknown Garden';
+                  if (!acc[garden]) acc[garden] = [];
+                  acc[garden].push(d);
+                  return acc;
+                }, {})
+              ).map(([gardenName, details]: any) => (
+                <div key={gardenName} className="rounded bg-dark-bg-primary border border-red-700 p-3 text-xs mb-2">
+                  <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
+                    <span>wAlert</span>
+                    <span className="text-emerald-200">{gardenName}</span>
+                    <span className="font-semibold text-emerald-400 ml-1">{Array.from(new Set(details.map((d: any) => d.plantName))).length} plants</span>
+                  </div>
+                  <div className="mb-1">
+                    <span className="font-semibold">Plants:</span> <span className="text-emerald-400">{Array.from(new Set(details.map((d: any) => d.plantName))).join(", ")}</span>
+                  </div>
+                  {details.map((d: any, idx: number) => (
+                    <div key={idx} className="mb-2 border-b border-red-900 pb-2 last:border-b-0 last:pb-0">
+                      <div className="font-bold text-red-200 mb-1">{d.type}{d.alertTypes?.length ? `: ${d.alertTypes.join(", ")}` : ""}</div>
+                      {d.roomName && <div><span className="font-semibold">Room:</span> {d.roomName}</div>}
+                      {d.zoneName && <div><span className="font-semibold">Zone:</span> {d.zoneName}</div>}
+                      {d.plantName && <div><span className="font-semibold">Plant:</span> <span className="text-emerald-400">{d.plantName}</span></div>}
+                      {d.createdAt && <div><span className="font-semibold">Time:</span> {format(new Date(d.createdAt), 'PPpp')}</div>}
+                      {d.message && <div className="mt-2 whitespace-pre-line">{d.message}</div>}
+                      {d.alertTypes && d.alertTypes.length > 0 && (
+                        <div className="mt-2">
+                          <span className="font-semibold">Alert Types:</span> {d.alertTypes.join(", ")}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
               ))
             )}
