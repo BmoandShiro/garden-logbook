@@ -21,6 +21,9 @@ interface Plant {
     name: string;
     zipcode: string;
   };
+  gardenId?: string;
+  roomId?: string;
+  zoneId?: string;
   sensitivities: {
     heat?: { enabled: boolean; threshold: number };
     frost?: { enabled: boolean; threshold: number };
@@ -96,8 +99,16 @@ export async function processWeatherAlerts() {
   console.log('[WEATHER_ALERTS] Starting weather alert processing...');
   
   const plants = await prisma.plant.findMany({
-    include: {
-      garden: true
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      garden: { select: { id: true, name: true, zipcode: true } },
+      gardenId: true,
+      roomId: true,
+      zoneId: true,
+      sensitivities: true,
+      stage: true
     }
   });
 
@@ -404,6 +415,9 @@ async function maybeSendOrUpdateAlert(
     data: {
       plantId: plant.id,
       userId: plant.userId,
+      gardenId: plant.garden?.id ?? plant.gardenId ?? null,
+      roomId: plant.roomId ?? null,
+      zoneId: plant.zoneId ?? null,
       type: 'WEATHER_ALERT',
       stage: plant.stage ?? 'VEGETATIVE',
       notes: logMessage,
