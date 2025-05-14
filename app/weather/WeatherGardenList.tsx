@@ -201,7 +201,18 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
                   <div className="mt-2 text-red-400">
                     <strong>Active Alerts:</strong>
                     <ul className="space-y-2 mt-2">
-                      {alerts.map((alert: any, idx: number) => (
+                      {/* Group alerts by plantId and show only the most recent per plant */}
+                      {Object.values(
+                        alerts.reduce((acc: Record<string, any>, alert: any) => {
+                          const plantId = alert.meta?.plantId;
+                          if (!plantId) return acc;
+                          // If not present or this alert is newer, set it
+                          if (!acc[plantId] || new Date(alert.createdAt) > new Date(acc[plantId].createdAt)) {
+                            acc[plantId] = alert;
+                          }
+                          return acc;
+                        }, {})
+                      ).map((alert: any) => (
                         <li key={alert.id} className="bg-emerald-950/60 rounded p-2 text-xs text-red-200">
                           <div>
                             <span className="font-semibold">Plant:</span> <Link href={`/gardens/${garden.id}/plants/${alert.meta?.plantId}`} className="text-emerald-300 hover:underline">{alert.meta?.plantName || alert.meta?.plantId}</Link>
