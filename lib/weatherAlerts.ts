@@ -229,7 +229,17 @@ export async function checkWeatherAlerts() {
 
 // Helper to get lat/lon from zipcode using OpenStreetMap Nominatim
 async function getLatLonForZip(zipcode: string): Promise<{ lat: number, lon: number }> {
-  // Nominatim usage policy: 1 request/sec per IP, so we should be careful
+  // 1. Check DB cache first
+  const cached = await prisma.weatherCheck.findUnique({ where: { zip: zipcode } });
+  if (cached) {
+    // Update lastChecked
+    await prisma.weatherCheck.update({
+      where: { zip: zipcode },
+      data: { lastChecked: new Date() }
+    });
+    return { lat: cached.lat, lon: cached.lon };
+  }
+  // 2. If not cached, fetch from Nominatim
   const url = `https://nominatim.openstreetmap.org/search?postalcode=${zipcode}&country=us&format=json&limit=1`;
   const res = await fetch(url, {
     headers: {
@@ -237,7 +247,6 @@ async function getLatLonForZip(zipcode: string): Promise<{ lat: number, lon: num
     }
   });
   if (res.status === 429) {
-    // Rate limited
     throw new Error('Nominatim geocoding rate limit reached (HTTP 429). Try again later.');
   }
   if (!res.ok) {
@@ -245,7 +254,19 @@ async function getLatLonForZip(zipcode: string): Promise<{ lat: number, lon: num
   }
   const data = await res.json();
   if (!data.length) throw new Error(`No lat/lon found for zipcode ${zipcode}`);
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  const lat = parseFloat(data[0].lat);
+  const lon = parseFloat(data[0].lon);
+  // 3. Store in DB for future use
+  await prisma.weatherCheck.create({
+    data: {
+      zip: zipcode,
+      lat,
+      lon,
+      lastChecked: new Date(),
+      data: data[0] // Store full geocode result for reference
+    }
+  });
+  return { lat, lon };
 }
 
 async function fetchWeatherData(zipcode: string): Promise<Weather> {

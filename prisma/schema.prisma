@@ -494,6 +494,8 @@ model GardenLogVisibilityPreference {
 model WeatherCheck {
   id           String   @id @default(cuid())
   zip          String   @unique
+  lat          Float
+  lon          Float
   lastChecked  DateTime
   data         Json?
 }
