@@ -104,6 +104,14 @@ export default function NotificationsPage() {
     setDeclining(null);
   }
 
+  async function clearAllNotifications() {
+    if (!window.confirm('Are you sure you want to clear all notifications? This cannot be undone.')) return;
+    setLoading(true);
+    await fetch('/api/notifications', { method: 'DELETE' });
+    await fetchNotifications();
+    setLoading(false);
+  }
+
   // Group pending invite notifications
   const pendingInvites = notifications.filter(n => n.type === 'invite' && n.meta?.inviteId);
   const otherNotifications = notifications.filter(n => !(n.type === 'invite' && n.meta?.inviteId));
@@ -124,6 +132,12 @@ export default function NotificationsPage() {
             disabled={notifications.every(n => n.read)}
           >
             Mark all as read
+          </button>
+          <button
+            onClick={clearAllNotifications}
+            className="px-3 py-1 rounded bg-red-700 text-white text-sm font-medium hover:bg-red-600"
+          >
+            Clear All Notifications
           </button>
           <select
             value={sortOrder}
@@ -212,6 +226,13 @@ export default function NotificationsPage() {
                                                                           </button>
                                                                         </div>
                                                                       </div>
+                                                                      {/* Show room and zone names if available */}
+                                                                      {n.meta && (n.meta.roomName || n.meta.zoneName) && (
+                                                                        <div className="text-xs text-emerald-300 mt-1">
+                                                                          {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
+                                                                          {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
+                                                                        </div>
+                                                                      )}
                                                                       <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
                                                                       {n.link && (
                                                                         <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>

@@ -259,23 +259,42 @@ export async function processWeatherAlerts() {
         }
       }
 
+      // Fetch room and zone names if IDs are present
+      let roomName = plant.roomId || 'Room/Plot';
+      let zoneName = plant.zoneId || 'Zone';
+      if (plant.roomId) {
+        const room = await prisma.room.findUnique({ where: { id: plant.roomId }, select: { name: true } });
+        if (room?.name) roomName = room.name;
+      }
+      if (plant.zoneId) {
+        const zone = await prisma.zone.findUnique({ where: { id: plant.zoneId }, select: { name: true } });
+        if (zone?.name) zoneName = zone.name;
+      }
+
       // --- After looping, send grouped forecasted alert notification if any ---
+      const allAlertTypes = ['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'];
       const alertTypes = Object.keys(forecastedAlerts);
       if (alertTypes.length > 0) {
         // Build grouped message
-        let message = `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name}:
+        let message = `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:
 \n`;
-        for (const type of alertTypes) {
-          message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:\n`;
-          for (const entry of forecastedAlerts[type]) {
-            message += `    - ${entry.period.name} (${entry.period.startTime}): `;
-            if (type === 'heat') message += `${entry.weather.temperature}°F`;
-            else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
-            else if (type === 'heavyRain') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
-            else if (type === 'frost') message += `${entry.weather.temperature}°F`;
-            else if (type === 'flood') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
-            else message += `${entry.severity}`;
+        for (const type of allAlertTypes) {
+          message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
+          if (forecastedAlerts[type] && forecastedAlerts[type].length > 0) {
             message += '\n';
+            for (const entry of forecastedAlerts[type]) {
+              message += `    - ${entry.period.name} (${entry.period.startTime}): `;
+              if (type === 'heat') message += `${entry.weather.temperature}°F`;
+              else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
+              else if (type === 'heavyRain') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
+              else if (type === 'frost') message += `${entry.weather.temperature}°F`;
+              else if (type === 'flood') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
+              else if (type === 'drought') message += `${entry.weather.daysWithoutRain} days`;
+              else message += `${entry.severity}`;
+              message += '\n';
+            }
+          } else {
+            message += ' None\n';
           }
         }
         message += '\nPlease prepare in advance to protect your plant.';
@@ -304,9 +323,9 @@ export async function processWeatherAlerts() {
                 gardenId: plant.gardenId,
                 gardenName: garden.name,
                 roomId: plant.roomId,
-                roomName: plant.roomId || 'Room/Plot',
+                roomName,
                 zoneId: plant.zoneId,
-                zoneName: plant.zoneId || 'Zone',
+                zoneName,
                 alertTypes,
                 forecastedAlerts,
                 forecastWindow: notificationPeriod
