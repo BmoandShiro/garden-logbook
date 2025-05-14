@@ -95,6 +95,21 @@ async function sendAllClearNotification(plant: Plant, garden: Plant['garden'], w
   });
 }
 
+// Helper to get the user's weather notification period preference
+async function getUserWeatherNotificationPeriod(userId: string): Promise<string> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { weatherNotificationPeriod: true } });
+  return user?.weatherNotificationPeriod || 'current';
+}
+
+// Helper to determine which forecast periods to check based on preference
+function getForecastPeriodIndexes(periods: any[], preference: string): number[] {
+  if (preference === 'current') return [0];
+  if (preference === '24h') return periods.slice(0, 2).map((_, i) => i); // 2 periods = 24h
+  if (preference === '3d') return periods.slice(0, 6).map((_, i) => i); // 6 periods = 3 days
+  if (preference === 'week' || preference === 'all') return periods.map((_, i) => i);
+  return [0];
+}
+
 export async function processWeatherAlerts() {
   console.log('[WEATHER_ALERTS] Starting weather alert processing...');
   
@@ -148,53 +163,156 @@ export async function processWeatherAlerts() {
     }
 
     try {
-      console.log(`[WEATHER_ALERTS] Fetching weather data for plant ${plant.id} in ${garden.zipcode}`);
-      const weather = await fetchWeatherData(garden.zipcode);
-      console.log(`[WEATHER_ALERTS] Weather data received for ${garden.zipcode}:`, weather);
+      // Fetch user notification preference
+      const notificationPeriod = await getUserWeatherNotificationPeriod(plant.userId);
+      // Fetch full forecast
+      const { lat, lon } = await getLatLonForZip(garden.zipcode);
+      const response = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
+      const data = await response.json();
+      if (!data.properties || !data.properties.forecast) {
+        throw new Error(`No forecast found for zipcode ${garden.zipcode} (lat/lon: ${lat},${lon}). Response: ${JSON.stringify(data)}`);
+      }
+      const forecastUrl = data.properties.forecast;
+      const forecastResponse = await fetch(forecastUrl);
+      const forecastData = await forecastResponse.json();
+      const periods = forecastData.properties.periods;
+      const periodIndexes = getForecastPeriodIndexes(periods, notificationPeriod);
 
       let hasAlerts = false;
       let triggeredType: string | null = null;
       let triggeredWeatherInfo: any = null;
 
-      // Check each sensitivity type
-      if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
-        await maybeSendOrUpdateAlert(plant, garden, 'heat', weather, weather.temperature);
-        hasAlerts = true;
-        triggeredType = 'heat';
-        triggeredWeatherInfo = weather;
-      }
-      if (sensitivities.frost?.enabled && weather.hasFrostAlert && isTodayInFrostWindow(plant)) {
-        await maybeSendOrUpdateAlert(plant, garden, 'frost', weather, 1);
-        hasAlerts = true;
-        triggeredType = 'frost';
-        triggeredWeatherInfo = weather;
-      }
-      if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
-        await maybeSendOrUpdateAlert(plant, garden, 'wind', weather, weather.windSpeed);
-        hasAlerts = true;
-        triggeredType = 'wind';
-        triggeredWeatherInfo = weather;
-      }
-      if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
-        await maybeSendOrUpdateAlert(plant, garden, 'drought', weather, weather.daysWithoutRain);
-        hasAlerts = true;
-        triggeredType = 'drought';
-        triggeredWeatherInfo = weather;
-      }
-      if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
-        await maybeSendOrUpdateAlert(plant, garden, 'flood', weather, 1);
-        hasAlerts = true;
-        triggeredType = 'flood';
-        triggeredWeatherInfo = weather;
-      }
-      if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
-        await maybeSendOrUpdateAlert(plant, garden, 'heavyRain', weather, weather.precipitation);
-        hasAlerts = true;
-        triggeredType = 'heavyRain';
-        triggeredWeatherInfo = weather;
+      for (const idx of periodIndexes) {
+        const period = periods[idx];
+        // Map to Weather interface
+        const weather: Weather = {
+          temperature: period.temperature,
+          humidity: period.relativeHumidity?.value || 0,
+          windSpeed: parseInt(period.windSpeed.split(' ')[0]) || 0,
+          precipitation: period.probabilityOfPrecipitation?.value || null,
+          conditions: period.shortForecast,
+          hasFrostAlert: period.temperature <= 32,
+          hasFloodAlert: period.probabilityOfPrecipitation?.value > 70,
+          daysWithoutRain: 0 // Not available in forecast
+        };
+        // Only log and send current/active alerts for the first period
+        if (idx === 0) {
+          // Check each sensitivity type (current/active)
+          if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
+            await maybeSendOrUpdateAlert(plant, garden, 'heat', weather, weather.temperature);
+            hasAlerts = true;
+            triggeredType = 'heat';
+            triggeredWeatherInfo = weather;
+          }
+          if (sensitivities.frost?.enabled && weather.hasFrostAlert && isTodayInFrostWindow(plant)) {
+            await maybeSendOrUpdateAlert(plant, garden, 'frost', weather, 1);
+            hasAlerts = true;
+            triggeredType = 'frost';
+            triggeredWeatherInfo = weather;
+          }
+          if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
+            await maybeSendOrUpdateAlert(plant, garden, 'wind', weather, weather.windSpeed);
+            hasAlerts = true;
+            triggeredType = 'wind';
+            triggeredWeatherInfo = weather;
+          }
+          if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
+            await maybeSendOrUpdateAlert(plant, garden, 'drought', weather, weather.daysWithoutRain);
+            hasAlerts = true;
+            triggeredType = 'drought';
+            triggeredWeatherInfo = weather;
+          }
+          if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
+            await maybeSendOrUpdateAlert(plant, garden, 'flood', weather, 1);
+            hasAlerts = true;
+            triggeredType = 'flood';
+            triggeredWeatherInfo = weather;
+          }
+          if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
+            await maybeSendOrUpdateAlert(plant, garden, 'heavyRain', weather, weather.precipitation);
+            hasAlerts = true;
+            triggeredType = 'heavyRain';
+            triggeredWeatherInfo = weather;
+          }
+        } else {
+          // For future periods, only send deduplicated forecast notifications
+          // Check each sensitivity type
+          const alertTypes: { type: string; triggered: boolean; severity: number }[] = [];
+          if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
+            alertTypes.push({ type: 'heat', triggered: true, severity: weather.temperature });
+          }
+          if (sensitivities.frost?.enabled && weather.hasFrostAlert) {
+            alertTypes.push({ type: 'frost', triggered: true, severity: 1 });
+          }
+          if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
+            alertTypes.push({ type: 'wind', triggered: true, severity: weather.windSpeed });
+          }
+          if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
+            alertTypes.push({ type: 'drought', triggered: true, severity: weather.daysWithoutRain });
+          }
+          if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
+            alertTypes.push({ type: 'flood', triggered: true, severity: 1 });
+          }
+          if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
+            alertTypes.push({ type: 'heavyRain', triggered: true, severity: weather.precipitation });
+          }
+          for (const alert of alertTypes) {
+            // Deduplicate: check if a notification for this plant, type, and period start time already exists
+            const periodStart = period.startTime;
+            const existing = await prisma.notification.findFirst({
+              where: {
+                userId: plant.userId,
+                type: 'WEATHER_FORECAST_ALERT',
+                meta: {
+                  path: ['plantId'], equals: plant.id
+                },
+                createdAt: { gte: new Date(periodStart) },
+                message: { contains: alert.type }
+              },
+              orderBy: { createdAt: 'desc' }
+            });
+            if (!existing) {
+              await prisma.notification.create({
+                data: {
+                  userId: plant.userId,
+                  type: 'WEATHER_FORECAST_ALERT',
+                  title: `⏳ Forecasted Weather Alert: ${alert.type} for ${plant.name}`,
+                  message: `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name}:
+
+` +
+                    `• Alert Type: ${alert.type}
+` +
+                    `• Forecasted For: ${period.name} (${period.startTime})
+` +
+                    `• Conditions: ${weather.conditions}
+` +
+                    `• Temperature: ${weather.temperature}°F
+` +
+                    `• Humidity: ${weather.humidity}%
+` +
+                    `• Wind Speed: ${weather.windSpeed} mph
+` +
+                    `• Precipitation: ${weather.precipitation ?? 'N/A'}
+
+` +
+                    `Please prepare in advance to protect your plant.`,
+                  link: `/gardens/${garden.id}/plants/${plant.id}`,
+                  meta: {
+                    plantId: plant.id,
+                    alertType: alert.type,
+                    forecastPeriod: period.name,
+                    forecastStart: period.startTime,
+                    severity: alert.severity,
+                    weatherInfo: weather
+                  }
+                }
+              });
+            }
+          }
+        }
       }
 
-      // Update garden status and alerts
+      // Update garden status and alerts (for current period only)
       const currentStatus = gardenStatus.get(garden.id) || {
         hasAlerts: false,
         alertCount: 0,

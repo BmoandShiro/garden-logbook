@@ -37,7 +37,7 @@ export default async function WeatherPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-emerald-100 mb-8">Weather Status</h1>
-      <WeatherGardenList gardens={gardens} />
+      <WeatherGardenList gardens={gardens} userId={session.user.id} />
     </div>
   );
 } 

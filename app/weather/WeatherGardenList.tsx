@@ -1,6 +1,6 @@
 "use client";
-import { useState } from 'react';
-import { Cloud, CloudSun, CloudLightning, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Cloud, CloudSun, CloudLightning, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -21,10 +21,23 @@ export interface WeatherGarden {
   plants: { id: string; name: string }[];
 }
 
-export function WeatherGardenList({ gardens }: { gardens: WeatherGarden[] }) {
+export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[], userId: string }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [notificationPeriod, setNotificationPeriod] = useState<string>('current');
+  const [saving, setSaving] = useState(false);
+
+  // Fetch current preference on mount
+  useEffect(() => {
+    fetch(`/api/users/${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.weatherNotificationPeriod) setNotificationPeriod(data.weatherNotificationPeriod);
+      });
+  }, [userId]);
+
   const toggle = (id: string) => setExpanded(e => ({ ...e, [id]: !e[id] }));
 
   async function handleRunWeatherCheck() {
@@ -40,6 +53,27 @@ export function WeatherGardenList({ gardens }: { gardens: WeatherGarden[] }) {
     }
   }
 
+  async function handleSavePreference(period: string) {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weatherNotificationPeriod: period })
+      });
+      if (res.ok) {
+        setNotificationPeriod(period);
+        setMessage('Notification preference updated!');
+        setShowSettings(false);
+      } else {
+        setMessage('Failed to update preference.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="mb-4 flex items-center gap-4">
@@ -50,8 +84,33 @@ export function WeatherGardenList({ gardens }: { gardens: WeatherGarden[] }) {
         >
           {loading ? 'Running...' : 'Run Weather Check'}
         </button>
+        <button
+          onClick={() => setShowSettings(v => !v)}
+          className="p-2 rounded-full hover:bg-emerald-900/40 text-emerald-300"
+          title="Weather notification settings"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
         {message && <span className="text-emerald-300 text-sm">{message}</span>}
       </div>
+      {showSettings && (
+        <div className="mb-4 p-4 bg-dark-bg-secondary border border-emerald-800 rounded shadow max-w-md">
+          <div className="mb-2 font-semibold text-emerald-200">Weather Notification Period</div>
+          <select
+            value={notificationPeriod}
+            onChange={e => handleSavePreference(e.target.value)}
+            disabled={saving}
+            className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
+          >
+            <option value="current">Current only</option>
+            <option value="24h">Next 24 hours</option>
+            <option value="3d">Next 3 days</option>
+            <option value="week">Full week (all periods)</option>
+            <option value="all">All available periods</option>
+          </select>
+          <div className="mt-2 text-xs text-emerald-300">Current: <span className="font-semibold">{notificationPeriod.replace('current', 'Current only').replace('24h', 'Next 24 hours').replace('3d', 'Next 3 days').replace('week', 'Full week').replace('all', 'All periods')}</span></div>
+        </div>
+      )}
       {gardens.map(garden => {
         const status = garden.weatherStatus;
         let icon = <Cloud className="w-6 h-6 text-gray-400" />;
