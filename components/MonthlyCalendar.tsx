@@ -213,7 +213,30 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                         <span className="font-semibold text-emerald-400 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {info.roomNames.size > 0 ? Array.from(info.roomNames).join(", ") : "No rooms/plots"}
+                        {(() => {
+                          const items = weatherAlert.details
+                            .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
+                            .reduce((acc: any[], d: any) => {
+                              if (d.roomId && d.roomName) acc.push({ id: d.roomId, name: d.roomName, gardenId: d.gardenId });
+                              return acc;
+                            }, []);
+                          const uniqueRooms = Array.from(new Map(items.map((room: any) => [room.id, room])).values());
+                          if (uniqueRooms.length === 0) {
+                            return (
+                              <span>
+                                No rooms/plots found.<br />
+                                <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
+                              </span>
+                            );
+                          }
+                          return uniqueRooms.map((room: any, idx: number, arr: any[]) =>
+                            room.id && room.gardenId ? (
+                              <Link key={room.id} href={`/gardens/${room.gardenId}/rooms/${room.id}`} className="underline text-emerald-300 hover:text-emerald-200 mr-1">{room.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                            ) : (
+                              <span key={room.name + idx}>{room.name}{idx < arr.length - 1 ? ', ' : ''}</span>
+                            )
+                          );
+                        })()}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -223,7 +246,30 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                         <span className="font-semibold text-emerald-300 ml-1 cursor-pointer">{info.zoneNames.size} zone{info.zoneNames.size !== 1 ? 's' : ''}</span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {info.zoneNames.size > 0 ? Array.from(info.zoneNames).join(", ") : "No zones"}
+                        {(() => {
+                          const items = weatherAlert.details
+                            .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
+                            .reduce((acc: any[], d: any) => {
+                              if (d.zoneId && d.zoneName && d.roomId && d.gardenId) acc.push({ id: d.zoneId, name: d.zoneName, roomId: d.roomId, gardenId: d.gardenId });
+                              return acc;
+                            }, []);
+                          const uniqueZones = Array.from(new Map(items.map((zone: any) => [zone.id, zone])).values());
+                          if (uniqueZones.length === 0) {
+                            return (
+                              <span>
+                                No zones found.<br />
+                                <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
+                              </span>
+                            );
+                          }
+                          return uniqueZones.map((zone: any, idx: number, arr: any[]) =>
+                            zone.id && zone.gardenId && zone.roomId ? (
+                              <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-emerald-400 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                            ) : (
+                              <span key={zone.name + idx}>{zone.name}{idx < arr.length - 1 ? ', ' : ''}</span>
+                            )
+                          );
+                        })()}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -233,7 +279,30 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                         <span className="font-semibold text-emerald-600 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {info.plantNames.size > 0 ? Array.from(info.plantNames).join(", ") : "No plants"}
+                        {(() => {
+                          const items = weatherAlert.details
+                            .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
+                            .reduce((acc: any[], d: any) => {
+                              if (d.plantId && d.plantName && d.zoneId && d.roomId && d.gardenId) acc.push({ id: d.plantId, name: d.plantName, zoneId: d.zoneId, roomId: d.roomId, gardenId: d.gardenId });
+                              return acc;
+                            }, []);
+                          const uniquePlants = Array.from(new Map(items.map((plant: any) => [plant.id, plant])).values());
+                          if (uniquePlants.length === 0) {
+                            return (
+                              <span>
+                                No plants found.<br />
+                                <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
+                              </span>
+                            );
+                          }
+                          return uniquePlants.map((plant: any, idx: number, arr: any[]) =>
+                            plant.id && plant.gardenId && plant.roomId && plant.zoneId ? (
+                              <Link key={plant.id} href={`/gardens/${plant.gardenId}/rooms/${plant.roomId}/zones/${plant.zoneId}/plants/${plant.id}`} className="underline text-lime-400 hover:text-lime-200 mr-1">{plant.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                            ) : (
+                              <span key={plant.name + idx}>{plant.name}{idx < arr.length - 1 ? ', ' : ''}</span>
+                            )
+                          );
+                        })()}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

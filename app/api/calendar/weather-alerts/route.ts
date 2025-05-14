@@ -62,9 +62,13 @@ export async function GET(request: Request) {
       type: n.type,
       alertTypes: n.meta?.alertTypes || [],
       plantName: n.meta?.plantName,
+      plantId: n.meta?.plantId,
       gardenName: n.meta?.gardenName,
+      gardenId: n.meta?.gardenId,
       roomName: n.meta?.roomName,
+      roomId: n.meta?.roomId,
       zoneName: n.meta?.zoneName,
+      zoneId: n.meta?.zoneId,
       createdAt: n.createdAt,
       message: n.message,
     });
