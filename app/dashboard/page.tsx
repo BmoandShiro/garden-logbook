@@ -87,6 +87,17 @@ export default async function Dashboard() {
   });
   let totalCurrentAlerts = 0;
   let totalForecastedAlerts = 0;
+
+  // For affected counts
+  let affectedGardensCurrent = new Set();
+  let affectedRoomsCurrent = new Set();
+  let affectedZonesCurrent = new Set();
+  let affectedPlantsCurrent = new Set();
+  let affectedGardensForecast = new Set();
+  let affectedRoomsForecast = new Set();
+  let affectedZonesForecast = new Set();
+  let affectedPlantsForecast = new Set();
+
   for (const gardenId of gardenIds) {
     // Current alerts
     const currentAlerts = await prisma.notification.findMany({
@@ -102,6 +113,11 @@ export default async function Dashboard() {
           if (alertTypes.includes(t)) {
             currentAlertCounts[t]++;
             totalCurrentAlerts++;
+            // Collect affected entities
+            if (alert.meta?.gardenId) affectedGardensCurrent.add(alert.meta.gardenId);
+            if (alert.meta?.roomId) affectedRoomsCurrent.add(alert.meta.roomId);
+            if (alert.meta?.zoneId) affectedZonesCurrent.add(alert.meta.zoneId);
+            if (alert.meta?.plantId) affectedPlantsCurrent.add(alert.meta.plantId);
           }
         }
       }
@@ -120,6 +136,11 @@ export default async function Dashboard() {
           if (alertTypes.includes(t)) {
             forecastedAlertCounts[t]++;
             totalForecastedAlerts++;
+            // Collect affected entities
+            if (alert.meta?.gardenId) affectedGardensForecast.add(alert.meta.gardenId);
+            if (alert.meta?.roomId) affectedRoomsForecast.add(alert.meta.roomId);
+            if (alert.meta?.zoneId) affectedZonesForecast.add(alert.meta.zoneId);
+            if (alert.meta?.plantId) affectedPlantsForecast.add(alert.meta.plantId);
           }
         }
       }
@@ -142,7 +163,7 @@ export default async function Dashboard() {
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Plants</h3>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{totalPlantCount}</p>
-                <p className="mt-2 text-sm text-dark-text-secondary">Active plants in your garden</p>
+                <p className="mt-2 text-sm text-dark-text-secondary">Active plants in your gardens</p>
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Species</h3>
@@ -164,6 +185,12 @@ export default async function Dashboard() {
                       <span className="font-semibold text-red-300">{currentAlertCounts[type]}</span>
                     </div>
                   ))}
+                  <div className="mt-2 text-xs text-dark-text-secondary">
+                    <span className="font-semibold">Gardens:</span> {affectedGardensCurrent.size} &nbsp;|
+                    <span className="font-semibold">Rooms/Plots:</span> {affectedRoomsCurrent.size} &nbsp;|
+                    <span className="font-semibold">Zones:</span> {affectedZonesCurrent.size} &nbsp;|
+                    <span className="font-semibold">Plants:</span> {affectedPlantsCurrent.size}
+                  </div>
                 </div>
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
@@ -176,6 +203,12 @@ export default async function Dashboard() {
                       <span className="font-semibold text-yellow-300">{forecastedAlertCounts[type]}</span>
                     </div>
                   ))}
+                  <div className="mt-2 text-xs text-dark-text-secondary">
+                    <span className="font-semibold">Gardens:</span> {affectedGardensForecast.size} &nbsp;|
+                    <span className="font-semibold">Rooms/Plots:</span> {affectedRoomsForecast.size} &nbsp;|
+                    <span className="font-semibold">Zones:</span> {affectedZonesForecast.size} &nbsp;|
+                    <span className="font-semibold">Plants:</span> {affectedPlantsForecast.size}
+                  </div>
                 </div>
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
