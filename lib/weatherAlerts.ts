@@ -180,6 +180,9 @@ export async function processWeatherAlerts() {
       // --- Group forecasted alerts by type ---
       const forecastedAlerts: Record<string, Array<{ period: any, weather: Weather, severity: number }>> = {};
 
+      // --- Group current alerts by type ---
+      const currentAlerts: Record<string, { weather: Weather, severity: number }> = {};
+
       for (const idx of periodIndexes) {
         const period = periods[idx];
         const weather: Weather = {
@@ -192,44 +195,25 @@ export async function processWeatherAlerts() {
           hasFloodAlert: period.probabilityOfPrecipitation?.value > 70,
           daysWithoutRain: 0
         };
-        // Only log and send current/active alerts for the first period
         if (idx === 0) {
-          // Check each sensitivity type (current/active)
+          // Populate currentAlerts for the current period
           if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
-            await maybeSendOrUpdateAlert(plant, garden, 'heat', weather, weather.temperature);
-            hasAlerts = true;
-            triggeredType = 'heat';
-            triggeredWeatherInfo = weather;
+            currentAlerts['heat'] = { weather, severity: weather.temperature };
           }
-          if (sensitivities.frost?.enabled && weather.hasFrostAlert && isTodayInFrostWindow(plant)) {
-            await maybeSendOrUpdateAlert(plant, garden, 'frost', weather, 1);
-            hasAlerts = true;
-            triggeredType = 'frost';
-            triggeredWeatherInfo = weather;
+          if (sensitivities.frost?.enabled && weather.hasFrostAlert) {
+            currentAlerts['frost'] = { weather, severity: 1 };
           }
           if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
-            await maybeSendOrUpdateAlert(plant, garden, 'wind', weather, weather.windSpeed);
-            hasAlerts = true;
-            triggeredType = 'wind';
-            triggeredWeatherInfo = weather;
+            currentAlerts['wind'] = { weather, severity: weather.windSpeed };
           }
           if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
-            await maybeSendOrUpdateAlert(plant, garden, 'drought', weather, weather.daysWithoutRain);
-            hasAlerts = true;
-            triggeredType = 'drought';
-            triggeredWeatherInfo = weather;
+            currentAlerts['drought'] = { weather, severity: weather.daysWithoutRain };
           }
           if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
-            await maybeSendOrUpdateAlert(plant, garden, 'flood', weather, 1);
-            hasAlerts = true;
-            triggeredType = 'flood';
-            triggeredWeatherInfo = weather;
+            currentAlerts['flood'] = { weather, severity: 1 };
           }
           if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
-            await maybeSendOrUpdateAlert(plant, garden, 'heavyRain', weather, weather.precipitation);
-            hasAlerts = true;
-            triggeredType = 'heavyRain';
-            triggeredWeatherInfo = weather;
+            currentAlerts['heavyRain'] = { weather, severity: weather.precipitation };
           }
         } else {
           // --- Group forecasted alerts for future periods ---
@@ -329,6 +313,65 @@ export async function processWeatherAlerts() {
                 alertTypes,
                 forecastedAlerts,
                 forecastWindow: notificationPeriod
+              }
+            }
+          });
+        }
+      }
+
+      // --- After looping, send grouped current alert notification if any ---
+      const currentAlertTypes = Object.keys(currentAlerts);
+      if (currentAlertTypes.length > 0) {
+        // Build grouped message
+        let message = `Current weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:
+\n`;
+        for (const type of allAlertTypes) {
+          message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
+          if (currentAlerts[type]) {
+            message += ' ';
+            if (type === 'heat') message += `${currentAlerts[type].weather.temperature}°F`;
+            else if (type === 'wind') message += `${currentAlerts[type].weather.windSpeed} mph`;
+            else if (type === 'heavyRain') message += `${currentAlerts[type].weather.precipitation ?? 'N/A'} precipitation`;
+            else if (type === 'frost') message += `${currentAlerts[type].weather.temperature}°F`;
+            else if (type === 'flood') message += `${currentAlerts[type].weather.precipitation ?? 'N/A'} precipitation`;
+            else if (type === 'drought') message += `${currentAlerts[type].weather.daysWithoutRain} days`;
+            else message += `${currentAlerts[type].severity}`;
+            message += '\n';
+          } else {
+            message += ' None\n';
+          }
+        }
+        message += '\nPlease take necessary precautions to protect your plant.';
+        // Deduplicate: check if a grouped notification for this plant already exists in the last 12 hours
+        const existing = await prisma.notification.findFirst({
+          where: {
+            userId: plant.userId,
+            type: 'WEATHER_ALERT',
+            meta: { path: ['plantId'], equals: plant.id },
+            createdAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        if (!existing) {
+          await prisma.notification.create({
+            data: {
+              userId: plant.userId,
+              type: 'WEATHER_ALERT',
+              title: `⚠️ Current Weather Alerts for ${plant.name}`,
+              message,
+              link: `/gardens/${garden.id}/plants/${plant.id}`,
+              meta: {
+                plantId: plant.id,
+                plantName: plant.name,
+                gardenId: plant.gardenId,
+                gardenName: garden.name,
+                roomId: plant.roomId,
+                roomName,
+                zoneId: plant.zoneId,
+                zoneName,
+                alertTypes: currentAlertTypes,
+                currentAlerts,
+                date: new Date().toISOString().slice(0, 10)
               }
             }
           });
@@ -544,6 +587,18 @@ async function maybeSendOrUpdateAlert(
     conditions: weather.conditions
   };
 
+  // Fetch room and zone names if IDs are present
+  let roomName = plant.roomId || 'Room/Plot';
+  let zoneName = plant.zoneId || 'Zone';
+  if (plant.roomId) {
+    const room = await prisma.room.findUnique({ where: { id: plant.roomId }, select: { name: true } });
+    if (room?.name) roomName = room.name;
+  }
+  if (plant.zoneId) {
+    const zone = await prisma.zone.findUnique({ where: { id: plant.zoneId }, select: { name: true } });
+    if (zone?.name) zoneName = zone.name;
+  }
+
   // Create a log entry for the plant
   const logMessage = `Weather Alert: ${type} conditions detected.\n` +
     `• Current Conditions: ${weatherInfo.conditions}\n` +
@@ -603,7 +658,10 @@ async function maybeSendOrUpdateAlert(
             ...existing.meta, 
             severity, 
             updatedAt: now,
-            weatherInfo
+            weatherInfo,
+            gardenName: garden.name,
+            roomName,
+            zoneName
           }
         }
       });
@@ -618,7 +676,7 @@ async function maybeSendOrUpdateAlert(
       userId: plant.userId,
       type: 'WEATHER_ALERT',
       title: `⚠️ Weather Alert: ${type} for ${plant.name}`,
-      message: `Weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name}:\n\n` +
+      message: `Weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:\n\n` +
         `• Alert Type: ${type}\n` +
         `• Current Conditions: ${weatherInfo.conditions}\n` +
         `• Temperature: ${weatherInfo.temperature}\n` +
@@ -632,7 +690,10 @@ async function maybeSendOrUpdateAlert(
         alertType: type, 
         date: today, 
         severity,
-        weatherInfo
+        weatherInfo,
+        gardenName: garden.name,
+        roomName,
+        zoneName
       }
     }
   });
