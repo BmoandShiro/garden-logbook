@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { format } from 'date-fns';
 import LogRawDataToggle from '../components/LogRawDataToggle';
+import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
 
 async function getLog(id: string) {
   const headersList = await headers();
@@ -229,7 +230,11 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
 
       {/* Notes Section */}
       <Section title="Notes">
-        <div className="text-dark-text-primary whitespace-pre-line min-h-[2rem]">{merged.notes || <span className="italic text-dark-text-secondary">N/A</span>}</div>
+        {String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT' ? (
+          <div className="text-dark-text-primary whitespace-pre-line min-h-[2rem]">{renderForecastedMessage(merged.notes || '')}</div>
+        ) : (
+          <div className="text-dark-text-primary whitespace-pre-line min-h-[2rem]">{merged.notes || <span className="italic text-dark-text-secondary">N/A</span>}</div>
+        )}
       </Section>
 
       {/* Raw Data Toggle (Client Component) */}
