@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import PendingInvitesWrapper from '../components/PendingInvitesWrapper';
-import { Fragment } from 'react';
 
 // Define Notification type
 interface Notification {
@@ -40,6 +39,60 @@ function groupNotificationsByHierarchy(notifications: Notification[]) {
     grouped[gardenId].rooms[roomId].zones[zoneId].plants[plantId].notifications.push(n);
   }
   return grouped;
+}
+
+// Helper to color and style forecasted alert sections
+function renderForecastedMessage(message: string) {
+  // Split by section (• Heat:, • Frost:, etc.)
+  const sectionOrder = [
+    { key: 'Heat', color: 'text-red-400' },
+    { key: 'Frost', color: 'text-sky-300' },
+    { key: 'Drought', color: 'text-orange-400' },
+    { key: 'Wind', color: 'text-gray-300' },
+    { key: 'Flood', color: 'text-yellow-900' },
+    { key: 'HeavyRain', color: 'text-blue-700' },
+  ];
+  // Regex to split sections
+  const sectionRegex = /• (Heat|Frost|Drought|Wind|Flood|HeavyRain):/g;
+  const parts = message.split(sectionRegex);
+  // parts: [before, section1, content1, section2, content2, ...]
+  let rendered: React.ReactNode[] = [];
+  let i = 1;
+  while (i < parts.length) {
+    const section = parts[i];
+    const content = parts[i + 1] || '';
+    const color = sectionOrder.find(s => s.key === section)?.color || '';
+    // Style date/time in italics and lighter color
+    const contentLines = content.split('\n').map((line, idx) => {
+      const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*)\)/);
+      if (dateMatch) {
+        const [before, date] = line.split('(');
+        return (
+          <div key={idx}>
+            {before}
+            <span className="italic text-gray-400">({date}</span>
+          </div>
+        );
+      }
+      return <div key={idx}>{line}</div>;
+    });
+    rendered.push(
+      <div key={section} className={`mb-3`}>
+        <span className={`font-bold ${color}`}>• {section}:</span>
+        <div className="pl-4">{contentLines}</div>
+      </div>
+    );
+    i += 2;
+  }
+  // Add any text before the first section (e.g., intro)
+  if (parts[0].trim()) {
+    rendered.unshift(<div key="intro" className="mb-2 whitespace-pre-line">{parts[0]}</div>);
+  }
+  // Add any text after the last section (e.g., outro)
+  if (parts.length % 2 === 0 && parts[parts.length - 1].trim()) {
+    rendered.push(<div key="outro" className="mt-2 whitespace-pre-line">{parts[parts.length - 1]}</div>);
+  }
+  return rendered;
 }
 
 export default function NotificationsPage() {
@@ -233,7 +286,11 @@ export default function NotificationsPage() {
                                                                           {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
                                                                         </div>
                                                                       )}
-                                                                      <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+                                                                      {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
+                                                                        <div className="mt-1">{renderForecastedMessage(n.message)}</div>
+                                                                      ) : (
+                                                                        <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+                                                                      )}
                                                                       {n.link && (
                                                                         <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
                                                                       )}
