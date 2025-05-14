@@ -21,7 +21,7 @@ export interface WeatherGarden {
   plants: { id: string; name: string }[];
 }
 
-export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[], userId: string }) {
+export function WeatherGardenList({ gardens: initialGardens, userId }: { gardens?: WeatherGarden[], userId: string }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -31,6 +31,16 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
   const [activeAlerts, setActiveAlerts] = useState<Record<string, any[]>>({});
   const [alertsLoading, setAlertsLoading] = useState<Record<string, boolean>>({});
   const [timers, setTimers] = useState<Record<string, string>>({});
+  const [gardens, setGardens] = useState<WeatherGarden[]>(initialGardens || []);
+
+  // If gardens not provided, fetch them for the user
+  useEffect(() => {
+    if (!initialGardens) {
+      fetch(`/api/gardens?userId=${userId}`)
+        .then(res => res.json())
+        .then(data => setGardens(data.gardens || []));
+    }
+  }, [initialGardens, userId]);
 
   // Fetch current preference on mount
   useEffect(() => {

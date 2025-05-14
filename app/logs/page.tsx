@@ -1,13 +1,26 @@
-import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
+"use client";
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import LogsDisplay from './components/LogsDisplay';
 
-export default async function LogsPage() {
-  const session = await getServerSession(authOptions);
+export default function LogsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    router.refresh();
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session?.user?.id) {
+      router.replace('/auth/signin');
+    }
+  }, [session, status, router]);
 
   if (!session?.user?.id) {
-    redirect('/auth/signin');
+    return null;
   }
 
   return (
