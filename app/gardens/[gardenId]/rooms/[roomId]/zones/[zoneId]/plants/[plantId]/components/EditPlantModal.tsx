@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import PlantModal from './PlantModal';
 
-export default function EditPlantModal({ plant, params }: { plant: any, params: any }) {
+export default function EditPlantModal({ plant, gardenId, roomId, zoneId, plantId }: { plant: any, gardenId: string, roomId: string, zoneId: string, plantId: string }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -20,10 +20,11 @@ export default function EditPlantModal({ plant, params }: { plant: any, params: 
   };
 
   const handleSubmit = async (values: any) => {
+    console.log('EditPlantModal ids:', { gardenId, roomId, zoneId, plantId });
     setIsSubmitting(true);
     setError('');
     try {
-      const res = await fetch(`/api/gardens/${params.gardenId}/rooms/${params.roomId}/zones/${params.zoneId}/plants/${params.plantId}`, {
+      const res = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${plantId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),

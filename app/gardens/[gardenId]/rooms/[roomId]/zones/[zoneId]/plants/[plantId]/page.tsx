@@ -102,7 +102,13 @@ export default async function PlantPage({ params }: PageProps) {
             <h2 className="text-xl font-semibold mb-4 text-emerald-100">Plant Details</h2>
             
             {isCreator && (
-              <EditPlantModal plant={plant} params={params} />
+              <EditPlantModal 
+                plant={plant}
+                gardenId={plant.zone.room.garden.id}
+                roomId={plant.zone.room.id}
+                zoneId={plant.zone.id}
+                plantId={plant.id}
+              />
             )}
 
             <div className="space-y-3">

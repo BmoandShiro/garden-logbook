@@ -65,10 +65,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ gard
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { gardenId: string; roomId: string; zoneId: string; plantId: string } }
-) {
+export async function PATCH(request: Request, context: { params: Promise<{ gardenId: string; roomId: string; zoneId: string; plantId: string }> }) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
