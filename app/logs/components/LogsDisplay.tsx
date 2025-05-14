@@ -61,9 +61,18 @@ interface LogsDisplayProps {
 }
 
 async function fetchLogs(userId: string, filters: any) {
+  let { startDate, endDate, ...rest } = filters;
+  // If startDate and endDate are the same, set endDate to end of that day
+  if (startDate && endDate && startDate === endDate) {
+    // Format as YYYY-MM-DDT23:59:59 for the query
+    endDate = startDate + 'T23:59:59';
+    startDate = startDate + 'T00:00:00';
+  }
   const queryParams = new URLSearchParams({
     userId,
-    ...filters,
+    ...rest,
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
   });
   const response = await fetch(`/api/logs?${queryParams}`);
   if (!response.ok) {
