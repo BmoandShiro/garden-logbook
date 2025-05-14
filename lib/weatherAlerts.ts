@@ -31,6 +31,7 @@ interface Plant {
     drought?: { enabled: boolean; threshold: number };
     flood?: { enabled: boolean; threshold: number };
     heavyRain?: { enabled: boolean; threshold: number };
+    unit?: string;
   } | null;
   stage?: string;
 }
@@ -122,6 +123,21 @@ async function getAllGardenUserIds(gardenId: string, plantUserId: string): Promi
   const userIds = members.map((m: { userId: string }) => m.userId);
   if (plantUserId && !userIds.includes(plantUserId)) userIds.push(plantUserId);
   return userIds;
+}
+
+function formatPrecipitation(value: number | null | undefined, unit: string) {
+  if (value == null) return 'None';
+  if (unit === 'mm') {
+    const mm = (typeof value === 'string' ? parseFloat(value) : value) * 25.4;
+    return `${mm.toFixed(1)} mm`;
+  }
+  return `${value} in`;
+}
+
+function getHeavyRainUnit(sensitivities: any): string {
+  return sensitivities && sensitivities.heavyRain && typeof sensitivities.heavyRain.unit === 'string'
+    ? sensitivities.heavyRain.unit
+    : 'in';
 }
 
 export async function processWeatherAlerts() {
@@ -284,9 +300,9 @@ export async function processWeatherAlerts() {
               message += `    - ${entry.period.name} (${entry.period.startTime}): `;
               if (type === 'heat') message += `${entry.weather.temperature}°F`;
               else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
-              else if (type === 'heavyRain') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
+              else if (type === 'heavyRain') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
               else if (type === 'frost') message += `${entry.weather.temperature}°F`;
-              else if (type === 'flood') message += `${entry.weather.precipitation ?? 'N/A'} precipitation`;
+              else if (type === 'flood') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
               else if (type === 'drought') message += `${entry.weather.daysWithoutRain} days`;
               else message += `${entry.severity}`;
               message += '\n';
@@ -348,9 +364,9 @@ export async function processWeatherAlerts() {
             message += ' ';
             if (type === 'heat') message += `${currentAlerts[type].weather.temperature}°F`;
             else if (type === 'wind') message += `${currentAlerts[type].weather.windSpeed} mph`;
-            else if (type === 'heavyRain') message += `${currentAlerts[type].weather.precipitation ?? 'N/A'} precipitation`;
+            else if (type === 'heavyRain') message += `${formatPrecipitation(currentAlerts[type].weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
             else if (type === 'frost') message += `${currentAlerts[type].weather.temperature}°F`;
-            else if (type === 'flood') message += `${currentAlerts[type].weather.precipitation ?? 'N/A'} precipitation`;
+            else if (type === 'flood') message += `${formatPrecipitation(currentAlerts[type].weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
             else if (type === 'drought') message += `${currentAlerts[type].weather.daysWithoutRain} days`;
             else message += `${currentAlerts[type].severity}`;
             message += '\n';
@@ -638,7 +654,7 @@ async function maybeSendOrUpdateAlert(
     temperature: `${weather.temperature}°F`,
     humidity: `${weather.humidity}%`,
     windSpeed: `${weather.windSpeed} mph`,
-    precipitation: weather.precipitation ? `${weather.precipitation} inches` : 'None',
+    precipitation: formatPrecipitation(weather.precipitation, getHeavyRainUnit(plant.sensitivities)),
     conditions: weather.conditions
   };
 
