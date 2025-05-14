@@ -333,6 +333,7 @@ model Garden {
   rooms        Room[]
   gardenInvites GardenInvite[]
   calendarNotes CalendarNote[]
+  weatherStatus Json?
 }
 
 model GardenMember {
