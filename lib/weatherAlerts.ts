@@ -300,6 +300,13 @@ export async function processWeatherAlerts() {
               link: `/gardens/${garden.id}/plants/${plant.id}`,
               meta: {
                 plantId: plant.id,
+                plantName: plant.name,
+                gardenId: plant.gardenId,
+                gardenName: garden.name,
+                roomId: plant.roomId,
+                roomName: plant.roomId || 'Room/Plot',
+                zoneId: plant.zoneId,
+                zoneName: plant.zoneId || 'Zone',
                 alertTypes,
                 forecastedAlerts,
                 forecastWindow: notificationPeriod

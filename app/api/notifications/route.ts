@@ -36,4 +36,18 @@ export async function PATCH(request: Request) {
     data: { read: true },
   });
   return NextResponse.json({ success: true });
+}
+
+// DELETE /api/notifications - clear all notifications for the current user (optionally filter by type)
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const url = new URL(request.url);
+  const type = url.searchParams.get('type');
+  const where: any = { userId: session.user.id };
+  if (type) where.type = type;
+  const deleted = await prisma.notification.deleteMany({ where });
+  return NextResponse.json({ success: true, count: deleted.count });
 } 
