@@ -132,4 +132,32 @@ export async function DELETE_member(request: Request, context: { params: Promise
     console.error('[GARDEN_REMOVE_MEMBER]', error);
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
+}
+
+export async function GET(request: Request, context: { params: { gardenId: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { gardenId } = context.params;
+  // Find all plants in the garden
+  const plants = await prisma.plant.findMany({
+    where: { gardenId },
+    select: { id: true, name: true }
+  });
+  const plantIds = plants.map((p: { id: string; name: string }) => p.id);
+  if (plantIds.length === 0) {
+    return NextResponse.json({ alerts: [] });
+  }
+  // Find all WEATHER_ALERT notifications for these plants in the last 12 hours
+  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+  const alerts = await prisma.notification.findMany({
+    where: {
+      type: 'WEATHER_ALERT',
+      meta: { path: ['plantId'], in: plantIds },
+      createdAt: { gte: twelveHoursAgo }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+  return NextResponse.json({ alerts });
 } 

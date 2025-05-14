@@ -28,6 +28,8 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
   const [showSettings, setShowSettings] = useState(false);
   const [notificationPeriod, setNotificationPeriod] = useState<string>('current');
   const [saving, setSaving] = useState(false);
+  const [activeAlerts, setActiveAlerts] = useState<Record<string, any[]>>({});
+  const [alertsLoading, setAlertsLoading] = useState<Record<string, boolean>>({});
 
   // Fetch current preference on mount
   useEffect(() => {
@@ -38,7 +40,22 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
       });
   }, [userId]);
 
-  const toggle = (id: string) => setExpanded(e => ({ ...e, [id]: !e[id] }));
+  const toggle = async (id: string) => {
+    setExpanded(e => ({ ...e, [id]: !e[id] }));
+    // If expanding and haven't loaded alerts yet, fetch them
+    if (!expanded[id]) {
+      setAlertsLoading(a => ({ ...a, [id]: true }));
+      try {
+        const res = await fetch(`/api/gardens/${id}/weather-alerts`);
+        const data = await res.json();
+        setActiveAlerts(a => ({ ...a, [id]: data.alerts || [] }));
+      } catch (e) {
+        setActiveAlerts(a => ({ ...a, [id]: [] }));
+      } finally {
+        setAlertsLoading(a => ({ ...a, [id]: false }));
+      }
+    }
+  };
 
   async function handleRunWeatherCheck() {
     setLoading(true);
@@ -113,16 +130,15 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
       )}
       {gardens.map(garden => {
         const status = garden.weatherStatus;
+        const alerts = activeAlerts[garden.id] || [];
         let icon = <Cloud className="w-6 h-6 text-gray-400" />;
         let summary = 'Weather status not available';
-        if (status) {
-          if (status.hasAlerts) {
-            icon = <CloudLightning className="w-6 h-6 text-red-500" />;
-            summary = `${status.alertCount} weather alert${status.alertCount === 1 ? '' : 's'}`;
-          } else {
-            icon = <CloudSun className="w-6 h-6 text-green-400" />;
-            summary = 'All clear';
-          }
+        if (alerts.length > 0) {
+          icon = <CloudLightning className="w-6 h-6 text-red-500" />;
+          summary = `${alerts.length} weather alert${alerts.length === 1 ? '' : 's'}`;
+        } else {
+          icon = <CloudSun className="w-6 h-6 text-green-400" />;
+          summary = 'All clear';
         }
         return (
           <div key={garden.id} className="rounded-lg bg-dark-bg-secondary border border-emerald-800 p-4 shadow flex flex-col">
@@ -145,29 +161,27 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
                     Last checked: {format(new Date(status.lastChecked), 'PPpp')}
                   </div>
                 )}
-                {status && status.hasAlerts ? (
+                {alertsLoading[garden.id] ? (
+                  <div className="mt-2 text-emerald-300">Loading alerts...</div>
+                ) : alerts.length > 0 ? (
                   <div className="mt-2 text-red-400">
                     <strong>Active Alerts:</strong>
-                    {Array.isArray(status.alerts) && status.alerts.length > 0 ? (
-                      <ul className="space-y-2 mt-2">
-                        {status.alerts.map((alert: any, idx: number) => (
-                          <li key={alert.plantId + alert.alertType + idx} className="bg-emerald-950/60 rounded p-2 text-xs text-red-200">
-                            <div>
-                              <span className="font-semibold">Plant:</span> <Link href={`/gardens/${garden.id}/plants/${alert.plantId}`} className="text-emerald-300 hover:underline">{alert.plantName}</Link>
-                            </div>
-                            <div><span className="font-semibold">Alert Type:</span> {alert.alertType}</div>
-                            <div><span className="font-semibold">Weather:</span> {alert.weatherInfo && (
-                              <span>
-                                {alert.weatherInfo.conditions} | Temp: {alert.weatherInfo.temperature}°F | Humidity: {alert.weatherInfo.humidity}% | Wind: {alert.weatherInfo.windSpeed} mph | Precip: {alert.weatherInfo.precipitation ?? 'N/A'}
-                              </span>
-                            )}</div>
-                            <div><span className="font-semibold">Time:</span> {alert.timestamp ? format(new Date(alert.timestamp), 'PPpp') : ''}</div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div>No detailed alert info available.</div>
-                    )}
+                    <ul className="space-y-2 mt-2">
+                      {alerts.map((alert: any, idx: number) => (
+                        <li key={alert.id} className="bg-emerald-950/60 rounded p-2 text-xs text-red-200">
+                          <div>
+                            <span className="font-semibold">Plant:</span> <Link href={`/gardens/${garden.id}/plants/${alert.meta?.plantId}`} className="text-emerald-300 hover:underline">{alert.meta?.plantName || alert.meta?.plantId}</Link>
+                          </div>
+                          <div><span className="font-semibold">Alert Type:</span> {alert.meta?.alertType || alert.type}</div>
+                          <div><span className="font-semibold">Weather:</span> {alert.meta?.weatherInfo && (
+                            <span>
+                              {alert.meta.weatherInfo.conditions} | Temp: {alert.meta.weatherInfo.temperature} | Humidity: {alert.meta.weatherInfo.humidity} | Wind: {alert.meta.weatherInfo.windSpeed} | Precip: {alert.meta.weatherInfo.precipitation ?? 'N/A'}
+                            </span>
+                          )}</div>
+                          <div><span className="font-semibold">Time:</span> {alert.createdAt ? format(new Date(alert.createdAt), 'PPpp') : ''}</div>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 ) : (
                   <div className="mt-2 text-green-400">No active weather alerts.</div>
