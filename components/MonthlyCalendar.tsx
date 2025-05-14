@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { Plus, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
@@ -85,6 +85,15 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const [alertModalDetails, setAlertModalDetails] = useState<any[]>([]);
   const [alertModalDate, setAlertModalDate] = useState<string>("");
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 600);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  const [selectedDayDetails, setSelectedDayDetails] = useState<{ date: string, logs: any[], alerts: any } | null>(null);
+
   // Fetch locations on popover open
   React.useEffect(() => {
     if (popoverFor && session?.user?.id && locations.length === 0) {
@@ -159,302 +168,313 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           key={day.toString()}
           className={`
             relative flex flex-col items-stretch justify-start border border-dark-border
-            min-h-[100px] min-w-[100px] sm:min-h-[120px] sm:min-w-[120px] p-2
+            min-h-[60px] min-w-[44px] sm:min-h-[120px] sm:min-w-[120px] p-1 sm:p-2
             ${isCurrentMonth ? "bg-dark-bg-primary text-dark-text-primary" : "bg-dark-bg-secondary text-dark-text-secondary opacity-60"}
             ${isToday && isCurrentMonth ? "ring-2 ring-garden-400" : ""}
             transition-all
           `}
+          onClick={isMobile ? () => setSelectedDayDetails({ date: dateKey, logs, alerts: weatherAlert }) : undefined}
+          style={{ cursor: isMobile ? 'pointer' : undefined }}
         >
-          {/* Day number as clickable link to logs page for that day */}
-          <Link
-            href={`/logs?startDate=${format(day, "yyyy-MM-dd")}&endDate=${format(day, "yyyy-MM-dd")}`}
-            className="font-bold text-lg mb-2 text-garden-400 hover:underline focus:outline-none focus:ring-2 focus:ring-garden-400 rounded cursor-pointer w-fit"
-            title={`View logs for ${format(day, "yyyy-MM-dd")}`}
-            prefetch={false}
-          >
-            {formattedDate}
-          </Link>
-          {/* Weather alert badge - moved below day number */}
-          {weatherAlert && weatherAlert.details && weatherAlert.details.length > 0 && (
-            <div className="mt-1 flex flex-col gap-0.5 z-10">
-              {/* Group alerts by gardenName and count affected plants */}
-              {Object.entries(
-                weatherAlert.details.reduce((acc: any, d: any) => {
-                  const garden = d.gardenName || 'Unknown Garden';
-                  if (!acc[garden]) acc[garden] = { plantNames: new Set(), roomNames: new Set(), zoneNames: new Set(), gardenId: d.gardenId };
-                  if (d.plantName) acc[garden].plantNames.add(d.plantName);
-                  if (d.roomName) acc[garden].roomNames.add(d.roomName);
-                  if (d.zoneName) acc[garden].zoneNames.add(d.zoneName);
-                  return acc;
-                }, {})
-              ).map(([gardenName, info]: any) => (
-                <div key={gardenName} className="flex items-center gap-2 flex-wrap text-xs whitespace-nowrap overflow-hidden text-ellipsis mb-2">
-                  <button
-                    className="font-bold text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-400 px-0 bg-transparent border-none cursor-pointer"
-                    title="View weather alert details"
-                    style={{ minWidth: 0 }}
-                    onClick={() => {
-                      setAlertModalDetails(weatherAlert.details.filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName));
-                      setAlertModalDate(dateKey);
-                      setAlertModalOpen(true);
+          <span className="font-bold text-base sm:text-lg mb-1 text-garden-400 w-fit">{formattedDate}</span>
+          {isMobile ? (
+            <div className="flex flex-row flex-wrap gap-1 items-center min-h-[18px]">
+              {/* Show up to 3 colored dots/icons for logs/alerts, then +N */}
+              {logs.slice(0, 3).map((log, idx) => (
+                <span key={log.id || idx} className={`w-3 h-3 rounded-full ${getLogColor(log.type || '')}`} title={log.type || ''}></span>
+              ))}
+              {weatherAlert && weatherAlert.details && weatherAlert.details.length > 0 && (
+                <span className="w-3 h-3 rounded-full bg-red-500" title="Weather Alert"></span>
+              )}
+              {logs.length + (weatherAlert && weatherAlert.details ? 1 : 0) > 3 && (
+                <span className="text-xs text-dark-text-secondary">+{logs.length + (weatherAlert && weatherAlert.details ? 1 : 0) - 3}</span>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Weather alert badge - moved below day number */}
+              {weatherAlert && weatherAlert.details && weatherAlert.details.length > 0 && (
+                <div className="mt-1 flex flex-col gap-0.5 z-10">
+                  {/* Group alerts by gardenName and count affected plants */}
+                  {Object.entries(
+                    weatherAlert.details.reduce((acc: any, d: any) => {
+                      const garden = d.gardenName || 'Unknown Garden';
+                      if (!acc[garden]) acc[garden] = { plantNames: new Set(), roomNames: new Set(), zoneNames: new Set(), gardenId: d.gardenId };
+                      if (d.plantName) acc[garden].plantNames.add(d.plantName);
+                      if (d.roomName) acc[garden].roomNames.add(d.roomName);
+                      if (d.zoneName) acc[garden].zoneNames.add(d.zoneName);
+                      return acc;
+                    }, {})
+                  ).map(([gardenName, info]: any) => (
+                    <div key={gardenName} className="flex items-center gap-2 flex-wrap text-xs whitespace-nowrap overflow-hidden text-ellipsis mb-2">
+                      <button
+                        className="font-bold text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-400 px-0 bg-transparent border-none cursor-pointer"
+                        title="View weather alert details"
+                        style={{ minWidth: 0 }}
+                        onClick={() => {
+                          setAlertModalDetails(weatherAlert.details.filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName));
+                          setAlertModalDate(dateKey);
+                          setAlertModalOpen(true);
+                        }}
+                      >
+                        wAlert
+                      </button>
+                      <Link
+                        href={`/gardens/${info.gardenId}`}
+                        className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        title={`Go to ${gardenName}`}
+                      >
+                        {gardenName}
+                      </Link>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="font-semibold text-emerald-400 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {(() => {
+                              const items = weatherAlert.details
+                                .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
+                                .reduce((acc: any[], d: any) => {
+                                  if (d.roomId && d.roomName) acc.push({ id: d.roomId, name: d.roomName, gardenId: d.gardenId });
+                                  return acc;
+                                }, []);
+                              const uniqueRooms = Array.from(new Map(items.map((room: any) => [room.id, room])).values());
+                              if (uniqueRooms.length === 0) {
+                                return (
+                                  <span>
+                                    No rooms/plots found.<br />
+                                    <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
+                                  </span>
+                                );
+                              }
+                              return uniqueRooms.map((room: any, idx: number, arr: any[]) =>
+                                room.id && room.gardenId ? (
+                                  <Link key={room.id} href={`/gardens/${room.gardenId}/rooms/${room.id}`} className="underline text-emerald-300 hover:text-emerald-200 mr-1">{room.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                                ) : (
+                                  <span key={room.name + idx}>{room.name}{idx < arr.length - 1 ? ', ' : ''}</span>
+                                )
+                              );
+                            })()}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="font-semibold text-emerald-300 ml-1 cursor-pointer">{info.zoneNames.size} zone{info.zoneNames.size !== 1 ? 's' : ''}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {(() => {
+                              const items = weatherAlert.details
+                                .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
+                                .reduce((acc: any[], d: any) => {
+                                  if (d.zoneId && d.zoneName && d.roomId && d.gardenId) acc.push({ id: d.zoneId, name: d.zoneName, roomId: d.roomId, gardenId: d.gardenId });
+                                  return acc;
+                                }, []);
+                              const uniqueZones = Array.from(new Map(items.map((zone: any) => [zone.id, zone])).values());
+                              if (uniqueZones.length === 0) {
+                                return (
+                                  <span>
+                                    No zones found.<br />
+                                    <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
+                                  </span>
+                                );
+                              }
+                              return uniqueZones.map((zone: any, idx: number, arr: any[]) =>
+                                zone.id && zone.gardenId && zone.roomId ? (
+                                  <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-emerald-400 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                                ) : (
+                                  <span key={zone.name + idx}>{zone.name}{idx < arr.length - 1 ? ', ' : ''}</span>
+                                )
+                              );
+                            })()}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="font-semibold text-emerald-600 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {(() => {
+                              const items = weatherAlert.details
+                                .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
+                                .reduce((acc: any[], d: any) => {
+                                  if (d.plantId && d.plantName && d.zoneId && d.roomId && d.gardenId) acc.push({ id: d.plantId, name: d.plantName, zoneId: d.zoneId, roomId: d.roomId, gardenId: d.gardenId });
+                                  return acc;
+                                }, []);
+                              const uniquePlants = Array.from(new Map(items.map((plant: any) => [plant.id, plant])).values());
+                              if (uniquePlants.length === 0) {
+                                return (
+                                  <span>
+                                    No plants found.<br />
+                                    <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
+                                  </span>
+                                );
+                              }
+                              return uniquePlants.map((plant: any, idx: number, arr: any[]) =>
+                                plant.id && plant.gardenId && plant.roomId && plant.zoneId ? (
+                                  <Link key={plant.id} href={`/gardens/${plant.gardenId}/rooms/${plant.roomId}/zones/${plant.zoneId}/plants/${plant.id}`} className="underline text-lime-400 hover:text-lime-200 mr-1">{plant.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                                ) : (
+                                  <span key={plant.name + idx}>{plant.name}{idx < arr.length - 1 ? ', ' : ''}</span>
+                                )
+                              );
+                            })()}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Plus icon in the top-right, no background */}
+              <button
+                className="absolute top-2 right-2 p-0 m-0 w-6 h-6 flex items-center justify-center text-garden-400 hover:text-garden-500 focus:outline-none"
+                aria-label="Add"
+                onClick={() => {
+                  setPopoverFor(dateKey);
+                  setTimeout(() => popoverInputRef.current?.focus(), 50);
+                }}
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              {/* Popover for adding a note */}
+              {popoverFor === dateKey && (
+                <div ref={popoverContainerRef} className="absolute z-50 top-10 right-2 bg-dark-bg-secondary border border-dark-border rounded shadow-lg p-2 flex flex-col gap-2 w-64">
+                  <input
+                    ref={popoverInputRef}
+                    type="text"
+                    className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border focus:outline-none"
+                    placeholder="Add a note..."
+                    value={noteText}
+                    onChange={e => setNoteText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && noteText.trim()) {
+                        handleAddNote();
+                      } else if (e.key === "Escape") {
+                        handleCancelNote();
+                      }
+                    }}
+                  />
+                  {/* Garden/Room/Zone dropdowns */}
+                  <select
+                    className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
+                    value={selectedGarden}
+                    onChange={e => {
+                      setSelectedGarden(e.target.value);
+                      setSelectedRoom("");
+                      setSelectedZone("");
                     }}
                   >
-                    wAlert
-                  </button>
-                  <Link
-                    href={`/gardens/${info.gardenId}`}
-                    className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                    title={`Go to ${gardenName}`}
+                    <option value="">All Gardens</option>
+                    {gardens.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
+                    value={selectedRoom}
+                    onChange={e => {
+                      setSelectedRoom(e.target.value);
+                      setSelectedZone("");
+                    }}
+                    disabled={!selectedGarden}
                   >
-                    {gardenName}
-                  </Link>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="font-semibold text-emerald-400 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {(() => {
-                          const items = weatherAlert.details
-                            .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
-                            .reduce((acc: any[], d: any) => {
-                              if (d.roomId && d.roomName) acc.push({ id: d.roomId, name: d.roomName, gardenId: d.gardenId });
-                              return acc;
-                            }, []);
-                          const uniqueRooms = Array.from(new Map(items.map((room: any) => [room.id, room])).values());
-                          if (uniqueRooms.length === 0) {
-                            return (
-                              <span>
-                                No rooms/plots found.<br />
-                                <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
-                              </span>
-                            );
-                          }
-                          return uniqueRooms.map((room: any, idx: number, arr: any[]) =>
-                            room.id && room.gardenId ? (
-                              <Link key={room.id} href={`/gardens/${room.gardenId}/rooms/${room.id}`} className="underline text-emerald-300 hover:text-emerald-200 mr-1">{room.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
-                            ) : (
-                              <span key={room.name + idx}>{room.name}{idx < arr.length - 1 ? ', ' : ''}</span>
-                            )
-                          );
-                        })()}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="font-semibold text-emerald-300 ml-1 cursor-pointer">{info.zoneNames.size} zone{info.zoneNames.size !== 1 ? 's' : ''}</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {(() => {
-                          const items = weatherAlert.details
-                            .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
-                            .reduce((acc: any[], d: any) => {
-                              if (d.zoneId && d.zoneName && d.roomId && d.gardenId) acc.push({ id: d.zoneId, name: d.zoneName, roomId: d.roomId, gardenId: d.gardenId });
-                              return acc;
-                            }, []);
-                          const uniqueZones = Array.from(new Map(items.map((zone: any) => [zone.id, zone])).values());
-                          if (uniqueZones.length === 0) {
-                            return (
-                              <span>
-                                No zones found.<br />
-                                <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
-                              </span>
-                            );
-                          }
-                          return uniqueZones.map((zone: any, idx: number, arr: any[]) =>
-                            zone.id && zone.gardenId && zone.roomId ? (
-                              <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-emerald-400 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
-                            ) : (
-                              <span key={zone.name + idx}>{zone.name}{idx < arr.length - 1 ? ', ' : ''}</span>
-                            )
-                          );
-                        })()}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="font-semibold text-emerald-600 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {(() => {
-                          const items = weatherAlert.details
-                            .filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName)
-                            .reduce((acc: any[], d: any) => {
-                              if (d.plantId && d.plantName && d.zoneId && d.roomId && d.gardenId) acc.push({ id: d.plantId, name: d.plantName, zoneId: d.zoneId, roomId: d.roomId, gardenId: d.gardenId });
-                              return acc;
-                            }, []);
-                          const uniquePlants = Array.from(new Map(items.map((plant: any) => [plant.id, plant])).values());
-                          if (uniquePlants.length === 0) {
-                            return (
-                              <span>
-                                No plants found.<br />
-                                <pre style={{ fontSize: 10, whiteSpace: 'pre-wrap' }}>{JSON.stringify(weatherAlert.details, null, 2)}</pre>
-                              </span>
-                            );
-                          }
-                          return uniquePlants.map((plant: any, idx: number, arr: any[]) =>
-                            plant.id && plant.gardenId && plant.roomId && plant.zoneId ? (
-                              <Link key={plant.id} href={`/gardens/${plant.gardenId}/rooms/${plant.roomId}/zones/${plant.zoneId}/plants/${plant.id}`} className="underline text-lime-400 hover:text-lime-200 mr-1">{plant.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
-                            ) : (
-                              <span key={plant.name + idx}>{plant.name}{idx < arr.length - 1 ? ', ' : ''}</span>
-                            )
-                          );
-                        })()}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Plus icon in the top-right, no background */}
-          <button
-            className="absolute top-2 right-2 p-0 m-0 w-6 h-6 flex items-center justify-center text-garden-400 hover:text-garden-500 focus:outline-none"
-            aria-label="Add"
-            onClick={() => {
-              setPopoverFor(dateKey);
-              setTimeout(() => popoverInputRef.current?.focus(), 50);
-            }}
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-          {/* Popover for adding a note */}
-          {popoverFor === dateKey && (
-            <div ref={popoverContainerRef} className="absolute z-50 top-10 right-2 bg-dark-bg-secondary border border-dark-border rounded shadow-lg p-2 flex flex-col gap-2 w-64">
-              <input
-                ref={popoverInputRef}
-                type="text"
-                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border focus:outline-none"
-                placeholder="Add a note..."
-                value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === "Enter" && noteText.trim()) {
-                    handleAddNote();
-                  } else if (e.key === "Escape") {
-                    handleCancelNote();
-                  }
-                }}
-              />
-              {/* Garden/Room/Zone dropdowns */}
-              <select
-                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
-                value={selectedGarden}
-                onChange={e => {
-                  setSelectedGarden(e.target.value);
-                  setSelectedRoom("");
-                  setSelectedZone("");
-                }}
-              >
-                <option value="">All Gardens</option>
-                {gardens.map(g => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-              <select
-                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
-                value={selectedRoom}
-                onChange={e => {
-                  setSelectedRoom(e.target.value);
-                  setSelectedZone("");
-                }}
-                disabled={!selectedGarden}
-              >
-                <option value="">All Rooms</option>
-                {rooms.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-              <select
-                className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
-                value={selectedZone}
-                onChange={e => setSelectedZone(e.target.value)}
-                disabled={!selectedRoom}
-              >
-                <option value="">All Zones</option>
-                {zones.map(z => (
-                  <option key={z.id} value={z.id}>{z.name}</option>
-                ))}
-              </select>
-              <label className="flex items-center gap-2 mt-1 cursor-pointer select-none group">
-                <span className="relative inline-block w-5 h-5 align-middle">
-                  <input
-                    type="checkbox"
-                    checked={isPrivate}
-                    onChange={e => setIsPrivate(e.target.checked)}
-                    className="opacity-0 absolute w-5 h-5 cursor-pointer z-10"
-                    tabIndex={0}
-                  />
-                  <span className={`block w-5 h-5 rounded bg-dark-bg-primary border border-dark-border transition-colors duration-150 ${isPrivate ? 'border-garden-400' : ''}`}></span>
-                  {isPrivate && (
-                    <span className="absolute left-0 top-0 w-5 h-5 flex items-center justify-center pointer-events-none">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="3" y1="3" x2="13" y2="13" stroke="#22c55e" strokeWidth="2"/>
-                        <line x1="13" y1="3" x2="3" y2="13" stroke="#22c55e" strokeWidth="2"/>
-                      </svg>
+                    <option value="">All Rooms</option>
+                    {rooms.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="w-full px-2 py-1 rounded bg-dark-bg-primary text-dark-text-primary border border-dark-border"
+                    value={selectedZone}
+                    onChange={e => setSelectedZone(e.target.value)}
+                    disabled={!selectedRoom}
+                  >
+                    <option value="">All Zones</option>
+                    {zones.map(z => (
+                      <option key={z.id} value={z.id}>{z.name}</option>
+                    ))}
+                  </select>
+                  <label className="flex items-center gap-2 mt-1 cursor-pointer select-none group">
+                    <span className="relative inline-block w-5 h-5 align-middle">
+                      <input
+                        type="checkbox"
+                        checked={isPrivate}
+                        onChange={e => setIsPrivate(e.target.checked)}
+                        className="opacity-0 absolute w-5 h-5 cursor-pointer z-10"
+                        tabIndex={0}
+                      />
+                      <span className={`block w-5 h-5 rounded bg-dark-bg-primary border border-dark-border transition-colors duration-150 ${isPrivate ? 'border-garden-400' : ''}`}></span>
+                      {isPrivate && (
+                        <span className="absolute left-0 top-0 w-5 h-5 flex items-center justify-center pointer-events-none">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <line x1="3" y1="3" x2="13" y2="13" stroke="#22c55e" strokeWidth="2"/>
+                            <line x1="13" y1="3" x2="3" y2="13" stroke="#22c55e" strokeWidth="2"/>
+                          </svg>
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                <span className="text-dark-text-secondary">Private (only you can see this note)</span>
-              </label>
-              <div className="flex gap-2 justify-end">
-                <button
-                  className="px-2 py-1 rounded bg-garden-400 text-dark-bg-primary font-bold hover:bg-garden-500"
-                  disabled={!noteText.trim()}
-                  onClick={handleAddNote}
-                >
-                  Add
-                </button>
-                <button
-                  className="px-2 py-1 rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-secondary"
-                  onClick={handleCancelNote}
-                >
-                  Cancel
-                </button>
+                    <span className="text-dark-text-secondary">Private (only you can see this note)</span>
+                  </label>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      className="px-2 py-1 rounded bg-garden-400 text-dark-bg-primary font-bold hover:bg-garden-500"
+                      disabled={!noteText.trim()}
+                      onClick={handleAddNote}
+                    >
+                      Add
+                    </button>
+                    <button
+                      className="px-2 py-1 rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-secondary"
+                      onClick={handleCancelNote}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="w-full flex-1 flex flex-col gap-1">
+                {logs
+                  .filter((log) => log.title !== 'WEATHER_ALERT')
+                  .map((log) => (
+                    <Link
+                      key={log.id}
+                      href={`/logs/${log.id}`}
+                      className={`${getLogColor(log.type || "")} rounded px-1 py-0.5 text-xs truncate cursor-pointer hover:underline`}
+                      title={log.notes || log.title}
+                    >
+                      {log.title}
+                    </Link>
+                  ))}
+                {/* Custom note pills from backend */}
+                {calendarNotes.filter(note => {
+                  return note.date === dateKey;
+                }).map((note, idx) => (
+                  <div
+                    key={"note-" + note.id}
+                    className={`relative bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate flex items-center ${note.private ? 'border border-garden-400' : ''}`}
+                    title={note.note}
+                  >
+                    <span className="flex-1 truncate">{note.note}{note.private && <span className="ml-1 text-garden-400">(Private)</span>}</span>
+                    <button
+                      className="ml-2 p-0.5 rounded hover:bg-dark-bg-primary text-garden-400 hover:text-red-500 focus:outline-none"
+                      aria-label="Delete note"
+                      onClick={() => openDeleteModal(note)}
+                      tabIndex={0}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" strokeWidth="2"/>
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
-            </div>
+            </>
           )}
-          <div className="w-full flex-1 flex flex-col gap-1">
-            {logs
-              .filter((log) => log.title !== 'WEATHER_ALERT')
-              .map((log) => (
-                <Link
-                  key={log.id}
-                  href={`/logs/${log.id}`}
-                  className={`${getLogColor(log.type || "")} rounded px-1 py-0.5 text-xs truncate cursor-pointer hover:underline`}
-                  title={log.notes || log.title}
-                >
-                  {log.title}
-                </Link>
-              ))}
-            {/* Custom note pills from backend */}
-            {calendarNotes.filter(note => {
-              return note.date === dateKey;
-            }).map((note, idx) => (
-              <div
-                key={"note-" + note.id}
-                className={`relative bg-dark-bg-secondary text-dark-text-primary rounded px-1 py-0.5 text-xs mt-1 truncate flex items-center ${note.private ? 'border border-garden-400' : ''}`}
-                title={note.note}
-              >
-                <span className="flex-1 truncate">{note.note}{note.private && <span className="ml-1 text-garden-400">(Private)</span>}</span>
-                <button
-                  className="ml-2 p-0.5 rounded hover:bg-dark-bg-primary text-garden-400 hover:text-red-500 focus:outline-none"
-                  aria-label="Delete note"
-                  onClick={() => openDeleteModal(note)}
-                  tabIndex={0}
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="2"/>
-                    <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
       );
       day = addDays(day, 1);
@@ -678,6 +698,62 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           </div>
         </DialogContent>
       </Dialog>
+      {/* Mobile: Modal for day details */}
+      {isMobile && selectedDayDetails && (
+        <Dialog open={!!selectedDayDetails} onOpenChange={() => setSelectedDayDetails(null)}>
+          <DialogContent className="max-w-md bg-dark-bg-secondary text-dark-text-primary">
+            <DialogHeader>
+              <DialogTitle className="text-garden-400 font-bold text-lg flex items-center gap-2">
+                {format(new Date(selectedDayDetails.date), 'PPP')}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto space-y-4 mt-2">
+              {selectedDayDetails.logs.length === 0 && (!selectedDayDetails.alerts || !selectedDayDetails.alerts.details || selectedDayDetails.alerts.details.length === 0) ? (
+                <div className="text-dark-text-secondary">No logs or alerts for this day.</div>
+              ) : (
+                <>
+                  {selectedDayDetails.logs.map((log, idx) => (
+                    <div key={log.id || idx} className="rounded bg-dark-bg-primary border border-garden-700 p-2 text-xs mb-2">
+                      <div className="font-bold mb-1 flex items-center gap-2">
+                        <span className={getLogColor(log.type || '') + ' w-2 h-2 rounded-full inline-block'}></span>
+                        <span>{log.type || 'Log'}</span>
+                      </div>
+                      <div className="text-sm">{log.notes}</div>
+                    </div>
+                  ))}
+                  {selectedDayDetails.alerts && selectedDayDetails.alerts.details && selectedDayDetails.alerts.details.length > 0 && (
+                    <div className="rounded bg-dark-bg-primary border border-red-700 p-2 text-xs mb-2">
+                      <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+                        <span>Weather Alert</span>
+                      </div>
+                      {/* Show alert details here as needed */}
+                      <div className="text-sm">{selectedDayDetails.alerts.details.length} alert(s)</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {/* Add responsive CSS for mobile calendar */}
+      <style jsx global>{`
+        @media (max-width: 600px) {
+          .calendar-day-cell {
+            min-width: 44px !important;
+            min-height: 60px !important;
+            padding: 2px !important;
+          }
+          .calendar-day-cell .font-bold {
+            font-size: 1rem !important;
+            margin-bottom: 2px !important;
+          }
+          .calendar-day-cell .flex-row {
+            min-height: 18px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
