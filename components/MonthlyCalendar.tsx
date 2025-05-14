@@ -313,16 +313,18 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             </div>
           )}
           <div className="w-full flex-1 flex flex-col gap-1">
-            {logs.map((log) => (
-              <Link
-                key={log.id}
-                href={`/logs/${log.id}`}
-                className={`${getLogColor(log.type || "")} rounded px-1 py-0.5 text-xs truncate cursor-pointer hover:underline`}
-                title={log.notes || log.title}
-              >
-                {log.title}
-              </Link>
-            ))}
+            {logs
+              .filter((log) => log.title !== 'WEATHER_ALERT')
+              .map((log) => (
+                <Link
+                  key={log.id}
+                  href={`/logs/${log.id}`}
+                  className={`${getLogColor(log.type || "")} rounded px-1 py-0.5 text-xs truncate cursor-pointer hover:underline`}
+                  title={log.notes || log.title}
+                >
+                  {log.title}
+                </Link>
+              ))}
             {/* Custom note pills from backend */}
             {calendarNotes.filter(note => {
               return note.date === dateKey;
