@@ -3,6 +3,7 @@ import Link from "next/link";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { Plus, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 function getLogColor(type: string) {
   switch (type) {
@@ -40,9 +41,11 @@ function getLogColor(type: string) {
 interface CalendarProps {
   month?: Date; // Defaults to current month if not provided
   logsByDate?: { [date: string]: { id: string; title: string; notes?: string; type?: string }[] };
+  weatherAlertsByDate?: { [date: string]: any };
+  monthChange?: (newMonth: Date) => void;
 }
 
-export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, logsByDate }) => {
+export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, logsByDate, weatherAlertsByDate = {}, monthChange }) => {
   const [month, setMonth] = useState<Date>(initialMonth || new Date());
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const yearButtonRef = useRef<HTMLButtonElement>(null);
@@ -76,6 +79,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   const [notesError, setNotesError] = useState<string | null>(null);
   const [noteToDelete, setNoteToDelete] = useState<any | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [alertModalDetails, setAlertModalDetails] = useState<any[]>([]);
+  const [alertModalDate, setAlertModalDate] = useState<string>("");
 
   // Fetch locations on popover open
   React.useEffect(() => {
@@ -144,6 +150,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
       const isToday = isSameDay(day, today);
       const dateKey = format(day, "yyyy-MM-dd");
       const logs = logsByDate?.[dateKey] || [];
+      const weatherAlert = weatherAlertsByDate[dateKey];
 
       days.push(
         <div
@@ -156,6 +163,25 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             transition-all
           `}
         >
+          {/* Weather alert badge */}
+          {weatherAlert && weatherAlert.totalAlerts > 0 && (
+            <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-600 text-xs text-white font-bold shadow">
+                {weatherAlert.totalAlerts} ⚠️
+              </span>
+              <button
+                className="ml-1 text-xs text-red-200 hover:text-white underline focus:outline-none"
+                title="View weather alert details"
+                onClick={() => {
+                  setAlertModalDetails(weatherAlert.details);
+                  setAlertModalDate(dateKey);
+                  setAlertModalOpen(true);
+                }}
+              >
+                Details
+              </button>
+            </div>
+          )}
           {/* Plus icon in the top-right, no background */}
           <button
             className="absolute top-2 right-2 p-0 m-0 w-6 h-6 flex items-center justify-center text-garden-400 hover:text-garden-500 focus:outline-none"
@@ -376,7 +402,10 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     <div className="w-full max-w-6xl mx-auto">
       <div className="text-center mb-4 flex items-center justify-center gap-4">
         <button
-          onClick={() => setMonth(subMonths(month, 1))}
+          onClick={() => {
+            setMonth(subMonths(month, 1));
+            monthChange?.(subMonths(month, 1));
+          }}
           className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
           aria-label="Previous Month"
         >
@@ -405,6 +434,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                     key={y}
                     onClick={() => {
                       setMonth(new Date(month.setFullYear(y)));
+                      monthChange?.(new Date(month.setFullYear(y)));
                       setYearDropdownOpen(false);
                     }}
                     className={`block w-full text-left px-4 py-2 text-2xl sm:text-4xl font-extrabold uppercase ${
@@ -421,7 +451,10 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           </div>
         </div>
         <button
-          onClick={() => setMonth(addMonths(month, 1))}
+          onClick={() => {
+            setMonth(addMonths(month, 1));
+            monthChange?.(addMonths(month, 1));
+          }}
           className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
           aria-label="Next Month"
         >
@@ -464,6 +497,38 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           </div>
         </div>
       )}
+      {/* Weather Alert Modal */}
+      <Dialog open={alertModalOpen} onOpenChange={setAlertModalOpen}>
+        <DialogContent className="max-w-xl bg-dark-bg-secondary text-dark-text-primary">
+          <DialogHeader>
+            <DialogTitle className="text-red-400 font-bold text-lg flex items-center gap-2">
+              Weather Alerts for {alertModalDate}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 mt-2">
+            {alertModalDetails.length === 0 ? (
+              <div className="text-dark-text-secondary">No details available.</div>
+            ) : (
+              alertModalDetails.map((d, idx) => (
+                <div key={idx} className="rounded bg-dark-bg-primary border border-red-700 p-3 text-xs">
+                  <div className="font-bold text-red-300 mb-1">{d.type}{d.alertTypes?.length ? `: ${d.alertTypes.join(", ")}` : ""}</div>
+                  {d.gardenName && <div><span className="font-semibold">Garden:</span> {d.gardenName}</div>}
+                  {d.roomName && <div><span className="font-semibold">Room:</span> {d.roomName}</div>}
+                  {d.zoneName && <div><span className="font-semibold">Zone:</span> {d.zoneName}</div>}
+                  {d.plantName && <div><span className="font-semibold">Plant:</span> {d.plantName}</div>}
+                  {d.createdAt && <div><span className="font-semibold">Time:</span> {format(new Date(d.createdAt), 'PPpp')}</div>}
+                  {d.message && <div className="mt-2 whitespace-pre-line">{d.message}</div>}
+                  {d.alertTypes && d.alertTypes.length > 0 && (
+                    <div className="mt-2">
+                      <span className="font-semibold">Alert Types:</span> {d.alertTypes.join(", ")}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
