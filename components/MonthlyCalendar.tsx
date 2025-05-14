@@ -179,12 +179,13 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
               {Object.entries(
                 weatherAlert.details.reduce((acc: any, d: any) => {
                   const garden = d.gardenName || 'Unknown Garden';
-                  if (!acc[garden]) acc[garden] = { count: 0, plantNames: new Set(), gardenId: d.gardenId };
+                  if (!acc[garden]) acc[garden] = { plantNames: new Set(), roomNames: new Set(), zoneNames: new Set(), gardenId: d.gardenId };
                   if (d.plantName) acc[garden].plantNames.add(d.plantName);
-                  acc[garden].count++;
+                  if (d.roomName) acc[garden].roomNames.add(d.roomName);
+                  if (d.zoneName) acc[garden].zoneNames.add(d.zoneName);
                   return acc;
                 }, {})
-              ).map(([gardenName, info]: any, idx) => (
+              ).map(([gardenName, info]: any) => (
                 <div key={gardenName} className="flex items-center gap-2 flex-wrap text-xs whitespace-nowrap overflow-hidden text-ellipsis mb-2">
                   <button
                     className="font-bold text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-400 px-0 bg-transparent border-none cursor-pointer"
@@ -205,7 +206,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                   >
                     {gardenName}
                   </Link>
-                  <span className="font-semibold text-emerald-400 ml-1">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
+                  <span className="font-semibold text-emerald-400 ml-1">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
+                  <span className="font-semibold text-emerald-300 ml-1">{info.zoneNames.size} zone{info.zoneNames.size !== 1 ? 's' : ''}</span>
+                  <span className="font-semibold text-emerald-600 ml-1">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
                 </div>
               ))}
             </div>
