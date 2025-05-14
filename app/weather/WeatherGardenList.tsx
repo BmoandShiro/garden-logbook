@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Cloud, CloudSun, CloudLightning, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 export interface WeatherStatus {
   hasAlerts: boolean;
@@ -21,9 +22,35 @@ export interface WeatherGarden {
 
 export function WeatherGardenList({ gardens }: { gardens: WeatherGarden[] }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const toggle = (id: string) => setExpanded(e => ({ ...e, [id]: !e[id] }));
+
+  async function handleRunWeatherCheck() {
+    setLoading(true);
+    setMessage(null);
+    try {
+      await fetch('/api/weather/test', { method: 'POST' });
+      setMessage('Weather check triggered! Refresh in a few seconds.');
+    } catch (e) {
+      setMessage('Failed to trigger weather check.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="mb-4 flex items-center gap-4">
+        <button
+          onClick={handleRunWeatherCheck}
+          disabled={loading}
+          className="px-4 py-2 rounded bg-garden-600 text-white font-semibold hover:bg-garden-500 disabled:opacity-50"
+        >
+          {loading ? 'Running...' : 'Run Weather Check'}
+        </button>
+        {message && <span className="text-emerald-300 text-sm">{message}</span>}
+      </div>
       {gardens.map(garden => {
         const status = garden.weatherStatus;
         let icon = <Cloud className="w-6 h-6 text-gray-400" />;
@@ -53,6 +80,11 @@ export function WeatherGardenList({ gardens }: { gardens: WeatherGarden[] }) {
               <div className="mt-4 space-y-2">
                 <div className="text-sm text-emerald-200">{garden.description}</div>
                 <div className="text-xs text-emerald-300/70">Zipcode: {garden.zipcode || 'N/A'}</div>
+                {status?.lastChecked && (
+                  <div className="text-xs text-emerald-300/70">
+                    Last checked: {format(new Date(status.lastChecked), 'PPpp')}
+                  </div>
+                )}
                 {status && status.hasAlerts ? (
                   <div className="mt-2 text-red-400">
                     <strong>Active Alerts:</strong>
