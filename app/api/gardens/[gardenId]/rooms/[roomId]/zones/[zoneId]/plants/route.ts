@@ -87,6 +87,8 @@ export async function POST(request: Request, context: { params: Promise<{ garden
           growingSeasonEnd: growingSeasonEnd || null,
           onlyTriggerAlertsDuringSeason: typeof onlyTriggerAlertsDuringSeason === 'boolean' ? onlyTriggerAlertsDuringSeason : false,
           sensitivities: sensitivities || null,
+          gardenId: gardenId,
+          roomId: roomId,
         },
       });
 

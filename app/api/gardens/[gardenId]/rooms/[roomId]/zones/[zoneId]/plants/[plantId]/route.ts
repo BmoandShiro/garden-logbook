@@ -123,6 +123,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ garde
       strainName: strainName || undefined,
       startDate: plantedDate ? new Date(plantedDate) : undefined,
       harvestDate: expectedHarvestDate ? new Date(expectedHarvestDate) : undefined,
+      gardenId: params.gardenId,
+      roomId: params.roomId,
     };
     if (type === 'REGULAR' || type === 'ZONE_PLANT') {
       updateData.type = type;

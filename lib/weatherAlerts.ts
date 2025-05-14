@@ -96,8 +96,7 @@ export async function processWeatherAlerts() {
   
   const plants = await prisma.plant.findMany({
     include: {
-      garden: true,
-      sensitivities: true
+      garden: true
     }
   });
 
@@ -107,8 +106,19 @@ export async function processWeatherAlerts() {
   const gardenStatus = new Map<string, { hasAlerts: boolean; alertCount: number }>();
 
   for (const plant of plants) {
+    // Debug log for plant and garden
+    console.log('[PLANT DEBUG]', {
+      id: plant.id,
+      name: plant.name,
+      gardenId: plant.gardenId,
+      garden: plant.garden
+    });
     const garden = plant.garden;
     const sensitivities = plant.sensitivities;
+    if (!garden || !garden.zipcode) {
+      console.log(`[WEATHER_ALERTS] Skipping plant ${plant.id} - no garden or zipcode`);
+      continue;
+    }
     if (!sensitivities) {
       console.log(`[WEATHER_ALERTS] Skipping plant ${plant.id} - no sensitivities configured`);
       continue;
@@ -180,8 +190,7 @@ export async function processWeatherAlerts() {
 export async function checkWeatherAlerts() {
   const plants = await prisma.plant.findMany({
     include: {
-      garden: true,
-      sensitivities: true
+      garden: true
     }
   });
 
