@@ -179,28 +179,33 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
               {Object.entries(
                 weatherAlert.details.reduce((acc: any, d: any) => {
                   const garden = d.gardenName || 'Unknown Garden';
-                  if (!acc[garden]) acc[garden] = { count: 0, plantNames: new Set() };
+                  if (!acc[garden]) acc[garden] = { count: 0, plantNames: new Set(), gardenId: d.gardenId };
                   if (d.plantName) acc[garden].plantNames.add(d.plantName);
                   acc[garden].count++;
                   return acc;
                 }, {})
               ).map(([gardenName, info]: any, idx) => (
-                <div key={gardenName} className="flex items-center gap-1 flex-wrap text-xs whitespace-nowrap overflow-hidden text-ellipsis">
-                  <span className="font-bold text-red-500">wAlert</span>
-                  <span className="font-semibold text-emerald-200">{gardenName}</span>
-                  <span className="font-semibold text-emerald-400 ml-1">{info.plantNames.size} plants</span>
+                <div key={gardenName} className="flex items-center gap-2 flex-wrap text-xs whitespace-nowrap overflow-hidden text-ellipsis mb-2">
                   <button
-                    className="ml-1 text-xs text-red-300 hover:text-white underline focus:outline-none"
+                    className="font-bold text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-400 px-0 bg-transparent border-none cursor-pointer"
                     title="View weather alert details"
-                    style={{ padding: 0, background: 'none', border: 'none', minWidth: 0 }}
+                    style={{ minWidth: 0 }}
                     onClick={() => {
                       setAlertModalDetails(weatherAlert.details.filter((d: any) => (d.gardenName || 'Unknown Garden') === gardenName));
                       setAlertModalDate(dateKey);
                       setAlertModalOpen(true);
                     }}
                   >
-                    Details
+                    wAlert
                   </button>
+                  <Link
+                    href={`/gardens/${info.gardenId}`}
+                    className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    title={`Go to ${gardenName}`}
+                  >
+                    {gardenName}
+                  </Link>
+                  <span className="font-semibold text-emerald-400 ml-1">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
                 </div>
               ))}
             </div>
