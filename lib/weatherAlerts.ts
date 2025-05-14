@@ -71,28 +71,31 @@ async function sendAllClearNotification(plant: Plant, garden: Plant['garden'], w
     }
   });
 
-  // Send a notification
-  await prisma.notification.create({
-    data: {
-      userId: plant.userId,
-      type: 'WEATHER_CHECK',
-      title: `✅ Weather Check: ${plant.name} is doing well`,
-      message: `Daily weather check for ${plant.name} in ${garden.name} (${garden.zipcode}):\n\n` +
-        `• Current Conditions: ${weatherInfo.conditions}\n` +
-        `• Temperature: ${weatherInfo.temperature}\n` +
-        `• Humidity: ${weatherInfo.humidity}\n` +
-        `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-        `• Precipitation: ${weatherInfo.precipitation}\n\n` +
-        `All conditions are within safe ranges for your plant.`,
-      link: `/gardens/${garden.id}/plants/${plant.id}`,
-      meta: { 
-        plantId: plant.id,
-        date: new Date().toISOString().slice(0, 10),
-        weatherInfo,
-        status: 'all_clear'
+  // Send a notification to all garden members
+  const userIds = await getAllGardenUserIds(garden.id, plant.userId);
+  await Promise.all(userIds.map(userId =>
+    prisma.notification.create({
+      data: {
+        userId,
+        type: 'WEATHER_CHECK',
+        title: `✅ Weather Check: ${plant.name} is doing well`,
+        message: `Daily weather check for ${plant.name} in ${garden.name} (${garden.zipcode}):\n\n` +
+          `• Current Conditions: ${weatherInfo.conditions}\n` +
+          `• Temperature: ${weatherInfo.temperature}\n` +
+          `• Humidity: ${weatherInfo.humidity}\n` +
+          `• Wind Speed: ${weatherInfo.windSpeed}\n` +
+          `• Precipitation: ${weatherInfo.precipitation}\n\n` +
+          `All conditions are within safe ranges for your plant.`,
+        link: `/gardens/${garden.id}/plants/${plant.id}`,
+        meta: { 
+          plantId: plant.id,
+          date: new Date().toISOString().slice(0, 10),
+          weatherInfo,
+          status: 'all_clear'
+        }
       }
-    }
-  });
+    })
+  ));
 }
 
 // Helper to get the user's weather notification period preference
@@ -108,6 +111,17 @@ function getForecastPeriodIndexes(periods: any[], preference: string): number[] 
   if (preference === '3d') return periods.slice(0, 6).map((_, i) => i); // 6 periods = 3 days
   if (preference === 'week' || preference === 'all') return periods.map((_, i) => i);
   return [0];
+}
+
+// Utility to get all userIds for a garden (members + creator)
+async function getAllGardenUserIds(gardenId: string, plantUserId: string): Promise<string[]> {
+  const members = await prisma.gardenMember.findMany({
+    where: { gardenId },
+    select: { userId: true }
+  });
+  const userIds = members.map((m: { userId: string }) => m.userId);
+  if (plantUserId && !userIds.includes(plantUserId)) userIds.push(plantUserId);
+  return userIds;
 }
 
 export async function processWeatherAlerts() {
@@ -293,29 +307,32 @@ export async function processWeatherAlerts() {
           },
           orderBy: { createdAt: 'desc' }
         });
+        const userIds = await getAllGardenUserIds(garden.id, plant.userId);
         if (!existing) {
-          await prisma.notification.create({
-            data: {
-              userId: plant.userId,
-              type: 'WEATHER_FORECAST_ALERT',
-              title: `⏳ Forecasted Weather Alerts for ${plant.name}`,
-              message,
-              link: `/gardens/${garden.id}/plants/${plant.id}`,
-              meta: {
-                plantId: plant.id,
-                plantName: plant.name,
-                gardenId: plant.gardenId,
-                gardenName: garden.name,
-                roomId: plant.roomId,
-                roomName,
-                zoneId: plant.zoneId,
-                zoneName,
-                alertTypes,
-                forecastedAlerts,
-                forecastWindow: notificationPeriod
+          await Promise.all(userIds.map(userId =>
+            prisma.notification.create({
+              data: {
+                userId,
+                type: 'WEATHER_FORECAST_ALERT',
+                title: `⏳ Forecasted Weather Alerts for ${plant.name}`,
+                message,
+                link: `/gardens/${garden.id}/plants/${plant.id}`,
+                meta: {
+                  plantId: plant.id,
+                  plantName: plant.name,
+                  gardenId: plant.gardenId,
+                  gardenName: garden.name,
+                  roomId: plant.roomId,
+                  roomName,
+                  zoneId: plant.zoneId,
+                  zoneName,
+                  alertTypes,
+                  forecastedAlerts,
+                  forecastWindow: notificationPeriod
+                }
               }
-            }
-          });
+            })
+          ));
         }
       }
 
@@ -353,28 +370,31 @@ export async function processWeatherAlerts() {
           orderBy: { createdAt: 'desc' }
         });
         if (!existing) {
-          await prisma.notification.create({
-            data: {
-              userId: plant.userId,
-              type: 'WEATHER_ALERT',
-              title: `⚠️ Current Weather Alerts for ${plant.name}`,
-              message,
-              link: `/gardens/${garden.id}/plants/${plant.id}`,
-              meta: {
-                plantId: plant.id,
-                plantName: plant.name,
-                gardenId: plant.gardenId,
-                gardenName: garden.name,
-                roomId: plant.roomId,
-                roomName,
-                zoneId: plant.zoneId,
-                zoneName,
-                alertTypes: currentAlertTypes,
-                currentAlerts,
-                date: new Date().toISOString().slice(0, 10)
+          const userIds = await getAllGardenUserIds(garden.id, plant.userId);
+          await Promise.all(userIds.map(userId =>
+            prisma.notification.create({
+              data: {
+                userId,
+                type: 'WEATHER_ALERT',
+                title: `⚠️ Current Weather Alerts for ${plant.name}`,
+                message,
+                link: `/gardens/${garden.id}/plants/${plant.id}`,
+                meta: {
+                  plantId: plant.id,
+                  plantName: plant.name,
+                  gardenId: plant.gardenId,
+                  gardenName: garden.name,
+                  roomId: plant.roomId,
+                  roomName,
+                  zoneId: plant.zoneId,
+                  zoneName,
+                  alertTypes: currentAlertTypes,
+                  currentAlerts,
+                  date: new Date().toISOString().slice(0, 10)
+                }
               }
-            }
-          });
+            })
+          ));
         }
       }
 
@@ -671,30 +691,33 @@ async function maybeSendOrUpdateAlert(
   }
 
   // No recent notification, send a new one
-  await prisma.notification.create({
-    data: {
-      userId: plant.userId,
-      type: 'WEATHER_ALERT',
-      title: `⚠️ Weather Alert: ${type} for ${plant.name}`,
-      message: `Weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:\n\n` +
-        `• Alert Type: ${type}\n` +
-        `• Current Conditions: ${weatherInfo.conditions}\n` +
-        `• Temperature: ${weatherInfo.temperature}\n` +
-        `• Humidity: ${weatherInfo.humidity}\n` +
-        `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-        `• Precipitation: ${weatherInfo.precipitation}\n\n` +
-        `Please take necessary precautions to protect your plant.`,
-      link: `/gardens/${garden.id}/plants/${plant.id}`,
-      meta: { 
-        plantId: plant.id, 
-        alertType: type, 
-        date: today, 
-        severity,
-        weatherInfo,
-        gardenName: garden.name,
-        roomName,
-        zoneName
+  const userIds = await getAllGardenUserIds(garden.id, plant.userId);
+  await Promise.all(userIds.map(userId =>
+    prisma.notification.create({
+      data: {
+        userId,
+        type: 'WEATHER_ALERT',
+        title: `⚠️ Weather Alert: ${type} for ${plant.name}`,
+        message: `Weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:\n\n` +
+          `• Alert Type: ${type}\n` +
+          `• Current Conditions: ${weatherInfo.conditions}\n` +
+          `• Temperature: ${weatherInfo.temperature}\n` +
+          `• Humidity: ${weatherInfo.humidity}\n` +
+          `• Wind Speed: ${weatherInfo.windSpeed}\n` +
+          `• Precipitation: ${weatherInfo.precipitation}\n\n` +
+          `Please take necessary precautions to protect your plant.`,
+        link: `/gardens/${garden.id}/plants/${plant.id}`,
+        meta: { 
+          plantId: plant.id, 
+          alertType: type, 
+          date: today, 
+          severity,
+          weatherInfo,
+          gardenName: garden.name,
+          roomName,
+          zoneName
+        }
       }
-    }
-  });
+    })
+  ));
 } 
