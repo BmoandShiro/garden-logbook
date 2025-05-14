@@ -490,6 +490,13 @@ model GardenLogVisibilityPreference {
   @@unique([userId, gardenId])
 }
 
+model WeatherCheck {
+  id           String   @id @default(cuid())
+  zip          String   @unique
+  lastChecked  DateTime
+  data         Json?
+}
+
 enum Role {
   ADMIN
   USER
