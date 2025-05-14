@@ -38,6 +38,11 @@ interface ExtendedGarden {
   };
   gardenInvites?: { id: string; email: string }[];
   zipcode?: string;
+  weatherStatus?: {
+    hasAlerts: boolean;
+    alertCount: number;
+    lastChecked: Date;
+  };
 }
 
 interface GardenListProps {
@@ -153,7 +158,26 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               )}
             </div>
             <div className="flex flex-1 flex-col space-y-2 p-4">
-              <h3 className="text-sm font-medium text-emerald-100 group-hover:text-emerald-50">{garden.name}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-emerald-100 group-hover:text-emerald-50">{garden.name}</h3>
+                {garden.weatherStatus && (
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className={`w-3 h-3 rounded-full ${
+                        garden.weatherStatus.hasAlerts ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                      title={garden.weatherStatus.hasAlerts 
+                        ? `${garden.weatherStatus.alertCount} weather alerts` 
+                        : 'All conditions safe'}
+                    />
+                    <span className="text-xs text-emerald-300/70">
+                      {garden.weatherStatus.hasAlerts 
+                        ? `${garden.weatherStatus.alertCount} alert${garden.weatherStatus.alertCount === 1 ? '' : 's'}`
+                        : 'All clear'}
+                    </span>
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-emerald-300/70 line-clamp-3">
                 {garden.description}
               </p>

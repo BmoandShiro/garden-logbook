@@ -35,6 +35,7 @@ export default async function GardensPage() {
       imageUrl: true,
       isPrivate: true,
       zipcode: true,
+      weatherStatus: true,
       createdBy: {
         select: {
           id: true,
