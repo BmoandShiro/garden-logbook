@@ -49,7 +49,7 @@ function renderForecastedMessage(message: string) {
     { key: 'Frost', color: 'text-sky-300' },
     { key: 'Drought', color: 'text-orange-400' },
     { key: 'Wind', color: 'text-gray-300' },
-    { key: 'Flood', color: 'text-yellow-900' },
+    { key: 'Flood', color: 'text-amber-700' },
     { key: 'HeavyRain', color: 'text-blue-700' },
   ];
   // Regex to split sections
@@ -62,19 +62,37 @@ function renderForecastedMessage(message: string) {
     const section = parts[i];
     const content = parts[i + 1] || '';
     const color = sectionOrder.find(s => s.key === section)?.color || '';
-    // Style date/time in italics and lighter color
+    // Style date/time in italics and lighter color, and value/unit in section color
     const contentLines = content.split('\n').map((line, idx) => {
+      // Regex: match date/time in parentheses, then value/unit at end
+      // Example: - Friday (2025-05-14T06:00:00-04:00): 74°F
       const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*)\)/);
+      const valueMatch = line.match(/([\d.]+\s*[^\s)]+)$/); // match value+unit at end, not inside parens
+      let before = line;
+      let date = null;
+      let value = null;
       if (dateMatch) {
-        const [before, date] = line.split('(');
-        return (
-          <div key={idx}>
-            {before}
-            <span className="italic text-gray-400">({date}</span>
-          </div>
-        );
+        // Find the index of the date/time
+        const dateIdx = line.indexOf(dateMatch[0]);
+        before = line.slice(0, dateIdx);
+        date = dateMatch[0];
       }
-      return <div key={idx}>{line}</div>;
+      if (valueMatch) {
+        // Find the index of the value/unit
+        const valueIdx = line.lastIndexOf(valueMatch[1]);
+        // Only remove value if it's not part of the date/time
+        if (!date || valueIdx > (date ? line.indexOf(date) + (date?.length || 0) : 0)) {
+          before = before.slice(0, valueIdx - (date ? 0 : 0));
+          value = valueMatch[1];
+        }
+      }
+      return (
+        <div key={idx}>
+          <span className="text-white">{before}</span>
+          {date && <span className="italic text-gray-400">{date}</span>}
+          {value && <span className={`font-semibold ${color}`}> {value}</span>}
+        </div>
+      );
     });
     rendered.push(
       <div key={section} className={`mb-3`}>
@@ -87,6 +105,11 @@ function renderForecastedMessage(message: string) {
   // Add any text before the first section (e.g., intro)
   if (parts[0].trim()) {
     rendered.unshift(<div key="intro" className="mb-2 whitespace-pre-line">{parts[0]}</div>);
+  }
+  // Add a line break before the outro ("Please prepare...")
+  let outroIdx = parts.findIndex(p => p && p.trim().startsWith('Please prepare'));
+  if (outroIdx > 0) {
+    parts[outroIdx] = '\n' + parts[outroIdx];
   }
   // Add any text after the last section (e.g., outro)
   if (parts.length % 2 === 0 && parts[parts.length - 1].trim()) {
