@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
-import PlantForm, { PlantFormValues } from '../components/PlantForm';
+import PlantModal from '../plants/[plantId]/components/PlantModal';
+import { useToast } from '@/components/ui/use-toast';
 
 interface CreatePlantButtonProps {
   gardenId: string;
@@ -19,8 +18,9 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { toast } = useToast();
 
-  const initialValues: PlantFormValues = {
+  const initialValues = {
     name: '',
     strainName: '',
     species: '',
@@ -34,7 +34,7 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
     sensitivities: undefined,
   };
 
-  const handleSubmit = async (values: PlantFormValues) => {
+  const handleSubmit = async (values: any) => {
     try {
       setIsSubmitting(true);
       setError('');
@@ -54,12 +54,12 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
         throw new Error(errorData.details || errorData.error || response.statusText);
       }
 
-      toast.success('Plant created successfully');
+      toast({ title: 'Plant created successfully' });
       router.refresh();
       setIsOpen(false);
     } catch (error: any) {
       setError(error.message || 'Error creating plant');
-      toast.error(error.message || 'Error creating plant');
+      toast({ title: error.message || 'Error creating plant', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -75,21 +75,16 @@ export default function CreatePlantButton({ gardenId, roomId, zoneId }: CreatePl
         Add Plant
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="bg-dark-bg-primary text-emerald-100">
-          <DialogHeader>
-            <DialogTitle>Add New Plant</DialogTitle>
-          </DialogHeader>
-          {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-          <PlantForm
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            onCancel={() => setIsOpen(false)}
-            submitButtonLabel="Add Plant"
-            isSubmitting={isSubmitting}
-          />
-        </DialogContent>
-      </Dialog>
+      <PlantModal
+        open={isOpen}
+        setOpen={setIsOpen}
+        title="Add New Plant"
+        initialValues={initialValues}
+        submitButtonLabel="Add Plant"
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        error={error}
+      />
     </>
   );
 } 

@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import PlantForm, { PlantFormValues } from './PlantForm';
+import PlantModal from './PlantModal';
 
 export default function EditPlantModal({ plant, params }: { plant: any, params: any }) {
   const [open, setOpen] = useState(false);
@@ -10,7 +9,7 @@ export default function EditPlantModal({ plant, params }: { plant: any, params: 
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const initialValues: PlantFormValues = {
+  const initialValues = {
     name: plant.name || '',
     strainName: plant.strainName || '',
     species: plant.species || '',
@@ -20,7 +19,7 @@ export default function EditPlantModal({ plant, params }: { plant: any, params: 
     notes: plant.notes || '',
   };
 
-  const handleSubmit = async (values: PlantFormValues) => {
+  const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
     setError('');
     try {
@@ -47,21 +46,16 @@ export default function EditPlantModal({ plant, params }: { plant: any, params: 
       <button className="mb-2 px-3 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800" onClick={() => setOpen(true)}>
         Edit
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-emerald-100 font-bold">Edit Plant</DialogTitle>
-          </DialogHeader>
-          {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-          <PlantForm
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            onCancel={() => setOpen(false)}
-            submitButtonLabel="Save Changes"
-            isSubmitting={isSubmitting}
-          />
-        </DialogContent>
-      </Dialog>
+      <PlantModal
+        open={open}
+        setOpen={setOpen}
+        title="Edit Plant"
+        initialValues={initialValues}
+        submitButtonLabel="Save Changes"
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        error={error}
+      />
     </>
   );
 } 

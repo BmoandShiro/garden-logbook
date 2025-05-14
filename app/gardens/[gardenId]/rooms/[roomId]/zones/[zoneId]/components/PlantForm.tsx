@@ -97,6 +97,7 @@ export default function PlantForm({
           onChange={handleChange}
           placeholder="Enter plant name"
           required
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       <div className="space-y-2">
@@ -107,6 +108,7 @@ export default function PlantForm({
           value={form.strainName || ''}
           onChange={handleChange}
           placeholder="Enter strain name (e.g. Mandarin Cookie R3 #01)"
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       <div className="space-y-2">
@@ -118,6 +120,7 @@ export default function PlantForm({
           onChange={handleChange}
           placeholder="Enter plant species"
           required
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       <div className="space-y-2">
@@ -128,6 +131,7 @@ export default function PlantForm({
           value={form.variety || ''}
           onChange={handleChange}
           placeholder="Enter plant variety"
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       <div className="space-y-2">
@@ -138,6 +142,7 @@ export default function PlantForm({
           type="date"
           value={form.plantedDate || ''}
           onChange={handleChange}
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       <div className="space-y-2">
@@ -148,6 +153,7 @@ export default function PlantForm({
           type="date"
           value={form.expectedHarvestDate || ''}
           onChange={handleChange}
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       <div className="space-y-2">
@@ -158,6 +164,7 @@ export default function PlantForm({
           value={form.notes || ''}
           onChange={handleChange}
           placeholder="Enter any notes about the plant"
+          className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
         />
       </div>
       {/* Growing Season Controls */}
@@ -172,6 +179,7 @@ export default function PlantForm({
               type="date"
               value={form.growingSeasonStart || ''}
               onChange={handleChange}
+              className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -182,6 +190,7 @@ export default function PlantForm({
               type="date"
               value={form.growingSeasonEnd || ''}
               onChange={handleChange}
+              className="bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
           </div>
           <div className="flex flex-col justify-end">
@@ -213,12 +222,12 @@ export default function PlantForm({
                 value={form.sensitivities.heat.threshold}
                 onChange={e => updateSensitivity('heat', { threshold: e.target.value })}
                 placeholder="Temp threshold"
-                className="w-28"
+                className="w-28 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
               />
               <select
                 value={form.sensitivities.heat.unit}
                 onChange={e => updateSensitivity('heat', { unit: e.target.value })}
-                className="ml-1 px-1 py-0.5 rounded border"
+                className="ml-1 px-1 py-0.5 rounded border bg-emerald-950 border-emerald-800 text-emerald-100 w-20"
               >
                 <option value="F">°F</option>
                 <option value="C">°C</option>
@@ -243,19 +252,19 @@ export default function PlantForm({
               placeholder="Label"
               value={window.label}
               onChange={e => updateFrostWindow(idx, { label: e.target.value })}
-              className="w-32"
+              className="w-32 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
             <Input
               type="date"
               value={window.start}
               onChange={e => updateFrostWindow(idx, { start: e.target.value })}
-              className="w-36"
+              className="w-36 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
             <Input
               type="date"
               value={window.end}
               onChange={e => updateFrostWindow(idx, { end: e.target.value })}
-              className="w-36"
+              className="w-36 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
             <Label className="flex items-center gap-1">
               <input
@@ -284,7 +293,7 @@ export default function PlantForm({
               value={form.sensitivities.drought.days}
               onChange={e => updateSensitivity('drought', { days: e.target.value })}
               placeholder="No rain for ___ days"
-              className="w-40"
+              className="w-40 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
           )}
         </div>
@@ -302,7 +311,7 @@ export default function PlantForm({
               value={form.sensitivities.wind.threshold}
               onChange={e => updateSensitivity('wind', { threshold: e.target.value })}
               placeholder="Wind speed (mph)"
-              className="w-40"
+              className="w-40 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
             />
           )}
         </div>
@@ -330,12 +339,12 @@ export default function PlantForm({
                 value={form.sensitivities.heavyRain.threshold}
                 onChange={e => updateSensitivity('heavyRain', { threshold: e.target.value })}
                 placeholder="Rain threshold"
-                className="w-28"
+                className="w-28 bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
               />
               <select
                 value={form.sensitivities.heavyRain.unit}
                 onChange={e => updateSensitivity('heavyRain', { unit: e.target.value })}
-                className="ml-1 px-1 py-0.5 rounded border"
+                className="ml-1 px-1 py-0.5 rounded border bg-emerald-950 border-emerald-800 text-emerald-100 w-20"
               >
                 <option value="in">in</option>
                 <option value="mm">mm</option>
