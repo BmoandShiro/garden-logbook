@@ -207,11 +207,31 @@ export function WeatherGardenList({ gardens, userId }: { gardens: WeatherGarden[
                             <span className="font-semibold">Plant:</span> <Link href={`/gardens/${garden.id}/plants/${alert.meta?.plantId}`} className="text-emerald-300 hover:underline">{alert.meta?.plantName || alert.meta?.plantId}</Link>
                           </div>
                           <div><span className="font-semibold">Alert Type:</span> {alert.meta?.alertType || alert.type}</div>
-                          <div><span className="font-semibold">Weather:</span> {alert.meta?.weatherInfo && (
-                            <span>
-                              {alert.meta.weatherInfo.conditions} | Temp: {alert.meta.weatherInfo.temperature} | Humidity: {alert.meta.weatherInfo.humidity} | Wind: {alert.meta.weatherInfo.windSpeed} | Precip: {alert.meta.weatherInfo.precipitation ?? 'N/A'}
-                            </span>
-                          )}</div>
+                          {/* Detailed breakdown for each alert type */}
+                          {alert.meta?.currentAlerts ? (
+                            <div className="mt-1 whitespace-pre-line">
+                              {['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'].map(type => {
+                                let value = 'None';
+                                const ca = alert.meta.currentAlerts[type];
+                                if (ca) {
+                                  if (type === 'heat' || type === 'frost') value = `${ca.weather.temperature}°F`;
+                                  else if (type === 'wind') value = `${ca.weather.windSpeed} mph`;
+                                  else if (type === 'heavyRain' || type === 'flood') value = `${ca.weather.precipitation ?? 'N/A'} precipitation`;
+                                  else if (type === 'drought') value = `${ca.weather.daysWithoutRain} days`;
+                                  else value = `${ca.severity}`;
+                                }
+                                return <div key={type}>• {type.charAt(0).toUpperCase() + type.slice(1)}: {value}</div>;
+                              })}
+                            </div>
+                          ) : alert.meta?.weatherInfo ? (
+                            <div className="mt-1 whitespace-pre-line">
+                              {['conditions', 'temperature', 'humidity', 'windSpeed', 'precipitation'].map(key => (
+                                <div key={key}>• {key.charAt(0).toUpperCase() + key.slice(1)}: {alert.meta.weatherInfo[key]}</div>
+                              ))}
+                            </div>
+                          ) : alert.message ? (
+                            <div className="mt-1 whitespace-pre-line">{alert.message}</div>
+                          ) : null}
                           <div><span className="font-semibold">Time:</span> {alert.createdAt ? format(new Date(alert.createdAt), 'PPpp') : ''}</div>
                         </li>
                       ))}
