@@ -575,6 +575,7 @@ enum LogType {
   CUSTOM
   FLUSHING
   GENERAL
+  WEATHER_ALERT
 }
 
 enum LSTIntensity {

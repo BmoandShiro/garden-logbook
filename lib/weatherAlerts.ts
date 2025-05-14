@@ -29,6 +29,7 @@ interface Plant {
     flood?: { enabled: boolean; threshold: number };
     heavyRain?: { enabled: boolean; threshold: number };
   } | null;
+  stage?: string;
 }
 
 interface Garden {
@@ -363,7 +364,9 @@ async function maybeSendOrUpdateAlert(
   await prisma.log.create({
     data: {
       plantId: plant.id,
+      userId: plant.userId,
       type: 'WEATHER_ALERT',
+      stage: plant.stage ?? 'VEGETATIVE',
       notes: logMessage,
       logDate: now,
       meta: {
