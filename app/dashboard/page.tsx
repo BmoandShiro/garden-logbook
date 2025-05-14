@@ -49,6 +49,34 @@ export default async function Dashboard() {
     }
   });
 
+  // Count unique species
+  const uniqueSpecies = await prisma.plant.findMany({
+    where: {
+      zone: {
+        room: {
+          gardenId: { in: gardenIds }
+        }
+      }
+    },
+    distinct: ['species'],
+    select: { species: true },
+  });
+  const totalSpecies = uniqueSpecies.length;
+
+  // Count unique strains
+  const uniqueStrains = await prisma.plant.findMany({
+    where: {
+      zone: {
+        room: {
+          gardenId: { in: gardenIds }
+        }
+      }
+    },
+    distinct: ['strainName'],
+    select: { strainName: true },
+  });
+  const totalStrains = uniqueStrains.length;
+
   return (
     <div className="py-10">
       <header>
@@ -66,6 +94,16 @@ export default async function Dashboard() {
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Plants</h3>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{totalPlantCount}</p>
                 <p className="mt-2 text-sm text-dark-text-secondary">Active plants in your garden</p>
+              </div>
+              <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
+                <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Species</h3>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{totalSpecies}</p>
+                <p className="mt-2 text-sm text-dark-text-secondary">Unique species in your gardens</p>
+              </div>
+              <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
+                <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Total Strains</h3>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-garden-400">{totalStrains}</p>
+                <p className="mt-2 text-sm text-dark-text-secondary">Unique strains in your gardens</p>
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Your Gardens</h3>
