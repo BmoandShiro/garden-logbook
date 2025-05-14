@@ -8,7 +8,7 @@ import DeleteButton from '../../components/DeleteButton';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { Settings, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, Plus, ChevronDown, ChevronUp, Cloud, CloudSun, CloudLightning } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 import LogToggleButton from './LogToggleButton';
@@ -122,6 +122,21 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                 Private
               </span>
             )}
+            {/* Weather status cloud icon */}
+            <span
+              title={garden.weatherStatus
+                ? (garden.weatherStatus.hasAlerts
+                  ? `${garden.weatherStatus.alertCount} weather alerts`
+                  : 'All conditions safe')
+                : 'Weather status not available'}
+              className="inline-flex items-center justify-center"
+            >
+              {garden.weatherStatus
+                ? (garden.weatherStatus.hasAlerts
+                  ? <CloudLightning className="w-5 h-5 text-red-500" />
+                  : <CloudSun className="w-5 h-5 text-green-400" />)
+                : <Cloud className="w-5 h-5 text-gray-400" />}
+            </span>
             <button
               className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
               title="Invite to Garden"
@@ -130,13 +145,6 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               <Plus className="h-5 w-5" />
             </button>
             <LogToggleButton gardenId={garden.id} />
-            <button
-              className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              title="Garden Settings"
-              onClick={() => setOpenModalGardenId(garden.id)}
-            >
-              <Settings className="h-5 w-5" />
-            </button>
             {session?.user?.id === garden.createdBy.id && (
               <DeleteButton
                 onDelete={() => handleDelete(garden.id)}
