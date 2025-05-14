@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import CleanupOrphanedPlantsButton from '../components/CleanupOrphanedPlantsButton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { format } from 'date-fns';
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -98,6 +100,10 @@ export default async function Dashboard() {
   let affectedZonesForecast = new Set();
   let affectedPlantsForecast = new Set();
 
+  // After fetching currentAlerts and forecastedAlerts for each garden, collect all their expiration times
+  let currentAlertExpirations: Date[] = [];
+  let forecastedAlertExpirations: Date[] = [];
+
   for (const gardenId of gardenIds) {
     // Current alerts
     const currentAlerts = await prisma.notification.findMany({
@@ -118,6 +124,8 @@ export default async function Dashboard() {
             if (alert.meta?.roomId) affectedRoomsCurrent.add(alert.meta.roomId);
             if (alert.meta?.zoneId) affectedZonesCurrent.add(alert.meta.zoneId);
             if (alert.meta?.plantId) affectedPlantsCurrent.add(alert.meta.plantId);
+            // Collect expiration times
+            currentAlertExpirations.push(new Date(new Date(alert.createdAt).getTime() + 4 * 60 * 60 * 1000));
           }
         }
       }
@@ -141,11 +149,17 @@ export default async function Dashboard() {
             if (alert.meta?.roomId) affectedRoomsForecast.add(alert.meta.roomId);
             if (alert.meta?.zoneId) affectedZonesForecast.add(alert.meta.zoneId);
             if (alert.meta?.plantId) affectedPlantsForecast.add(alert.meta.plantId);
+            // Collect expiration times
+            forecastedAlertExpirations.push(new Date(new Date(alert.createdAt).getTime() + 4 * 60 * 60 * 1000));
           }
         }
       }
     }
   }
+
+  // Calculate next expiration times
+  const nextCurrentAlertExpiration = currentAlertExpirations.length > 0 ? new Date(Math.min(...currentAlertExpirations.map(d => d.getTime()))) : null;
+  const nextForecastedAlertExpiration = forecastedAlertExpirations.length > 0 ? new Date(Math.min(...forecastedAlertExpirations.map(d => d.getTime()))) : null;
 
   return (
     <div className="py-10">
@@ -177,7 +191,20 @@ export default async function Dashboard() {
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Current Weather Alerts</h3>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-red-400">{totalCurrentAlerts}</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-red-400 cursor-help">{totalCurrentAlerts}</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {nextCurrentAlertExpiration ? (
+                        <span>Next alert expires: {format(nextCurrentAlertExpiration, 'PPpp')}</span>
+                      ) : (
+                        <span>No active alerts</span>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <div className="mt-2 text-sm text-dark-text-secondary">
                   {alertTypes.map(type => (
                     <div key={type} className="flex items-center gap-2">
@@ -195,7 +222,20 @@ export default async function Dashboard() {
               </div>
               <div className="rounded-lg bg-dark-bg-secondary p-6 shadow-lg ring-1 ring-dark-border">
                 <h3 className="text-base font-semibold leading-6 text-dark-text-primary">Forecasted Weather Alerts</h3>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-yellow-400">{totalForecastedAlerts}</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-yellow-400 cursor-help">{totalForecastedAlerts}</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {nextForecastedAlertExpiration ? (
+                        <span>Next alert expires: {format(nextForecastedAlertExpiration, 'PPpp')}</span>
+                      ) : (
+                        <span>No active alerts</span>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <div className="mt-2 text-sm text-dark-text-secondary">
                   {alertTypes.map(type => (
                     <div key={type} className="flex items-center gap-2">
