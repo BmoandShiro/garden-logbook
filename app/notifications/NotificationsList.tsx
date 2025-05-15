@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
@@ -124,11 +124,33 @@ export default function NotificationsList({ notifications }: NotificationsListPr
   const [loading, setLoading] = useState(false);
   const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
 
+  // --- Pagination state ---
+  // { [plantId]: { page: number, pageSize: number } }
+  const [plantPagination, setPlantPagination] = useState<Record<string, { page: number; pageSize: number }>>({});
+  const PAGE_SIZE_OPTIONS = [3, 10, 25, 50];
+  const DEFAULT_PAGE_SIZE = 10;
+
   // Group pending invite notifications
   const otherNotifications = localNotifications.filter((n: Notification) => !(n.type === 'invite' && n.meta?.inviteId));
 
   // Group forecasted and current weather alerts by hierarchy
   const grouped = groupNotificationsByHierarchy(otherNotifications);
+
+  // Helper to get pagination state for a plant
+  const getPagination = useCallback((plantId: string) => {
+    return plantPagination[plantId] || { page: 1, pageSize: DEFAULT_PAGE_SIZE };
+  }, [plantPagination]);
+
+  // Helper to set pagination state for a plant
+  const setPagination = (plantId: string, page: number, pageSize?: number) => {
+    setPlantPagination(prev => ({
+      ...prev,
+      [plantId]: {
+        page: Math.max(1, page),
+        pageSize: pageSize ?? (prev[plantId]?.pageSize || DEFAULT_PAGE_SIZE),
+      },
+    }));
+  };
 
   async function handleMarkAllRead() {
     setLoading(true);
@@ -212,6 +234,10 @@ export default function NotificationsList({ notifications }: NotificationsListPr
                                                   <ul className="pl-4">
                                                     {Object.entries(zone.plants).map(([plantId, plantObj]) => {
                                                       const plant = plantObj as { name: string; notifications: Notification[] };
+                                                      const { page, pageSize } = getPagination(plantId);
+                                                      const total = plant.notifications.length;
+                                                      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                                                      const pagedNotifications = plant.notifications.slice((page - 1) * pageSize, page * pageSize);
                                                       return (
                                                         <Disclosure key={plantId} defaultOpen>
                                                           {({ open: openPlant }) => (
@@ -222,7 +248,7 @@ export default function NotificationsList({ notifications }: NotificationsListPr
                                                               </Disclosure.Button>
                                                               <Disclosure.Panel>
                                                                 <ul className="pl-4">
-                                                                  {plant.notifications.map((n: Notification) => (
+                                                                  {pagedNotifications.map((n: Notification) => (
                                                                     <li
                                                                       key={n.id}
                                                                       className={`p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'}`}
@@ -251,6 +277,40 @@ export default function NotificationsList({ notifications }: NotificationsListPr
                                                                     </li>
                                                                   ))}
                                                                 </ul>
+                                                                {/* Pagination controls */}
+                                                                <div className="flex items-center justify-between mt-2 px-2">
+                                                                  <div className="flex items-center gap-2">
+                                                                    <span className="text-xs text-dark-text-secondary">Page size:</span>
+                                                                    <select
+                                                                      value={pageSize}
+                                                                      onChange={e => setPagination(plantId, 1, Number(e.target.value))}
+                                                                      className="rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border px-1 py-0.5 text-xs focus:outline-none"
+                                                                    >
+                                                                      {PAGE_SIZE_OPTIONS.map(opt => (
+                                                                        <option key={opt} value={opt}>{opt}</option>
+                                                                      ))}
+                                                                    </select>
+                                                                  </div>
+                                                                  <div className="flex items-center gap-2">
+                                                                    <button
+                                                                      className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+                                                                      onClick={() => setPagination(plantId, page - 1)}
+                                                                      disabled={page === 1}
+                                                                    >
+                                                                      Previous
+                                                                    </button>
+                                                                    <span className="text-xs text-dark-text-secondary">
+                                                                      Page {page} of {totalPages}
+                                                                    </span>
+                                                                    <button
+                                                                      className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+                                                                      onClick={() => setPagination(plantId, page + 1)}
+                                                                      disabled={page === totalPages}
+                                                                    >
+                                                                      Next
+                                                                    </button>
+                                                                  </div>
+                                                                </div>
                                                               </Disclosure.Panel>
                                                             </li>
                                                           )}
