@@ -104,12 +104,17 @@ export default async function Dashboard() {
   let currentAlertExpirations: Date[] = [];
   let forecastedAlertExpirations: Date[] = [];
 
+  // Deduplication sets for unique plant+alertType pairs for the current user
+  const uniqueCurrentPlantAlertPairs = new Set<string>();
+  const uniqueForecastedPlantAlertPairs = new Set<string>();
+
   for (const gardenId of gardenIds) {
-    // Current alerts
+    // Current alerts for current user only
     const currentAlerts = await prisma.notification.findMany({
       where: {
         type: 'WEATHER_ALERT',
         meta: { path: ['gardenId'], equals: gardenId },
+        userId: session.user.id,
         createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) }
       }
     });
@@ -117,8 +122,12 @@ export default async function Dashboard() {
       if (alert.meta?.alertTypes) {
         for (const t of alert.meta.alertTypes) {
           if (alertTypes.includes(t)) {
-            currentAlertCounts[t]++;
-            totalCurrentAlerts++;
+            const key = `${alert.meta.plantId}:${t}`;
+            if (!uniqueCurrentPlantAlertPairs.has(key)) {
+              uniqueCurrentPlantAlertPairs.add(key);
+              currentAlertCounts[t]++;
+              totalCurrentAlerts++;
+            }
             // Collect affected entities
             if (alert.meta?.gardenId) affectedGardensCurrent.add(alert.meta.gardenId);
             if (alert.meta?.roomId) affectedRoomsCurrent.add(alert.meta.roomId);
@@ -130,11 +139,12 @@ export default async function Dashboard() {
         }
       }
     }
-    // Forecasted alerts
+    // Forecasted alerts for current user only
     const forecastedAlerts = await prisma.notification.findMany({
       where: {
         type: 'WEATHER_FORECAST_ALERT',
         meta: { path: ['gardenId'], equals: gardenId },
+        userId: session.user.id,
         createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) }
       }
     });
@@ -142,8 +152,12 @@ export default async function Dashboard() {
       if (alert.meta?.alertTypes) {
         for (const t of alert.meta.alertTypes) {
           if (alertTypes.includes(t)) {
-            forecastedAlertCounts[t]++;
-            totalForecastedAlerts++;
+            const key = `${alert.meta.plantId}:${t}`;
+            if (!uniqueForecastedPlantAlertPairs.has(key)) {
+              uniqueForecastedPlantAlertPairs.add(key);
+              forecastedAlertCounts[t]++;
+              totalForecastedAlerts++;
+            }
             // Collect affected entities
             if (alert.meta?.gardenId) affectedGardensForecast.add(alert.meta.gardenId);
             if (alert.meta?.roomId) affectedRoomsForecast.add(alert.meta.roomId);

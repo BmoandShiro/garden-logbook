@@ -169,11 +169,29 @@ export function WeatherGardenList({ gardens: initialGardens, userId }: { gardens
       {gardens.map(garden => {
         const status = garden.weatherStatus;
         const alerts = activeAlerts[garden.id] || [];
+        if (garden.name === "BMOs Garden") {
+          console.log("BMOs Garden raw alerts:", alerts);
+          const allTypes = alerts.flatMap(a => a.meta?.alertTypes || []);
+          console.log("BMOs Garden all alert types:", allTypes);
+        }
         let icon = <Cloud className="w-6 h-6 text-gray-400" />;
         let summary = 'Weather status not available';
-        if (alerts.length > 0) {
+        // Deduplicate for current user only
+        const userAlerts = alerts.filter(alert => alert.userId === userId);
+        const uniquePlantAlertPairs = new Set<string>();
+        userAlerts.forEach(alert => {
+          const plantId = alert.meta?.plantId;
+          const alertTypes = alert.meta?.alertTypes || [];
+          alertTypes.forEach((type: string) => {
+            if (plantId && type) {
+              uniquePlantAlertPairs.add(`${plantId}:${type}`);
+            }
+          });
+        });
+        const alertCount = uniquePlantAlertPairs.size;
+        if (alertCount > 0) {
           icon = <CloudLightning className="w-6 h-6 text-red-500" />;
-          summary = `${alerts.length} weather alert${alerts.length === 1 ? '' : 's'}`;
+          summary = `${alertCount} weather alert${alertCount === 1 ? '' : 's'}`;
         } else {
           icon = <CloudSun className="w-6 h-6 text-green-400" />;
           summary = 'All clear';

@@ -30,5 +30,13 @@ export async function GET(request: Request, context: { params: Promise<{ gardenI
   const filteredAlerts = alerts.filter((alert: any) =>
     plantIds.includes(alert.meta?.plantId)
   );
+
+  // Server-side debug for BMOs Garden
+  if (gardenId === "cmajtujtf000jsbcraxvtoelb") {
+    console.log("BMOs Garden API raw alerts:", filteredAlerts);
+    const allTypes = filteredAlerts.flatMap((a: any) => a.meta?.alertTypes || []);
+    console.log("BMOs Garden API all alert types:", allTypes);
+  }
+
   return NextResponse.json({ alerts: filteredAlerts });
 } 
