@@ -76,12 +76,12 @@ function renderCurrentAlertLabels(message: string) {
 
 // Helper to color and style forecasted alert sections
 function renderForecastedMessage(message: string) {
-  // Split by section (• Heat:, • Frost:, etc.)
+  // Update the sectionOrder for forecasted alerts to use the same color for Wind as current alerts
   const sectionOrder = [
     { key: 'Heat', color: 'text-red-400' },
     { key: 'Frost', color: 'text-sky-300' },
     { key: 'Drought', color: 'text-orange-400' },
-    { key: 'Wind', color: 'text-gray-300' },
+    { key: 'Wind', color: 'text-slate-400' },
     { key: 'Flood', color: 'text-amber-700' },
     { key: 'HeavyRain', color: 'text-blue-700' },
   ];
@@ -329,9 +329,6 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                             <div className="mt-1">{renderForecastedMessage(n.message)}</div>
                                                                           ) : (
                                                                             <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
-                                                                          )}
-                                                                          {n.link && (
-                                                                            <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
                                                                           )}
                                                                         </li>
                                                                       );
