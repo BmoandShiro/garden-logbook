@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Log, LogType } from '@prisma/client';
 import { format } from 'date-fns';
@@ -93,9 +93,18 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     startDate: '',
     endDate: '',
     location: '',
+    gardenId: '',
+    roomId: '',
+    zoneId: '',
+    plantId: '',
   });
   const importInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
+  // Add state for gardens, rooms, zones, plants
+  const [gardens, setGardens] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [plants, setPlants] = useState([]);
 
   // On mount, initialize filters from query params if present
   useEffect(() => {
@@ -109,6 +118,78 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
       }));
     }
   }, [searchParams]);
+
+  // Fetch gardens on mount
+  useEffect(() => {
+    async function fetchGardens() {
+      const res = await fetch('/api/gardens');
+      if (res.ok) {
+        const data = await res.json();
+        setGardens(data.map((g: any) => ({ id: g.id, name: g.name })));
+      }
+    }
+    fetchGardens();
+  }, []);
+
+  // Fetch rooms when gardenId changes
+  useEffect(() => {
+    if (!filters.gardenId) {
+      setRooms([]);
+      setZones([]);
+      setPlants([]);
+      setFilters(f => ({ ...f, roomId: '', zoneId: '', plantId: '' }));
+      return;
+    }
+    async function fetchRooms() {
+      const res = await fetch(`/api/gardens/${filters.gardenId}/rooms`);
+      if (res.ok) {
+        const data = await res.json();
+        setRooms(data.map((r: any) => ({ id: r.id, name: r.name, gardenId: filters.gardenId })));
+      }
+    }
+    fetchRooms();
+    setZones([]);
+    setPlants([]);
+    setFilters(f => ({ ...f, roomId: '', zoneId: '', plantId: '' }));
+  }, [filters.gardenId]);
+
+  // Fetch zones when roomId changes
+  useEffect(() => {
+    if (!filters.gardenId || !filters.roomId) {
+      setZones([]);
+      setPlants([]);
+      setFilters(f => ({ ...f, zoneId: '', plantId: '' }));
+      return;
+    }
+    async function fetchZones() {
+      const res = await fetch(`/api/gardens/${filters.gardenId}/rooms/${filters.roomId}/zones`);
+      if (res.ok) {
+        const data = await res.json();
+        setZones(data.map((z: any) => ({ id: z.id, name: z.name, roomId: filters.roomId })));
+      }
+    }
+    fetchZones();
+    setPlants([]);
+    setFilters(f => ({ ...f, zoneId: '', plantId: '' }));
+  }, [filters.gardenId, filters.roomId]);
+
+  // Fetch plants when zoneId changes
+  useEffect(() => {
+    if (!filters.gardenId || !filters.roomId || !filters.zoneId) {
+      setPlants([]);
+      setFilters(f => ({ ...f, plantId: '' }));
+      return;
+    }
+    async function fetchPlants() {
+      const res = await fetch(`/api/gardens/${filters.gardenId}/rooms/${filters.roomId}/zones/${filters.zoneId}/plants`);
+      if (res.ok) {
+        const data = await res.json();
+        setPlants(data.map((p: any) => ({ id: p.id, name: p.name, zoneId: filters.zoneId })));
+      }
+    }
+    fetchPlants();
+    setFilters(f => ({ ...f, plantId: '' }));
+  }, [filters.gardenId, filters.roomId, filters.zoneId]);
 
   const { data: logs, isLoading, error, refetch } = useQuery<LogWithLocation[]>({
     queryKey: ['logs', userId, filters],
@@ -212,7 +293,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
           </div>
         </div>
       </div>
-      <LogFilters filters={filters} onFilterChange={setFilters} />
+      <LogFilters filters={filters} onFilterChange={setFilters} gardens={gardens} rooms={rooms} zones={zones} plants={plants} />
       <LogsList logs={logs || []} onLogDeleted={refetch} />
       <CreateLogModal
         isOpen={isCreateModalOpen}

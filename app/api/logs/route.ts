@@ -22,6 +22,11 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const location = searchParams.get('location');
+    const gardenId = searchParams.get('gardenId');
+    const roomId = searchParams.get('roomId');
+    const zoneId = searchParams.get('zoneId');
+    const plantId = searchParams.get('plantId');
+    const keyword = searchParams.get('keyword');
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -76,6 +81,29 @@ export async function GET(request: Request) {
         { room: { name: { contains: location, mode: 'insensitive' } } },
         { zone: { name: { contains: location, mode: 'insensitive' } } },
         { plant: { name: { contains: location, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (gardenId) {
+      where.gardenId = gardenId;
+    }
+    if (roomId) {
+      where.roomId = roomId;
+    }
+    if (zoneId) {
+      where.zoneId = zoneId;
+    }
+    if (plantId) {
+      where.plantId = plantId;
+    }
+    // Keyword search (notes, plant name, garden name, room name, zone name)
+    if (keyword) {
+      where.OR = [
+        { notes: { contains: keyword, mode: 'insensitive' } },
+        { plant: { name: { contains: keyword, mode: 'insensitive' } } },
+        { garden: { name: { contains: keyword, mode: 'insensitive' } } },
+        { room: { name: { contains: keyword, mode: 'insensitive' } } },
+        { zone: { name: { contains: keyword, mode: 'insensitive' } } },
       ];
     }
 
