@@ -350,6 +350,7 @@ export default function PlantForm({
               <Input
                 type="number"
                 min="0"
+                step="0.1"
                 value={form.sensitivities.heavyRain.threshold}
                 onChange={e => updateSensitivity('heavyRain', { threshold: e.target.value })}
                 placeholder="Rain threshold"

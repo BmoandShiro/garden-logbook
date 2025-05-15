@@ -207,6 +207,52 @@ export async function processWeatherAlerts() {
       let triggeredType: string | null = null;
       let triggeredWeatherInfo: any = null;
 
+      // Fetch NWS alerts for this location
+      const alertsResponse = await fetch(`https://api.weather.gov/alerts/active?point=${lat},${lon}`);
+      const alertsData = await alertsResponse.json();
+      const activeAlerts = alertsData.features || [];
+      const floodAlertActive = activeAlerts.some((alert: any) => {
+        const event = alert.properties?.event || '';
+        return (
+          event.includes('Flood Warning') ||
+          event.includes('Flood Advisory') ||
+          event.includes('Flash Flood Warning')
+        );
+      });
+
+      // Fetch NWS observations for this location to calculate days without rain (up to 365 days)
+      let daysWithoutRain = 0;
+      try {
+        const obsResponse = await fetch(`https://api.weather.gov/stations?lat=${lat}&lon=${lon}`);
+        const obsData = await obsResponse.json();
+        const stationId = obsData.features?.[0]?.properties?.stationIdentifier;
+        if (stationId) {
+          const now = new Date();
+          const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // look back 365 days
+          const isoStart = start.toISOString();
+          let observations: any[] = [];
+          let obsHistUrl = `https://api.weather.gov/stations/${stationId}/observations?start=${isoStart}`;
+          while (obsHistUrl) {
+            const obsHistResponse = await fetch(obsHistUrl);
+            const obsHistData = await obsHistResponse.json();
+            observations = observations.concat(obsHistData.features || []);
+            obsHistUrl = obsHistData.pagination?.next || null;
+          }
+          // Sort by most recent first
+          observations.sort((a: any, b: any) => new Date(b.properties.timestamp).getTime() - new Date(a.properties.timestamp).getTime());
+          for (const obs of observations) {
+            const precip = obs.properties?.precipitationLast24Hours?.value;
+            if (precip == null || precip < 0.01) {
+              daysWithoutRain++;
+            } else {
+              break;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[WEATHER_ALERTS] Could not fetch daysWithoutRain:', err);
+      }
+
       // --- Group forecasted alerts by type ---
       const forecastedAlerts: Record<string, Array<{ period: any, weather: Weather, severity: number }>> = {};
 
@@ -215,15 +261,22 @@ export async function processWeatherAlerts() {
 
       for (const idx of periodIndexes) {
         const period = periods[idx];
+        // Use rain amount if available, fallback to 0
+        let rainAmount = 0;
+        if (period.quantitativePrecipitation) {
+          rainAmount = period.quantitativePrecipitation.in || period.quantitativePrecipitation.mm * 0.0393701 || 0;
+        } else if (period.probabilityOfPrecipitation?.value && period.probabilityOfPrecipitation.value > 0) {
+          rainAmount = 0;
+        }
         const weather: Weather = {
           temperature: period.temperature,
           humidity: period.relativeHumidity?.value || 0,
           windSpeed: parseInt(period.windSpeed.split(' ')[0]) || 0,
-          precipitation: period.probabilityOfPrecipitation?.value || null,
+          precipitation: rainAmount,
           conditions: period.shortForecast,
           hasFrostAlert: period.temperature <= 32,
-          hasFloodAlert: period.probabilityOfPrecipitation?.value > 70,
-          daysWithoutRain: 0
+          hasFloodAlert: floodAlertActive,
+          daysWithoutRain,
         };
         if (idx === 0) {
           // Populate currentAlerts for the current period
