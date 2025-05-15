@@ -6,7 +6,7 @@ import DeleteLogButton from './DeleteLogButton';
 import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, convertTemperature, convertVolume, convertLength, formatMeasurement } from '@/lib/units';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import Link from 'next/link';
-import { renderForecastedMessage } from '@/components/MonthlyCalendar';
+import renderForecastedMessage from '@/components/MonthlyCalendar';
 
 interface LogWithLocation {
   id: string;
@@ -92,7 +92,7 @@ const weatherAlertColors: Record<string, string> = {
   Heat: 'text-red-400',
   Frost: 'text-sky-300',
   Drought: 'text-orange-400',
-  Wind: 'text-gray-300',
+  Wind: 'text-slate-400',
   Flood: 'text-amber-700',
   HeavyRain: 'text-blue-700',
 };
@@ -548,7 +548,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                   </div>
                 </Link>
                 <div className="flex-shrink-0 flex items-center ml-4">
-                  <DeleteLogButton logId={log.id} onSuccess={onLogDeleted} />
+                  <DeleteLogButton logId={log.id} onSuccess={onLogDeleted || (() => {})} />
                 </div>
               </li>
             );
