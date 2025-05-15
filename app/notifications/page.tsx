@@ -33,7 +33,7 @@ export default async function NotificationsPage() {
       {/* Pending Invites Dropdown */}
       <PendingInvitesWrapper />
       {/* Use the new client component to render the list */}
-      <NotificationsList notifications={notifications} />
+      <NotificationsList notifications={notifications} userEmail={session.user.email} />
     </div>
   );
 } 

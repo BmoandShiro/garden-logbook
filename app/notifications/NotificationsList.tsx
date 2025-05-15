@@ -19,6 +19,7 @@ interface Notification {
 
 interface NotificationsListProps {
   notifications: Notification[];
+  userEmail?: string;
 }
 
 function groupNotificationsByHierarchy(notifications: Notification[]) {
@@ -120,7 +121,7 @@ function renderForecastedMessage(message: string) {
   return rendered;
 }
 
-export default function NotificationsList({ notifications }: NotificationsListProps) {
+export default function NotificationsList({ notifications, userEmail }: NotificationsListProps) {
   const [loading, setLoading] = useState(false);
   const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
 
@@ -151,6 +152,9 @@ export default function NotificationsList({ notifications }: NotificationsListPr
       },
     }));
   };
+
+  // Only show Clear All if user is bmostradingpost@gmail.com
+  const canClearAll = userEmail === 'bmostradingpost@gmail.com';
 
   async function handleMarkAllRead() {
     setLoading(true);
@@ -183,13 +187,15 @@ export default function NotificationsList({ notifications }: NotificationsListPr
           >
             {loading ? 'Marking...' : 'Mark all as read'}
           </button>
-          <button
-            onClick={handleClearAll}
-            disabled={loading || localNotifications.length === 0}
-            className="px-3 py-1 rounded bg-red-700 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50"
-          >
-            {loading ? 'Clearing...' : 'Clear all'}
-          </button>
+          {canClearAll && (
+            <button
+              onClick={handleClearAll}
+              disabled={loading || localNotifications.length === 0}
+              className="px-3 py-1 rounded bg-red-700 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+            >
+              {loading ? 'Clearing...' : 'Clear all'}
+            </button>
+          )}
         </div>
       </div>
       {Object.keys(grouped).length === 0 && otherNotifications.filter(n => n.type !== 'invite').length === 0 ? (
@@ -284,7 +290,7 @@ export default function NotificationsList({ notifications }: NotificationsListPr
                                                                     <select
                                                                       value={pageSize}
                                                                       onChange={e => setPagination(plantId, 1, Number(e.target.value))}
-                                                                      className="rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border px-1 py-0.5 text-xs focus:outline-none"
+                                                                      className="rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border px-1 py-0.5 text-xs focus:outline-none appearance-none pr-8"
                                                                     >
                                                                       {PAGE_SIZE_OPTIONS.map(opt => (
                                                                         <option key={opt} value={opt}>{opt}</option>
