@@ -165,16 +165,8 @@ export function Navigation() {
                 )}
               </div>
               <div className="-mr-2 flex items-center sm:hidden">
-                <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-dark-text-secondary hover:bg-dark-bg-primary hover:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-garden-500">
-                  <span className="sr-only">Open main menu</span>
-                  {open ? (
-                    <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-                  ) : (
-                    <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
-                  )}
-                </Disclosure.Button>
                 {session?.user && (
-                  <Link href="/notifications" className="relative ml-2" aria-label="Notifications">
+                  <Link href="/notifications" className="relative mr-2" aria-label="Notifications">
                     <BellIcon className="h-7 w-7 text-dark-text-secondary hover:text-garden-400 transition-colors" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white border-2 border-dark-bg-secondary shadow">
@@ -183,6 +175,14 @@ export function Navigation() {
                     )}
                   </Link>
                 )}
+                <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-dark-text-secondary hover:bg-dark-bg-primary hover:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-garden-500">
+                  <span className="sr-only">Open main menu</span>
+                  {open ? (
+                    <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
+                  ) : (
+                    <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+                  )}
+                </Disclosure.Button>
               </div>
             </div>
           </div>

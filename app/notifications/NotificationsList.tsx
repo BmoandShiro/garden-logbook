@@ -128,7 +128,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
   // --- Pagination state ---
   // { [plantId]: { page: number, pageSize: number } }
   const [plantPagination, setPlantPagination] = useState<Record<string, { page: number; pageSize: number }>>({});
-  const PAGE_SIZE_OPTIONS = [3, 10, 25, 50];
+  const PAGE_SIZE_OPTIONS = [1, 3, 10, 25, 50];
   const DEFAULT_PAGE_SIZE = 10;
 
   // Group pending invite notifications
