@@ -66,7 +66,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
 
   // Year dropdown logic
   const currentYear = month.getFullYear();
-  const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
+  const minYear = 2000;
+  const maxYear = 2100;
+  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
 
   const { data: session } = useSession();
   const [locations, setLocations] = useState<any[]>([]);
@@ -151,28 +153,31 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   // Generate all days to display in the calendar grid
   const rows = [];
   let days = [];
-  let day = startDate;
+  let day = new Date(startDate); // Ensure a new Date object
   let formattedDate = "";
 
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
-      formattedDate = format(day, dateFormat);
-      const isCurrentMonth = isSameMonth(day, monthStart);
-      const isToday = isSameDay(day, today);
-      const dateKey = format(day, "yyyy-MM-dd");
+      const dayCopy = new Date(day); // Use a copy for each cell
+      formattedDate = format(dayCopy, dateFormat);
+      const isCurrentMonth = isSameMonth(dayCopy, monthStart);
+      const isToday = isSameDay(dayCopy, today);
+      const dateKey = format(dayCopy, "yyyy-MM-dd");
       const logs = logsByDate?.[dateKey] || [];
       const weatherAlert = weatherAlertsByDate[dateKey];
 
       days.push(
         <div
-          key={day.toString()}
-          className={`
+          key={dayCopy.toString()}
+          className={
+            `
             relative flex flex-col items-stretch justify-start border border-dark-border
             min-h-[60px] min-w-[44px] sm:min-h-[120px] sm:min-w-[120px] p-1 sm:p-2
             ${isCurrentMonth ? "bg-dark-bg-primary text-dark-text-primary" : "bg-dark-bg-secondary text-dark-text-secondary opacity-60"}
             ${isToday && isCurrentMonth ? "ring-2 ring-garden-400" : ""}
             transition-all
-          `}
+          `
+          }
           onClick={isMobile ? () => setSelectedDayDetails({ date: dateKey, logs, alerts: weatherAlert }) : undefined}
           style={{ cursor: isMobile ? 'pointer' : undefined }}
         >
@@ -477,7 +482,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           )}
         </div>
       );
-      day = addDays(day, 1);
+      day = addDays(day, 1); // Move to next day
     }
     rows.push(
       <div className="grid grid-cols-7 w-full" key={day.toString() + "row"}>
@@ -548,13 +553,19 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     }
   }
 
+  useEffect(() => {
+    // Debug: log the current month whenever it changes
+    console.log('[MonthlyCalendar] Current month:', month.toISOString());
+  }, [month]);
+
   return (
     <div className="w-full max-w-6xl mx-auto">
       <div className="text-center mb-4 flex items-center justify-center gap-4">
         <button
           onClick={() => {
-            setMonth(subMonths(month, 1));
-            monthChange?.(subMonths(month, 1));
+            const prevMonth = subMonths(month, 1);
+            setMonth(prevMonth);
+            monthChange?.(prevMonth);
           }}
           className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
           aria-label="Previous Month"
@@ -578,13 +589,19 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
               <ChevronDown className="ml-1 w-6 h-6 text-garden-400" />
             </button>
             {yearDropdownOpen && (
-              <div className="absolute left-0 z-50 mt-2 w-full max-h-60 overflow-y-auto rounded bg-dark-bg-primary border border-garden-400 shadow-lg">
+              <div
+                className="absolute left-0 z-50 mt-2 w-full max-h-60 overflow-y-auto rounded bg-dark-bg-primary border border-garden-400 shadow-lg"
+                onMouseDown={e => e.preventDefault()}
+              >
                 {years.map((y) => (
                   <button
                     key={y}
+                    onPointerDown={e => e.preventDefault()}
                     onClick={() => {
-                      setMonth(new Date(month.setFullYear(y)));
-                      monthChange?.(new Date(month.setFullYear(y)));
+                      console.log('[MonthlyCalendar] Year selected:', y);
+                      const newMonth = new Date(y, month.getMonth(), 1);
+                      setMonth(newMonth);
+                      monthChange?.(newMonth);
                       setYearDropdownOpen(false);
                     }}
                     className={`block w-full text-left px-4 py-2 text-2xl sm:text-4xl font-extrabold uppercase ${
@@ -602,8 +619,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
         </div>
         <button
           onClick={() => {
-            setMonth(addMonths(month, 1));
-            monthChange?.(addMonths(month, 1));
+            const nextMonth = addMonths(month, 1);
+            setMonth(nextMonth);
+            monthChange?.(nextMonth);
           }}
           className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
           aria-label="Next Month"
