@@ -196,6 +196,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
     });
     setLocalNotifications((prev) => prev.map(n => ({ ...n, read: true })));
     setLoading(false);
+    window.location.reload();
   }
 
   async function handleClearAll() {
