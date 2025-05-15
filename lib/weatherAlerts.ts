@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { getWeatherDataForZip } from '@/lib/weather';
+import { prisma } from '../lib/prisma.ts';
+import { getWeatherDataForZip } from '../lib/weather.ts';
 
 interface Weather {
   temperature: number;
