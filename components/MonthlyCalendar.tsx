@@ -590,7 +590,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             </button>
             {yearDropdownOpen && (
               <div
-                className="absolute left-0 z-50 mt-2 w-full max-h-60 overflow-y-auto rounded bg-dark-bg-primary border border-garden-400 shadow-lg"
+                className="absolute left-0 z-50 mt-2 w-full max-h-60 overflow-y-auto rounded bg-dark-bg-primary border border-garden-400 shadow-lg year-dropdown-scroll"
                 onMouseDown={e => e.preventDefault()}
               >
                 {years.map((y) => (
@@ -771,6 +771,21 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           .calendar-day-cell .flex-row {
             min-height: 18px !important;
           }
+        }
+        .year-dropdown-scroll::-webkit-scrollbar {
+          width: 8px;
+          background: #181c1f;
+        }
+        .year-dropdown-scroll::-webkit-scrollbar-thumb {
+          background: #22c55e;
+          border-radius: 6px;
+        }
+        .year-dropdown-scroll::-webkit-scrollbar-thumb:hover {
+          background: #16a34a;
+        }
+        .year-dropdown-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #22c55e #181c1f;
         }
       `}</style>
     </div>
