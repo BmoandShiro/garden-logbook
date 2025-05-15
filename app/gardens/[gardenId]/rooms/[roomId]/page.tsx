@@ -14,7 +14,8 @@ interface PageProps {
   };
 }
 
-export default async function RoomPage({ params }: PageProps) {
+export default async function RoomPage({ params }) {
+  const { roomId, gardenId } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -23,7 +24,7 @@ export default async function RoomPage({ params }: PageProps) {
 
   const room = await prisma.room.findUnique({
     where: {
-      id: params.roomId,
+      id: roomId,
     },
     include: {
       garden: {
@@ -76,7 +77,7 @@ export default async function RoomPage({ params }: PageProps) {
   }
 
   const logs = await prisma.log.findMany({
-    where: { roomId: params.roomId },
+    where: { roomId: roomId },
     orderBy: { logDate: 'desc' },
     include: {
       plant: { select: { name: true } },
@@ -90,7 +91,7 @@ export default async function RoomPage({ params }: PageProps) {
     <div className="h-full p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-emerald-100">{room.name}</h1>
-        <CreateZoneButton roomId={params.roomId} gardenId={params.gardenId} />
+        <CreateZoneButton roomId={roomId} gardenId={gardenId} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -170,7 +171,7 @@ export default async function RoomPage({ params }: PageProps) {
         </div>
 
         <div className="space-y-4">
-          <ZoneList zones={room.zones} gardenId={params.gardenId} roomId={params.roomId} />
+          <ZoneList zones={room.zones} gardenId={gardenId} roomId={roomId} />
         </div>
       </div>
 

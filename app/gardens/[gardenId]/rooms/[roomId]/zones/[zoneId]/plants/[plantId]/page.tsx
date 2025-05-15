@@ -16,7 +16,8 @@ interface PageProps {
   };
 }
 
-export default async function PlantPage({ params }: PageProps) {
+export default async function PlantPage({ params }) {
+  const { plantId, roomId, gardenId, zoneId } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -25,7 +26,7 @@ export default async function PlantPage({ params }: PageProps) {
 
   const plant = await prisma.plant.findUnique({
     where: {
-      id: params.plantId,
+      id: plantId,
     },
     include: {
       zone: {
@@ -75,7 +76,7 @@ export default async function PlantPage({ params }: PageProps) {
 
   // Fetch logs for this plant
   const logs = await prisma.log.findMany({
-    where: { plantId: params.plantId },
+    where: { plantId: plantId },
     orderBy: { logDate: 'desc' },
     include: {
       plant: { select: { name: true } },
