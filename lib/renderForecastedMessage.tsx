@@ -5,7 +5,7 @@ export function renderForecastedMessage(message: string) {
     { key: 'Heat', color: 'text-red-400' },
     { key: 'Frost', color: 'text-sky-300' },
     { key: 'Drought', color: 'text-orange-400' },
-    { key: 'Wind', color: 'text-gray-300' },
+    { key: 'Wind', color: 'text-slate-400' },
     { key: 'Flood', color: 'text-amber-700' },
     { key: 'HeavyRain', color: 'text-blue-700' },
   ];
