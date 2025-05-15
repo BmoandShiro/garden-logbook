@@ -94,7 +94,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  const [selectedDayDetails, setSelectedDayDetails] = useState<{ date: string, logs: any[], alerts: any } | null>(null);
+  const [selectedDayDetails, setSelectedDayDetails] = useState<{ date: Date, logs: any[], alerts: any } | null>(null);
 
   // Fetch locations on popover open
   React.useEffect(() => {
@@ -152,14 +152,14 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
 
   // Generate all days to display in the calendar grid
   const rows = [];
-  let days = [];
-  let day = new Date(startDate); // Ensure a new Date object
-  let formattedDate = "";
-
-  while (day <= endDate) {
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  for (let week = 0; week < Math.ceil(totalDays / 7); week++) {
+    let days = [];
     for (let i = 0; i < 7; i++) {
-      const dayCopy = new Date(day); // Use a copy for each cell
-      formattedDate = format(dayCopy, dateFormat);
+      const dayIndex = week * 7 + i;
+      if (dayIndex >= totalDays) break;
+      const dayCopy = addDays(startDate, dayIndex);
+      const formattedDate = format(dayCopy, dateFormat);
       const isCurrentMonth = isSameMonth(dayCopy, monthStart);
       const isToday = isSameDay(dayCopy, today);
       const dateKey = format(dayCopy, "yyyy-MM-dd");
@@ -178,7 +178,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             transition-all
           `
           }
-          onClick={isMobile ? () => setSelectedDayDetails({ date: dateKey, logs, alerts: weatherAlert }) : undefined}
+          onClick={isMobile ? () => {
+            setSelectedDayDetails({ date: dayCopy, logs, alerts: weatherAlert });
+          } : undefined}
           style={{ cursor: isMobile ? 'pointer' : undefined }}
         >
           <span className="font-bold text-base sm:text-lg mb-1 text-garden-400 w-fit">{formattedDate}</span>
@@ -482,14 +484,12 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           )}
         </div>
       );
-      day = addDays(day, 1); // Move to next day
     }
     rows.push(
-      <div className="grid grid-cols-7 w-full" key={day.toString() + "row"}>
+      <div className="grid grid-cols-7 w-full" key={week + "row"}>
         {days}
       </div>
     );
-    days = [];
   }
 
   async function handleAddNote() {
@@ -725,7 +725,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           <DialogContent className="max-w-md bg-dark-bg-secondary text-dark-text-primary">
             <DialogHeader>
               <DialogTitle className="text-garden-400 font-bold text-lg flex items-center gap-2">
-                {format(new Date(selectedDayDetails.date), 'PPP')}
+                {format(selectedDayDetails.date, 'PPP')}
               </DialogTitle>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto space-y-4 mt-2">
