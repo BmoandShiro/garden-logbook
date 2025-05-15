@@ -33,7 +33,7 @@ export default async function WeatherPage() {
   return (
     <div className="min-h-screen bg-dark-bg-primary">
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <WeatherGardenList gardens={gardens} userId={session.user.id} />
+        <WeatherGardenList gardens={gardens} userId={session.user.id} userEmail={session.user.email} />
       </main>
     </div>
   );

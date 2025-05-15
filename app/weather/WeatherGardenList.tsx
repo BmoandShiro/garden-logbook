@@ -21,7 +21,7 @@ export interface WeatherGarden {
   plants: { id: string; name: string }[];
 }
 
-export function WeatherGardenList({ gardens: initialGardens, userId }: { gardens?: WeatherGarden[], userId: string }) {
+export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }: { gardens?: WeatherGarden[], userId: string, userEmail?: string | null }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -32,6 +32,8 @@ export function WeatherGardenList({ gardens: initialGardens, userId }: { gardens
   const [alertsLoading, setAlertsLoading] = useState<Record<string, boolean>>({});
   const [timers, setTimers] = useState<Record<string, string>>({});
   const [gardens, setGardens] = useState<WeatherGarden[]>(initialGardens || []);
+
+  const isOwner = userEmail === "bmostradingpost@gmail.com";
 
   // If gardens not provided, fetch them for the user
   useEffect(() => {
@@ -132,13 +134,15 @@ export function WeatherGardenList({ gardens: initialGardens, userId }: { gardens
   return (
     <div className="space-y-4">
       <div className="mb-4 flex items-center gap-4">
-        <button
-          onClick={handleRunWeatherCheck}
-          disabled={loading}
-          className="px-4 py-2 rounded bg-garden-600 text-white font-semibold hover:bg-garden-500 disabled:opacity-50"
-        >
-          {loading ? 'Running...' : 'Run Weather Check'}
-        </button>
+        {isOwner && (
+          <button
+            onClick={handleRunWeatherCheck}
+            disabled={loading}
+            className="px-4 py-2 rounded bg-garden-600 text-white font-semibold hover:bg-garden-500 disabled:opacity-50"
+          >
+            {loading ? 'Running...' : 'Run Weather Check'}
+          </button>
+        )}
         <button
           onClick={() => setShowSettings(v => !v)}
           className="p-2 rounded-full hover:bg-emerald-900/40 text-emerald-300"

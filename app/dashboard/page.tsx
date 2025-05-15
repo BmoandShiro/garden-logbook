@@ -6,6 +6,7 @@ import Link from 'next/link';
 import CleanupOrphanedPlantsButton from '../components/CleanupOrphanedPlantsButton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
+import { OwnerOnly } from '@/components/OwnerOnly';
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -326,7 +327,9 @@ export default async function Dashboard() {
               </div>
             </div>
             <div className="mt-4 flex justify-end">
-              <CleanupOrphanedPlantsButton />
+              <OwnerOnly userEmail={session.user.email}>
+                <CleanupOrphanedPlantsButton />
+              </OwnerOnly>
             </div>
           </div>
         </div>
