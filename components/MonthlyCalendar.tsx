@@ -559,31 +559,33 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
   }, [month]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="text-center mb-4 flex items-center justify-center gap-4">
+    <div className="w-full max-w-6xl mx-auto overflow-x-hidden">
+      <div className="text-center mb-4 flex items-center justify-center gap-2 sm:gap-4 w-full max-w-full px-1 sm:px-0">
         <button
           onClick={() => {
             const prevMonth = subMonths(month, 1);
             setMonth(prevMonth);
             monthChange?.(prevMonth);
           }}
-          className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
+          className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400 flex-shrink-0"
           aria-label="Previous Month"
+          style={{ minWidth: 36, minHeight: 36 }}
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <div className="flex items-center gap-2">
-          <div className="text-4xl sm:text-6xl font-extrabold tracking-tight text-garden-400 uppercase">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center w-full min-w-0">
+          <div className="text-2xl sm:text-4xl md:text-6xl font-extrabold tracking-tight text-garden-400 uppercase truncate">
             {format(month, "MMMM")}
           </div>
-          <div className="relative ml-2">
+          <div className="relative ml-1 sm:ml-2">
             <button
               ref={yearButtonRef}
               onClick={() => setYearDropdownOpen((open) => !open)}
-              className="flex items-center text-4xl sm:text-6xl font-extrabold tracking-tight uppercase text-garden-400 bg-transparent border-none outline-none focus:ring-2 focus:ring-garden-400 px-2"
+              className="flex items-center text-2xl sm:text-4xl md:text-6xl font-extrabold tracking-tight uppercase text-garden-400 bg-transparent border-none outline-none focus:ring-2 focus:ring-garden-400 px-2"
               aria-haspopup="listbox"
               aria-expanded={yearDropdownOpen}
               type="button"
+              style={{ minWidth: 60 }}
             >
               {month.getFullYear()}
               <ChevronDown className="ml-1 w-6 h-6 text-garden-400" />
@@ -604,7 +606,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       monthChange?.(newMonth);
                       setYearDropdownOpen(false);
                     }}
-                    className={`block w-full text-left px-4 py-2 text-2xl sm:text-4xl font-extrabold uppercase ${
+                    className={`block w-full text-left px-4 py-2 text-xl sm:text-2xl md:text-4xl font-extrabold uppercase ${
                       y === month.getFullYear()
                         ? "bg-garden-400 text-dark-bg-primary"
                         : "text-garden-400 hover:bg-dark-bg-secondary"
@@ -623,23 +625,24 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
             setMonth(nextMonth);
             monthChange?.(nextMonth);
           }}
-          className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400"
+          className="p-2 rounded-full hover:bg-dark-bg-primary text-garden-400 flex-shrink-0"
           aria-label="Next Month"
+          style={{ minWidth: 36, minHeight: 36 }}
         >
           <ChevronRight className="w-6 h-6" />
         </button>
       </div>
-      <div className="grid grid-cols-7 mb-2">
+      <div className="grid grid-cols-7 mb-2 w-full max-w-full overflow-x-hidden">
         {daysOfWeek.map((day) => (
           <div
             key={day}
-            className="text-center font-semibold text-dark-text-secondary uppercase py-2"
+            className="text-center font-semibold text-dark-text-secondary uppercase py-2 text-xs sm:text-base md:text-lg truncate"
           >
             {day}
           </div>
         ))}
       </div>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-0.5 w-full max-w-full overflow-x-hidden">
         {rows}
       </div>
       {/* Delete confirmation modal */}
@@ -770,6 +773,9 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
           }
           .calendar-day-cell .flex-row {
             min-height: 18px !important;
+          }
+          .year-dropdown-scroll {
+            font-size: 1.2rem !important;
           }
         }
         .year-dropdown-scroll::-webkit-scrollbar {
