@@ -132,6 +132,20 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {gardens.map((garden) => {
         const alerts = activeAlerts[garden.id] || [];
+        // Deduplicate alerts for the current user by (plantId, alertType)
+        const userId = session?.user?.id;
+        const userAlerts = userId ? alerts.filter((alert: any) => alert.userId === userId) : alerts;
+        const uniquePlantAlertPairs = new Set<string>();
+        userAlerts.forEach((alert: any) => {
+          const plantId = alert.meta?.plantId;
+          const alertTypes = alert.meta?.alertTypes || [];
+          alertTypes.forEach((type: string) => {
+            if (plantId && type) {
+              uniquePlantAlertPairs.add(`${plantId}:${type}`);
+            }
+          });
+        });
+        const alertCount = uniquePlantAlertPairs.size;
         return (
           <div
             key={garden.id}
@@ -147,14 +161,14 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               <span
                 title={alertsLoading[garden.id]
                   ? 'Checking weather alerts...'
-                  : alerts.length > 0
-                    ? `${alerts.length} weather alert${alerts.length === 1 ? '' : 's'}`
+                  : alertCount > 0
+                    ? `${alertCount} weather alert${alertCount === 1 ? '' : 's'}`
                     : 'All conditions safe'}
                 className="inline-flex items-center justify-center"
               >
                 {alertsLoading[garden.id]
                   ? <Cloud className="w-5 h-5 text-gray-400 animate-pulse" />
-                  : alerts.length > 0
+                  : alertCount > 0
                     ? <CloudLightning className="w-5 h-5 text-red-500" />
                     : <CloudSun className="w-5 h-5 text-green-400" />}
               </span>
@@ -189,17 +203,17 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               <div className="flex flex-1 flex-col space-y-2 p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-emerald-100 group-hover:text-emerald-50">{garden.name}</h3>
-                  {alerts.length > 0 && (
+                  {alertCount > 0 && (
                     <div className="flex items-center gap-2">
                       <div 
-                        className={`w-3 h-3 rounded-full ${alerts.length > 0 ? 'bg-red-500' : 'bg-green-500'}`}
-                        title={alerts.length > 0
-                          ? `${alerts.length} weather alert${alerts.length === 1 ? '' : 's'}`
+                        className={`w-3 h-3 rounded-full ${alertCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}
+                        title={alertCount > 0
+                          ? `${alertCount} weather alert${alertCount === 1 ? '' : 's'}`
                           : 'All conditions safe'}
                       />
                       <span className="text-xs text-emerald-300/70">
-                        {alerts.length > 0
-                          ? `${alerts.length} alert${alerts.length === 1 ? '' : 's'}`
+                        {alertCount > 0
+                          ? `${alertCount} alert${alertCount === 1 ? '' : 's'}`
                           : 'All clear'}
                       </span>
                     </div>
