@@ -44,6 +44,36 @@ function groupNotificationsByHierarchy(notifications: Notification[]) {
   return grouped;
 }
 
+// Add color mapping for current alert labels
+const ALERT_LABEL_COLORS: Record<string, string> = {
+  Heat: 'text-red-400',
+  Frost: 'text-sky-300',
+  Drought: 'text-orange-400',
+  Wind: 'text-slate-400',
+  Flood: 'text-amber-700',
+  HeavyRain: 'text-blue-700',
+};
+
+// Helper to render colored labels for current alerts
+function renderCurrentAlertLabels(message: string) {
+  // Regex to match lines like '• Heat: 81°F' or '• Frost: None'
+  const lineRegex = /• (Heat|Frost|Drought|Wind|Flood|HeavyRain):\s*([^\n]*)/g;
+  const lines: React.ReactNode[] = [];
+  let match;
+  while ((match = lineRegex.exec(message)) !== null) {
+    const key = match[1];
+    const value = match[2];
+    const color = ALERT_LABEL_COLORS[key] || '';
+    lines.push(
+      <div key={key}>
+        <span className={`font-bold ${color}`}>• {key}:</span>
+        <span className="ml-1 text-white">{value}</span>
+      </div>
+    );
+  }
+  return lines;
+}
+
 // Helper to color and style forecasted alert sections
 function renderForecastedMessage(message: string) {
   // Split by section (• Heat:, • Frost:, etc.)
@@ -254,34 +284,59 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                               </Disclosure.Button>
                                                               <Disclosure.Panel>
                                                                 <ul className="pl-4">
-                                                                  {pagedNotifications.map((n: Notification) => (
-                                                                    <li
-                                                                      key={n.id}
-                                                                      className={`p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'}`}
-                                                                    >
-                                                                      <div className="flex items-center justify-between">
-                                                                        <div className="font-semibold text-garden-400">{n.title}</div>
-                                                                        <div className="flex items-center gap-2">
-                                                                          <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
-                                                                        </div>
-                                                                      </div>
-                                                                      {/* Show room and zone names if available */}
-                                                                      {n.meta && (n.meta.roomName || n.meta.zoneName) && (
-                                                                        <div className="text-xs text-emerald-300 mt-1">
-                                                                          {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
-                                                                          {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
-                                                                        </div>
-                                                                      )}
-                                                                      {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
-                                                                        <div className="mt-1">{renderForecastedMessage(n.message)}</div>
-                                                                      ) : (
-                                                                        <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
-                                                                      )}
-                                                                      {n.link && (
-                                                                        <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
-                                                                      )}
-                                                                    </li>
-                                                                  ))}
+                                                                  {pagedNotifications.map((n: Notification) => {
+                                                                    if (n.type === 'WEATHER_ALERT') {
+                                                                      return (
+                                                                        <a
+                                                                          key={n.id}
+                                                                          href={n.link || (n.meta?.plantId ? `/logs?plantId=${n.meta.plantId}` : undefined)}
+                                                                          className={`block p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'} hover:bg-dark-bg-hover`}
+                                                                        >
+                                                                          <div className="flex items-center justify-between">
+                                                                            <div className="font-semibold text-garden-400">{n.title}</div>
+                                                                            <div className="flex items-center gap-2">
+                                                                              <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                            </div>
+                                                                          </div>
+                                                                          {n.meta && (n.meta.roomName || n.meta.zoneName) && (
+                                                                            <div className="text-xs text-emerald-300 mt-1">
+                                                                              {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
+                                                                              {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
+                                                                            </div>
+                                                                          )}
+                                                                          <div className="mt-1 space-y-1">{renderCurrentAlertLabels(n.message)}</div>
+                                                                        </a>
+                                                                      );
+                                                                    } else {
+                                                                      return (
+                                                                        <li
+                                                                          key={n.id}
+                                                                          className={`p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'}`}
+                                                                        >
+                                                                          <div className="flex items-center justify-between">
+                                                                            <div className="font-semibold text-garden-400">{n.title}</div>
+                                                                            <div className="flex items-center gap-2">
+                                                                              <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                            </div>
+                                                                          </div>
+                                                                          {n.meta && (n.meta.roomName || n.meta.zoneName) && (
+                                                                            <div className="text-xs text-emerald-300 mt-1">
+                                                                              {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
+                                                                              {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
+                                                                            </div>
+                                                                          )}
+                                                                          {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
+                                                                            <div className="mt-1">{renderForecastedMessage(n.message)}</div>
+                                                                          ) : (
+                                                                            <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+                                                                          )}
+                                                                          {n.link && (
+                                                                            <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
+                                                                          )}
+                                                                        </li>
+                                                                      );
+                                                                    }
+                                                                  })}
                                                                 </ul>
                                                                 {/* Pagination controls */}
                                                                 <div className="flex items-center justify-between mt-2 px-2">
