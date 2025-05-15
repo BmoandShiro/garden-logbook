@@ -225,7 +225,7 @@ export function WeatherGardenList({ gardens: initialGardens, userId }: { gardens
                       ).map((alert: any) => (
                         <li key={alert.id} className="bg-emerald-950/60 rounded p-2 text-xs text-red-200">
                           <div>
-                            <span className="font-semibold">Plant:</span> <Link href={`/gardens/${garden.id}/plants/${alert.meta?.plantId}`} className="text-emerald-300 hover:underline">{alert.meta?.plantName || alert.meta?.plantId}</Link>
+                            <span className="font-semibold">Plant:</span> <Link href={`/gardens/${alert.meta?.gardenId}/rooms/${alert.meta?.roomId}/zones/${alert.meta?.zoneId}/plants/${alert.meta?.plantId}`} className="text-emerald-300 hover:underline">{alert.meta?.plantName || alert.meta?.plantId}</Link>
                           </div>
                           <div><span className="font-semibold">Alert Type:</span> {alert.meta?.alertType || alert.type}</div>
                           {/* Detailed breakdown for each alert type */}
