@@ -330,10 +330,9 @@ export async function processWeatherAlerts() {
                 precipIn = Math.round((precipMm / 25.4) * 100) / 100;
               }
             }
-            // Only count up drought if no significant rain is forecasted
+            // --- Drought ---
             if (!droughtBroken && precipIn < 0.01 && precipMm < 0.254) {
               droughtForecastCounter++;
-              // Add to forecasted drought alerts
               if (!forecastedAlerts['drought']) forecastedAlerts['drought'] = [];
               forecastedAlerts['drought'].push({
                 period,
@@ -348,6 +347,63 @@ export async function processWeatherAlerts() {
               });
             } else {
               droughtBroken = true;
+            }
+            // --- Heat ---
+            if (sensitivities.heat?.enabled && period.temperature >= sensitivities.heat.threshold) {
+              if (!forecastedAlerts['heat']) forecastedAlerts['heat'] = [];
+              forecastedAlerts['heat'].push({
+                period,
+                weather: {
+                  ...weather,
+                  temperature: period.temperature,
+                },
+                severity: period.temperature
+              });
+            }
+            // --- Frost ---
+            if (sensitivities.frost?.enabled && period.temperature <= 32) {
+              if (!forecastedAlerts['frost']) forecastedAlerts['frost'] = [];
+              forecastedAlerts['frost'].push({
+                period,
+                weather: {
+                  ...weather,
+                  temperature: period.temperature,
+                },
+                severity: 1
+              });
+            }
+            // --- Wind ---
+            const windSpeed = parseInt(period.windSpeed.split(' ')[0]) || 0;
+            if (sensitivities.wind?.enabled && windSpeed >= sensitivities.wind.threshold) {
+              if (!forecastedAlerts['wind']) forecastedAlerts['wind'] = [];
+              forecastedAlerts['wind'].push({
+                period,
+                weather: {
+                  ...weather,
+                  windSpeed,
+                },
+                severity: windSpeed
+              });
+            }
+            // --- Heavy Rain ---
+            // Use threshold from sensitivities
+            if (sensitivities.heavyRain?.enabled) {
+              const heavyRainThreshold = sensitivities.heavyRain.threshold;
+              const heavyRainUnit = getHeavyRainUnit(sensitivities);
+              const precipValue = heavyRainUnit === 'mm' ? precipMm : precipIn;
+              if (precipValue >= heavyRainThreshold) {
+                if (!forecastedAlerts['heavyRain']) forecastedAlerts['heavyRain'] = [];
+                forecastedAlerts['heavyRain'].push({
+                  period,
+                  weather: {
+                    ...weather,
+                    precipitation: precipValue,
+                    precipitationIn: precipIn,
+                    precipitationMm: precipMm,
+                  },
+                  severity: precipValue
+                });
+              }
             }
           }
         }
