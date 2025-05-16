@@ -296,8 +296,11 @@ export async function processWeatherAlerts() {
           if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
             currentAlerts['wind'] = { weather, severity: weather.windSpeed };
           }
-          if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
-            currentAlerts['drought'] = { weather, severity: weather.daysWithoutRain };
+          if (sensitivities.drought?.enabled) {
+            const droughtThreshold = sensitivities.drought.threshold ?? sensitivities.drought.days;
+            if (droughtThreshold != null && weather.daysWithoutRain >= droughtThreshold) {
+              currentAlerts['drought'] = { weather, severity: weather.daysWithoutRain };
+            }
           }
           if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
             currentAlerts['flood'] = { weather, severity: 1 };
@@ -319,8 +322,11 @@ export async function processWeatherAlerts() {
           if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
             alertTypes.push({ type: 'wind', triggered: true, severity: weather.windSpeed });
           }
-          if (sensitivities.drought?.enabled && weather.daysWithoutRain >= sensitivities.drought.threshold) {
-            alertTypes.push({ type: 'drought', triggered: true, severity: weather.daysWithoutRain });
+          if (sensitivities.drought?.enabled) {
+            const droughtThreshold = sensitivities.drought.threshold ?? sensitivities.drought.days;
+            if (droughtThreshold != null && weather.daysWithoutRain >= droughtThreshold) {
+              alertTypes.push({ type: 'drought', triggered: true, severity: weather.daysWithoutRain });
+            }
           }
           if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
             alertTypes.push({ type: 'flood', triggered: true, severity: 1 });
