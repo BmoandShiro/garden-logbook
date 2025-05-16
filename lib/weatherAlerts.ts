@@ -544,8 +544,9 @@ export async function processWeatherAlerts() {
             logDate: { gte: dedupWindow }
           }
         });
+        let createdLog = existingLog;
         if (!existingLog) {
-          await prisma.log.create({
+          createdLog = await prisma.log.create({
             data: {
               plantId: plant.id,
               userId: plant.userId,
@@ -587,7 +588,7 @@ export async function processWeatherAlerts() {
                 type: 'WEATHER_ALERT',
                 title: `⚠️ Current Weather Alerts for ${plant.name}`,
                 message,
-                link: `/gardens/${garden.id}/plants/${plant.id}`,
+                link: createdLog ? `/logs/${createdLog.id}` : `/gardens/${garden.id}/plants/${plant.id}`,
                 meta: {
                   plantId: plant.id,
                   plantName: plant.name,
@@ -599,7 +600,8 @@ export async function processWeatherAlerts() {
                   zoneName,
                   alertTypes: currentAlertTypes,
                   currentAlerts,
-                  date: new Date().toISOString().slice(0, 10)
+                  date: new Date().toISOString().slice(0, 10),
+                  logId: createdLog ? createdLog.id : undefined
                 }
               }
             })
