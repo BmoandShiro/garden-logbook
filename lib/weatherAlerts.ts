@@ -421,6 +421,22 @@ export async function processWeatherAlerts() {
         if (zone?.name) zoneName = zone.name;
       }
 
+      // Dedupe forecasted alerts: only one per calendar day per type (most severe)
+      function dedupeForecastedAlertsByDay(alerts: Array<{ period: any, weather: any, severity: number }>) {
+        const seen: Record<string, { period: any, weather: any, severity: number }> = {};
+        for (const alert of alerts) {
+          // Use the date part only (YYYY-MM-DD)
+          const date = new Date(alert.period.startTime).toISOString().slice(0, 10);
+          if (!seen[date] || alert.severity > seen[date].severity) {
+            seen[date] = alert;
+          }
+        }
+        return Object.values(seen);
+      }
+      for (const type of Object.keys(forecastedAlerts)) {
+        forecastedAlerts[type] = dedupeForecastedAlertsByDay(forecastedAlerts[type]);
+      }
+
       // --- After looping, send grouped forecasted alert notification if any ---
       const allAlertTypes = ['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'];
       const alertTypes = Object.keys(forecastedAlerts);
