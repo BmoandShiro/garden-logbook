@@ -10,6 +10,8 @@ interface Weather {
   hasFrostAlert: boolean;
   hasFloodAlert: boolean;
   daysWithoutRain: number;
+  precipitationIn?: number;
+  precipitationMm?: number;
 }
 
 interface Plant {
@@ -312,31 +314,41 @@ export async function processWeatherAlerts() {
           }
         } else {
           // --- Group forecasted alerts for future periods ---
-          const alertTypes: { type: string; triggered: boolean; severity: number }[] = [];
-          if (sensitivities.heat?.enabled && weather.temperature >= sensitivities.heat.threshold) {
-            alertTypes.push({ type: 'heat', triggered: true, severity: weather.temperature });
-          }
-          if (sensitivities.frost?.enabled && weather.hasFrostAlert) {
-            alertTypes.push({ type: 'frost', triggered: true, severity: 1 });
-          }
-          if (sensitivities.wind?.enabled && weather.windSpeed >= sensitivities.wind.threshold) {
-            alertTypes.push({ type: 'wind', triggered: true, severity: weather.windSpeed });
-          }
-          if (sensitivities.drought?.enabled) {
-            const droughtThreshold = sensitivities.drought.threshold ?? sensitivities.drought.days;
-            if (droughtThreshold != null && weather.daysWithoutRain >= droughtThreshold) {
-              alertTypes.push({ type: 'drought', triggered: true, severity: weather.daysWithoutRain });
+          let droughtForecastCounter = daysWithoutRain;
+          let droughtBroken = false;
+          for (let i = 1; i < periods.length; i++) {
+            const period = periods[i];
+            // Get forecasted precipitation in inches and mm
+            let precipIn = 0;
+            let precipMm = 0;
+            if (period.quantitativePrecipitation) {
+              if (typeof period.quantitativePrecipitation.in === 'number') {
+                precipIn = period.quantitativePrecipitation.in;
+                precipMm = Math.round(precipIn * 25.4 * 100) / 100;
+              } else if (typeof period.quantitativePrecipitation.mm === 'number') {
+                precipMm = period.quantitativePrecipitation.mm;
+                precipIn = Math.round((precipMm / 25.4) * 100) / 100;
+              }
             }
-          }
-          if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
-            alertTypes.push({ type: 'flood', triggered: true, severity: 1 });
-          }
-          if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
-            alertTypes.push({ type: 'heavyRain', triggered: true, severity: weather.precipitation });
-          }
-          for (const alert of alertTypes) {
-            if (!forecastedAlerts[alert.type]) forecastedAlerts[alert.type] = [];
-            forecastedAlerts[alert.type].push({ period, weather, severity: alert.severity });
+            // Only count up drought if no significant rain is forecasted
+            if (!droughtBroken && precipIn < 0.01 && precipMm < 0.254) {
+              droughtForecastCounter++;
+              // Add to forecasted drought alerts
+              if (!forecastedAlerts['drought']) forecastedAlerts['drought'] = [];
+              forecastedAlerts['drought'].push({
+                period,
+                weather: {
+                  ...weather,
+                  precipitation: plant.sensitivities?.heavyRain?.unit === 'mm' ? precipMm : precipIn,
+                  precipitationIn: precipIn,
+                  precipitationMm: precipMm,
+                  daysWithoutRain: droughtForecastCounter
+                },
+                severity: droughtForecastCounter
+              });
+            } else {
+              droughtBroken = true;
+            }
           }
         }
       }
@@ -366,12 +378,15 @@ export async function processWeatherAlerts() {
             message += '\n';
             for (const entry of forecastedAlerts[type]) {
               message += `    - ${entry.period.name} (${entry.period.startTime}): `;
-              if (type === 'heat') message += `${entry.weather.temperature}°F`;
+              if (type === 'drought') {
+                const precipIn = entry.weather.precipitationIn ?? entry.weather.precipitation;
+                const precipMm = entry.weather.precipitationMm ?? (precipIn != null ? Math.round(precipIn * 25.4 * 100) / 100 : null);
+                message += `${entry.weather.daysWithoutRain} days without rain, Precip: ${precipIn} in / ${precipMm} mm`;
+              } else if (type === 'heat') message += `${entry.weather.temperature}°F`;
               else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
               else if (type === 'heavyRain') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
               else if (type === 'frost') message += `${entry.weather.temperature}°F`;
               else if (type === 'flood') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
-              else if (type === 'drought') message += `${entry.weather.daysWithoutRain} days`;
               else message += `${entry.severity}`;
               message += '\n';
             }
