@@ -445,20 +445,21 @@ export async function processWeatherAlerts() {
         let message = `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:
 \n`;
         for (const type of allAlertTypes) {
+          // Skip flood for forecasted alerts
+          if (type === 'flood') continue;
           message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
           if (forecastedAlerts[type] && forecastedAlerts[type].length > 0) {
             message += '\n';
             for (const entry of forecastedAlerts[type]) {
               message += `    - ${entry.period.name} (${entry.period.startTime}): `;
               if (type === 'drought') {
-                const precipIn = entry.weather.precipitationIn ?? entry.weather.precipitation;
-                const precipMm = entry.weather.precipitationMm ?? (precipIn != null ? Math.round(precipIn * 25.4 * 100) / 100 : null);
-                message += `${entry.weather.daysWithoutRain} days without rain, Precip: ${precipIn} in / ${precipMm} mm`;
+                // Show chance of rain instead of mm/in precipitation
+                const chance = entry.period.probabilityOfPrecipitation?.value;
+                message += `${entry.weather.daysWithoutRain} days without rain, Chance of Rain: ${typeof chance === 'number' ? chance + '%' : 'N/A'}`;
               } else if (type === 'heat') message += `${entry.weather.temperature}°F`;
               else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
               else if (type === 'heavyRain') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
               else if (type === 'frost') message += `${entry.weather.temperature}°F`;
-              else if (type === 'flood') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
               else message += `${entry.severity}`;
               message += '\n';
             }

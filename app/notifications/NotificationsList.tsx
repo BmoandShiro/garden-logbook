@@ -97,8 +97,38 @@ function renderForecastedMessage(message: string) {
     const color = sectionOrder.find(s => s.key === section)?.color || '';
     // Style date/time in italics and lighter color, and value/unit in section color
     const contentLines = content.split('\n').map((line, idx) => {
-      // Regex: match date/time in parentheses, then value/unit at end
-      // Example: - Friday (2025-05-14T06:00:00-04:00): 74°F
+      // For all alert types except Flood: Only show day label and value/unit, remove date/time
+      if (['Heat', 'Frost', 'Drought', 'Wind', 'HeavyRain'].includes(section)) {
+        // Match: - Friday Night (2025-05-16T18:00:00-04:00): ... value
+        // For Drought: ... Chance of Rain: XX%
+        if (section === 'Drought') {
+          const droughtMatch = line.match(/- ([^(]+) \([^)]*\):.*Chance of Rain: (\d+)%/);
+          if (droughtMatch) {
+            const dayLabel = droughtMatch[1].trim();
+            const percent = droughtMatch[2];
+            return (
+              <div key={idx}>
+                <span className="text-white">{dayLabel} </span>
+                <span className="text-blue-400 font-semibold">{percent}%</span>
+              </div>
+            );
+          }
+        } else {
+          // Match: - Friday Night (2025-05-16T18:00:00-04:00): 80°F
+          const valueMatch = line.match(/- ([^(]+) \([^)]*\): ([^\n]+)/);
+          if (valueMatch) {
+            const dayLabel = valueMatch[1].trim();
+            const value = valueMatch[2].trim();
+            return (
+              <div key={idx}>
+                <span className="text-white">{dayLabel} </span>
+                <span className={`font-semibold ${color}`}>{value}</span>
+              </div>
+            );
+          }
+        }
+      }
+      // Default rendering for other lines (including Flood or unmatched)
       const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*)\)/);
       const valueMatch = line.match(/([\d.]+\s*[^\s)]+)$/); // match value+unit at end, not inside parens
       let before = line;
