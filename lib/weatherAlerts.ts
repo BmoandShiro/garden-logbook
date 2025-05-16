@@ -222,6 +222,7 @@ export async function processWeatherAlerts() {
 
       // Fetch NWS observations for this location to calculate days without rain (up to 365 days)
       let daysWithoutRain = 0;
+      let observedPrecip24h = null;
       try {
         const obsResponse = await fetch(`https://api.weather.gov/stations?lat=${lat}&lon=${lon}`);
         const obsData = await obsResponse.json();
@@ -232,6 +233,7 @@ export async function processWeatherAlerts() {
           const isoStart = start.toISOString();
           let observations: any[] = [];
           let obsHistUrl = `https://api.weather.gov/stations/${stationId}/observations?start=${isoStart}`;
+          let latestObs = null;
           while (obsHistUrl) {
             const obsHistResponse = await fetch(obsHistUrl);
             const obsHistData = await obsHistResponse.json();
@@ -239,7 +241,7 @@ export async function processWeatherAlerts() {
             obsHistUrl = obsHistData.pagination?.next || null;
           }
           // Sort by most recent first
-          observations.sort((a: any, b: any) => new Date(b.properties.timestamp).getTime() - new Date(a.properties.timestamp).getTime());
+          observations.sort((a, b) => new Date(b.properties.timestamp).getTime() - new Date(a.properties.timestamp).getTime());
           for (const obs of observations) {
             const precip = obs.properties?.precipitationLast24Hours?.value;
             if (precip == null || precip < 0.01) {
@@ -248,9 +250,14 @@ export async function processWeatherAlerts() {
               break;
             }
           }
+          // Get the most recent observation for 24h precip
+          if (observations.length > 0) {
+            latestObs = observations[0];
+            observedPrecip24h = latestObs.properties?.precipitationLast24Hours?.value ?? null;
+          }
         }
       } catch (err) {
-        console.warn('[WEATHER_ALERTS] Could not fetch daysWithoutRain:', err);
+        console.warn('[WEATHER_ALERTS] Could not fetch daysWithoutRain or observed precip:', err);
       }
 
       // --- Group forecasted alerts by type ---
@@ -295,8 +302,10 @@ export async function processWeatherAlerts() {
           if (sensitivities.flood?.enabled && weather.hasFloodAlert) {
             currentAlerts['flood'] = { weather, severity: 1 };
           }
-          if (sensitivities.heavyRain?.enabled && weather.precipitation && weather.precipitation >= sensitivities.heavyRain.threshold) {
-            currentAlerts['heavyRain'] = { weather, severity: weather.precipitation };
+          // Use observed precipitation for current heavy rain alert
+          if (sensitivities.heavyRain?.enabled && observedPrecip24h != null && observedPrecip24h >= sensitivities.heavyRain.threshold) {
+            // Clone weather object but override precipitation with observed value
+            currentAlerts['heavyRain'] = { weather: { ...weather, precipitation: observedPrecip24h }, severity: observedPrecip24h };
           }
         } else {
           // --- Group forecasted alerts for future periods ---
