@@ -96,6 +96,21 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
     });
   }, [gardens]);
 
+  useEffect(() => {
+    if (openEditModalGardenId) {
+      const garden = gardens.find(g => g.id === openEditModalGardenId);
+      if (garden) {
+        setEditFormData({
+          name: garden.name || '',
+          description: garden.description || '',
+          imageUrl: garden.imageUrl || '',
+          isPrivate: garden.isPrivate,
+          zipcode: garden.zipcode || '',
+        });
+      }
+    }
+  }, [openEditModalGardenId, gardens]);
+
   const handleDelete = async (gardenId: string) => {
     try {
       const response = await fetch(`/api/gardens/${gardenId}`, {
@@ -172,6 +187,14 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     ? <CloudLightning className="w-5 h-5 text-red-500" />
                     : <CloudSun className="w-5 h-5 text-green-400" />}
               </span>
+              {/* Gear/settings button for garden */}
+              <button
+                className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                title="Garden Settings"
+                onClick={() => setOpenEditModalGardenId(garden.id)}
+              >
+                <Settings className="h-5 w-5" />
+              </button>
               <button
                 className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 title="Invite to Garden"

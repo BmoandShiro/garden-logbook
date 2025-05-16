@@ -532,6 +532,18 @@ export async function processWeatherAlerts() {
       }
       gardenStatus.set(garden.id, currentStatus);
 
+      // --- Group forecasted alerts by type ---
+      console.log(`[DEBUG] Forecast periods for ${plant.name} (${garden.zipcode}):`, periods.map((p: any) => ({
+        name: p.name,
+        startTime: p.startTime,
+        quantitativePrecipitation: p.quantitativePrecipitation,
+        probabilityOfPrecipitation: p.probabilityOfPrecipitation,
+        shortForecast: p.shortForecast
+      })));
+      // --- Group current alerts by type ---
+      console.log(`[DEBUG] Observed precipitation for ${plant.name} (${garden.zipcode}):`, observedPrecip24h);
+      console.log(`[DEBUG] Days without rain for ${plant.name} (${garden.zipcode}):`, daysWithoutRain);
+
     } catch (error) {
       console.error(`[WEATHER_ALERTS] Error checking weather alerts for plant ${plant.id}:`, error);
     }
