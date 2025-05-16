@@ -98,8 +98,7 @@ function renderForecastedMessage(message: string) {
     // Style date/time in italics and lighter color, and value/unit in section color
     const contentLines = content.split('\n').map((line, idx) => {
       // For all alert types except Flood: Only show day label and value/unit, remove date/time
-      if (['Heat', 'Frost', 'Drought', 'Wind', 'HeavyRain'].includes(section)) {
-        // Match: - Friday Night (2025-05-16T18:00:00-04:00): ... value
+      if (["Heat", "Frost", "Drought", "Wind", "HeavyRain"].includes(section)) {
         // For Drought: ... Chance of Rain: XX%
         if (section === 'Drought') {
           const droughtMatch = line.match(/- ([^(]+) \([^)]*\):.*Chance of Rain: (\d+)%/);
@@ -113,6 +112,8 @@ function renderForecastedMessage(message: string) {
               </div>
             );
           }
+          // If chance of rain is N/A or missing, do not render anything
+          return null;
         } else {
           // Match: - Friday Night (2025-05-16T18:00:00-04:00): 80°F
           const valueMatch = line.match(/- ([^(]+) \([^)]*\): ([^\n]+)/);
@@ -128,32 +129,22 @@ function renderForecastedMessage(message: string) {
           }
         }
       }
-      // Default rendering for other lines (including Flood or unmatched)
-      const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*)\)/);
-      const valueMatch = line.match(/([\d.]+\s*[^\s)]+)$/); // match value+unit at end, not inside parens
-      let before = line;
-      let date = null;
-      let value = null;
-      if (dateMatch) {
-        // Find the index of the date/time
-        const dateIdx = line.indexOf(dateMatch[0]);
-        before = line.slice(0, dateIdx);
-        date = dateMatch[0];
+      // For unmatched lines and Flood: Only show day label and value/unit, remove date/time
+      const genericMatch = line.match(/- ([^(]+) \([^)]*\): ([^\n]+)/);
+      if (genericMatch) {
+        const dayLabel = genericMatch[1].trim();
+        const value = genericMatch[2].trim();
+        return (
+          <div key={idx}>
+            <span className="text-white">{dayLabel} </span>
+            <span className={`font-semibold ${color}`}>{value}</span>
+          </div>
+        );
       }
-      if (valueMatch) {
-        // Find the index of the value/unit
-        const valueIdx = line.lastIndexOf(valueMatch[1]);
-        // Only remove value if it's not part of the date/time
-        if (!date || valueIdx > (date ? line.indexOf(date) + (date?.length || 0) : 0)) {
-          before = before.slice(0, valueIdx - (date ? 0 : 0));
-          value = valueMatch[1];
-        }
-      }
+      // If no match, just show the line as plain text
       return (
         <div key={idx}>
-          <span className="text-white">{before}</span>
-          {date && <span className="italic text-gray-400">{date}</span>}
-          {value && <span className={`font-semibold ${color}`}> {value}</span>}
+          <span className="text-white">{line}</span>
         </div>
       );
     });
