@@ -220,44 +220,44 @@ export async function processWeatherAlerts() {
         );
       });
 
-      // Fetch NWS observations for this location to calculate days without rain (up to 365 days)
+      // --- Open-Meteo: Fetch daily precipitation for drought and heavy rain ---
       let daysWithoutRain = 0;
       let observedPrecip24h = null;
       try {
-        const obsResponse = await fetch(`https://api.weather.gov/stations?lat=${lat}&lon=${lon}`);
-        const obsData = await obsResponse.json();
-        const stationId = obsData.features?.[0]?.properties?.stationIdentifier;
-        if (stationId) {
-          const now = new Date();
-          const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // look back 365 days
-          const isoStart = start.toISOString();
-          let observations: any[] = [];
-          let obsHistUrl = `https://api.weather.gov/stations/${stationId}/observations?start=${isoStart}`;
-          let latestObs = null;
-          while (obsHistUrl) {
-            const obsHistResponse = await fetch(obsHistUrl);
-            const obsHistData = await obsHistResponse.json();
-            observations = observations.concat(obsHistData.features || []);
-            obsHistUrl = obsHistData.pagination?.next || null;
-          }
-          // Sort by most recent first
-          observations.sort((a, b) => new Date(b.properties.timestamp).getTime() - new Date(a.properties.timestamp).getTime());
-          for (const obs of observations) {
-            const precip = obs.properties?.precipitationLast24Hours?.value;
-            if (precip == null || precip < 0.01) {
-              daysWithoutRain++;
-            } else {
-              break;
-            }
-          }
-          // Get the most recent observation for 24h precip
-          if (observations.length > 0) {
-            latestObs = observations[0];
-            observedPrecip24h = latestObs.properties?.precipitationLast24Hours?.value ?? null;
+        // Get today and 7 days ago in YYYY-MM-DD
+        const now = new Date();
+        const endDate = now.toISOString().slice(0, 10);
+        const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=auto`;
+        const meteoRes = await fetch(openMeteoUrl);
+        const meteoData = await meteoRes.json();
+        let precipArr = [];
+        if (meteoData.daily && Array.isArray(meteoData.daily.precipitation_sum)) {
+          precipArr = meteoData.daily.precipitation_sum;
+        } else if (typeof meteoData.daily?.precipitation_sum === 'string') {
+          // If for some reason it's a string, try to parse as CSV
+          precipArr = meteoData.daily.precipitation_sum.split(',').map(Number);
+        }
+        // Open-Meteo returns mm, convert to inches and round to two decimals
+        const precipInchesArr = precipArr.map((mm: number) => Math.round((mm / 25.4) * 100) / 100);
+        // Drought: count consecutive days with < 0.01 inch
+        daysWithoutRain = 0;
+        for (let i = precipInchesArr.length - 1; i >= 0; i--) {
+          if (precipInchesArr[i] < 0.01) {
+            daysWithoutRain++;
+          } else {
+            break;
           }
         }
+        // Heavy rain: use most recent day's precipitation
+        if (precipInchesArr.length > 0) {
+          observedPrecip24h = precipInchesArr[precipInchesArr.length - 1];
+        }
+        console.log(`[DEBUG][OpenMeteo] Daily precip (in) for ${plant.name} (${garden.zipcode}):`, precipInchesArr);
+        console.log(`[DEBUG][OpenMeteo] Days without rain:`, daysWithoutRain);
+        console.log(`[DEBUG][OpenMeteo] Most recent precip (in):`, observedPrecip24h);
       } catch (err) {
-        console.warn('[WEATHER_ALERTS] Could not fetch daysWithoutRain or observed precip:', err);
+        console.warn('[WEATHER_ALERTS] Could not fetch Open-Meteo daily precip:', err);
       }
 
       // --- Group forecasted alerts by type ---
@@ -531,18 +531,6 @@ export async function processWeatherAlerts() {
         });
       }
       gardenStatus.set(garden.id, currentStatus);
-
-      // --- Group forecasted alerts by type ---
-      console.log(`[DEBUG] Forecast periods for ${plant.name} (${garden.zipcode}):`, periods.map((p: any) => ({
-        name: p.name,
-        startTime: p.startTime,
-        quantitativePrecipitation: p.quantitativePrecipitation,
-        probabilityOfPrecipitation: p.probabilityOfPrecipitation,
-        shortForecast: p.shortForecast
-      })));
-      // --- Group current alerts by type ---
-      console.log(`[DEBUG] Observed precipitation for ${plant.name} (${garden.zipcode}):`, observedPrecip24h);
-      console.log(`[DEBUG] Days without rain for ${plant.name} (${garden.zipcode}):`, daysWithoutRain);
 
     } catch (error) {
       console.error(`[WEATHER_ALERTS] Error checking weather alerts for plant ${plant.id}:`, error);
