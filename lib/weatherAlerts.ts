@@ -447,6 +447,8 @@ export async function processWeatherAlerts() {
         for (const type of allAlertTypes) {
           // Skip flood for forecasted alerts
           if (type === 'flood') continue;
+          // Skip drought if there's no current drought alert
+          if (type === 'drought' && !currentAlerts['drought']) continue;
           message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
           if (forecastedAlerts[type] && forecastedAlerts[type].length > 0) {
             message += '\n';
