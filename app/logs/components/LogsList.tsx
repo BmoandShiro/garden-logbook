@@ -50,7 +50,7 @@ interface LogWithLocation {
 
 interface LogsListProps {
   logs: LogWithLocation[];
-  onLogDeleted?: () => void;
+  onLogDeleted?: (deletedLogId: string) => void;
 }
 
 const getLogIcon = (type: string) => {

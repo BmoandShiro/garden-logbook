@@ -36,10 +36,60 @@ interface LogsListWrapperProps {
 
 export default function LogsListWrapper({ logs: initialLogs }: LogsListWrapperProps) {
   const [logs, setLogs] = useState(initialLogs);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
   const handleLogDeleted = (deletedLogId: string) => {
     setLogs((prev) => prev.filter((log) => log.id !== deletedLogId));
   };
 
-  return <LogsList logs={logs} onLogDeleted={handleLogDeleted} />;
+  const totalPages = Math.max(1, Math.ceil(logs.length / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = logs.slice(startIndex, endIndex);
+
+  return (
+    <div className="space-y-4">
+      <LogsList logs={paginatedLogs} onLogDeleted={handleLogDeleted} />
+      {logs.length > 0 && (
+        <div className="flex items-center justify-between mt-4 px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-dark-text-secondary">Page size:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1); // Reset to first page when changing page size
+              }}
+              className="rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border px-1 py-0.5 text-xs focus:outline-none appearance-none pr-8"
+            >
+              {PAGE_SIZE_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+            >
+              Previous
+            </button>
+            <span className="text-xs text-dark-text-secondary">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 } 
