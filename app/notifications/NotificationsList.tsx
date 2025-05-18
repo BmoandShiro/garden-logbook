@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import { WeatherAlertMessage } from '@/components/WeatherAlertMessage';
 
 // Define Notification type
 interface Notification {
@@ -308,9 +307,27 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                               <Disclosure.Panel>
                                                                 <ul className="pl-4">
                                                                   {pagedNotifications.map((n: Notification) => {
-                                                                    if (n.type === 'WEATHER_ALERT' || n.type === 'WEATHER_FORECAST_ALERT') {
+                                                                    if (n.type === 'WEATHER_ALERT') {
                                                                       return (
-                                                                        <WeatherAlertMessage key={n.id} alert={n} variant="notification" />
+                                                                        <a
+                                                                          key={n.id}
+                                                                          href={n.link || (n.meta?.plantId ? `/logs?plantId=${n.meta.plantId}` : undefined)}
+                                                                          className={`block p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'} hover:bg-dark-bg-hover`}
+                                                                        >
+                                                                          <div className="flex items-center justify-between">
+                                                                            <div className="font-semibold text-garden-400">{n.title}</div>
+                                                                            <div className="flex items-center gap-2">
+                                                                              <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                            </div>
+                                                                          </div>
+                                                                          {n.meta && (n.meta.roomName || n.meta.zoneName) && (
+                                                                            <div className="text-xs text-emerald-300 mt-1">
+                                                                              {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
+                                                                              {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
+                                                                            </div>
+                                                                          )}
+                                                                          <div className="mt-1 space-y-1">{renderCurrentAlertLabels(n.message)}</div>
+                                                                        </a>
                                                                       );
                                                                     } else {
                                                                       return (
