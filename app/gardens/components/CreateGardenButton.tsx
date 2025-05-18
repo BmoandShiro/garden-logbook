@@ -56,9 +56,9 @@ export default function CreateGardenButton() {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium"
       >
-        <Plus className="h-5 w-5 mr-2" />
+        <Plus className="h-4 w-4 mr-2" />
         Create Garden
       </button>
 

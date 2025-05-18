@@ -68,7 +68,7 @@ export default function ManageGardensButton({ gardens, userId }: ManageGardensBu
       <div className="relative">
         <Menu>
           <Menu.Button className="inline-flex items-center justify-center p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 group">
-            <Trash2 className="h-8 w-8 text-red-600 group-hover:text-red-700 transition-colors" />
+            <Trash2 className="h-6 w-6 text-red-400 opacity-70 group-hover:text-red-600 group-hover:opacity-100 transition-colors transition-opacity duration-150" />
           </Menu.Button>
           <Menu.Items className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-emerald-900 ring-1 ring-black ring-opacity-5 divide-y divide-emerald-800 focus:outline-none z-50">
             <div className="py-1">
