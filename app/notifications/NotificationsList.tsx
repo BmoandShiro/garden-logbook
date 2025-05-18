@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { WeatherAlertMessage } from '@/components/WeatherAlertMessage';
-import Link from 'next/link';
 
 // Define Notification type
 interface Notification {
@@ -309,40 +308,36 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                               <Disclosure.Panel>
                                                                 <ul className="pl-4">
                                                                   {pagedNotifications.map((n: Notification) => {
-                                                                    const notificationContent = (
-                                                                      <>
-                                                                        <div className="flex items-center justify-between">
-                                                                          <div className="font-semibold text-garden-400">{n.title}</div>
-                                                                          <div className="flex items-center gap-2">
-                                                                            <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                    if (n.type === 'WEATHER_ALERT' || n.type === 'WEATHER_FORECAST_ALERT') {
+                                                                      return (
+                                                                        <WeatherAlertMessage key={n.id} alert={n} variant="notification" />
+                                                                      );
+                                                                    } else {
+                                                                      return (
+                                                                        <li
+                                                                          key={n.id}
+                                                                          className={`p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'}`}
+                                                                        >
+                                                                          <div className="flex items-center justify-between">
+                                                                            <div className="font-semibold text-garden-400">{n.title}</div>
+                                                                            <div className="flex items-center gap-2">
+                                                                              <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                            </div>
                                                                           </div>
-                                                                        </div>
-                                                                        {n.meta && (n.meta.roomName || n.meta.zoneName) && (
-                                                                          <div className="text-xs text-emerald-300 mt-1">
-                                                                            {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
-                                                                            {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
-                                                                          </div>
-                                                                        )}
-                                                                        {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
-                                                                          <div className="mt-1">{renderForecastedMessage(n.message)}</div>
-                                                                        ) : (
-                                                                          <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
-                                                                        )}
-                                                                        {n.type === 'LOG' && (
-                                                                          <div className="mt-2 text-xs font-bold text-emerald-400">Log Entry</div>
-                                                                        )}
-                                                                      </>
-                                                                    );
-                                                                    const notificationClass = `p-4 rounded border transition mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-green-400 shadow-lg'}${n.link ? ' cursor-pointer hover:border-green-500' : ''}`;
-                                                                    return n.link ? (
-                                                                      <Link key={n.id} href={n.link} className={notificationClass} prefetch={false}>
-                                                                        {notificationContent}
-                                                                      </Link>
-                                                                    ) : (
-                                                                      <li key={n.id} className={notificationClass}>
-                                                                        {notificationContent}
-                                                                      </li>
-                                                                    );
+                                                                          {n.meta && (n.meta.roomName || n.meta.zoneName) && (
+                                                                            <div className="text-xs text-emerald-300 mt-1">
+                                                                              {n.meta.roomName && <span>Room/Plot: {n.meta.roomName} </span>}
+                                                                              {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
+                                                                            </div>
+                                                                          )}
+                                                                          {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
+                                                                            <div className="mt-1">{renderForecastedMessage(n.message)}</div>
+                                                                          ) : (
+                                                                            <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+                                                                          )}
+                                                                        </li>
+                                                                      );
+                                                                    }
                                                                   })}
                                                                 </ul>
                                                                 {/* Pagination controls */}
@@ -413,35 +408,23 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
         <ul className="space-y-2 mt-4">
           {otherNotifications
             .filter(n => !n.meta?.plantId && n.type !== 'invite')
-            .map((n: Notification) => {
-              const notificationContent = (
-                <>
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-garden-400">{n.title}</div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
-                  {n.type === 'LOG' && (
-                    <div className="mt-2 text-xs font-bold text-emerald-400">Log Entry</div>
-                  )}
-                  {n.link && (
-                    <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
-                  )}
-                </>
-              );
-              const notificationClass = `p-4 rounded border transition mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-green-400 shadow-lg'}${n.link ? ' cursor-pointer hover:border-green-500' : ''}`;
-              return n.link ? (
-                <Link key={n.id} href={n.link} className={notificationClass} prefetch={false}>
-                  {notificationContent}
-                </Link>
-              ) : (
-                <li key={n.id} className={notificationClass}>
-                  {notificationContent}
-                </li>
-              );
-            })}
+            .map((n: Notification) => (
+            <li
+              key={n.id}
+              className={`p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-garden-400">{n.title}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                </div>
+              </div>
+              <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+              {n.link && (
+                <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
+              )}
+            </li>
+          ))}
         </ul>
       )}
     </>
