@@ -101,6 +101,12 @@ function renderForecastedMessage(message: string) {
       if (["Heat", "Frost", "Drought", "Wind", "HeavyRain"].includes(section)) {
         // For Drought: ... Chance of Rain: XX%
         if (section === 'Drought') {
+          // Show 'No rain expected for the next X periods.'
+          if (/No rain expected for the next \d+ periods?\./i.test(line.trim())) {
+            return (
+              <div key={idx} className="text-amber-300 font-semibold">{line.trim()}</div>
+            );
+          }
           const droughtMatch = line.match(/- ([^(]+) \([^)]*\):.*Chance of Rain: (\d+)%/);
           if (droughtMatch) {
             const dayLabel = droughtMatch[1].trim();
@@ -436,7 +442,11 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                   <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
                 </div>
               </div>
-              <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+              {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
+                <div className="mt-1">{renderForecastedMessage(n.message)}</div>
+              ) : (
+                <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
+              )}
               {n.link && (
                 <div className="mt-2 text-xs text-blue-400 underline">Go to related page</div>
               )}
