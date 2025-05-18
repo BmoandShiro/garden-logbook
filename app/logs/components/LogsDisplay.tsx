@@ -105,6 +105,9 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
   const [rooms, setRooms] = useState([]);
   const [zones, setZones] = useState([]);
   const [plants, setPlants] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250, 500, 1000];
 
   // On mount, initialize filters from query params if present
   useEffect(() => {
@@ -200,6 +203,11 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     refetchOnWindowFocus: true,
   });
 
+  const totalPages = logs && logs.length ? Math.max(1, Math.ceil(logs.length / pageSize)) : 1;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = logs ? logs.slice(startIndex, endIndex) : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -294,7 +302,46 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
         </div>
       </div>
       <LogFilters filters={filters} onFilterChange={setFilters} gardens={gardens} rooms={rooms} zones={zones} plants={plants} />
-      <LogsList logs={logs || []} onLogDeleted={refetch} />
+      <LogsList logs={paginatedLogs} onLogDeleted={() => refetch()} />
+      {/* Pagination Controls */}
+      {logs && logs.length > 0 && (
+        <div className="flex items-center justify-between mt-4 px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-dark-text-secondary">Page size:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1); // Reset to first page when changing page size
+              }}
+              className="rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border px-1 py-0.5 text-xs focus:outline-none appearance-none pr-8"
+            >
+              {PAGE_SIZE_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+            >
+              Previous
+            </button>
+            <span className="text-xs text-dark-text-secondary">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
       <CreateLogModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

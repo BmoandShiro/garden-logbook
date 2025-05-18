@@ -54,6 +54,9 @@ export default function LogsView({ userId }: LogsViewProps) {
     plantId: '',
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250, 500, 1000];
 
   useEffect(() => {
     fetchLogs();
@@ -143,6 +146,11 @@ export default function LogsView({ userId }: LogsViewProps) {
     
     return matchesSearch && matchesType && matchesStage && matchesPlant && matchesDate;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6">
@@ -312,12 +320,12 @@ export default function LogsView({ userId }: LogsViewProps) {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-4">Loading...</TableCell>
               </TableRow>
-            ) : filteredLogs.length === 0 ? (
+            ) : paginatedLogs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-4">No logs found</TableCell>
               </TableRow>
             ) : (
-              filteredLogs.map((log) => (
+              paginatedLogs.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell>{new Date(log.logDate).toLocaleDateString()}</TableCell>
                   <TableCell>{log.type.toLowerCase().replace('_', ' ')}</TableCell>
@@ -339,6 +347,45 @@ export default function LogsView({ userId }: LogsViewProps) {
           </TableBody>
         </Table>
       </div>
+      {/* Pagination Controls */}
+      {filteredLogs.length > 0 && (
+        <div className="flex items-center justify-between mt-4 px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-dark-text-secondary">Page size:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1); // Reset to first page when changing page size
+              }}
+              className="rounded bg-dark-bg-primary text-dark-text-secondary border border-dark-border px-1 py-0.5 text-xs focus:outline-none appearance-none pr-8"
+            >
+              {PAGE_SIZE_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+            >
+              Previous
+            </button>
+            <span className="text-xs text-dark-text-secondary">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              className="px-2 py-1 rounded text-xs bg-dark-bg-primary text-dark-text-secondary border border-dark-border hover:bg-dark-bg-hover disabled:opacity-50"
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
