@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import DeleteButton from '../../../components/DeleteButton';
 import { toast } from 'sonner';
-import { Settings } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
@@ -41,9 +41,15 @@ interface RoomListProps {
 export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProps) {
   const router = useRouter();
   const [openEditModalRoomId, setOpenEditModalRoomId] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState({ name: '', description: '', type: '', dimensions: '' });
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    type: '',
+    dimensions: '',
+  });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
 
   const handleDelete = async (roomId: string) => {
     try {
@@ -252,8 +258,20 @@ export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProp
           {/* Recent Logs for this room/plot */}
           {logsByRoomId && logsByRoomId[room.id] && logsByRoomId[room.id].length > 0 && (
             <div className="p-4 border-t border-emerald-800 bg-dark-bg-secondary">
-              <div className="text-sm font-semibold text-emerald-100 mb-2">Recent Logs</div>
-              <LogsListWrapper logs={logsByRoomId[room.id]} />
+              <button
+                className="flex items-center w-full text-left text-sm font-semibold text-emerald-100 mb-2 focus:outline-none"
+                onClick={() => setExpandedLogs(prev => ({ ...prev, [room.id]: !prev[room.id] }))}
+                aria-expanded={expandedLogs[room.id]}
+                aria-controls={`logs-list-${room.id}`}
+              >
+                <span className="flex-1">Recent Logs</span>
+                {expandedLogs[room.id] ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+              </button>
+              {expandedLogs[room.id] && (
+                <div id={`logs-list-${room.id}`}>
+                  <LogsListWrapper logs={logsByRoomId[room.id]} />
+                </div>
+              )}
             </div>
           )}
         </div>
