@@ -461,18 +461,27 @@ export async function processWeatherAlerts() {
           message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
           if (forecastedAlerts[type] && forecastedAlerts[type].length > 0) {
             message += '\n';
-            for (const entry of forecastedAlerts[type]) {
-              message += `    - ${entry.period.name} (${entry.period.startTime}): `;
-              if (type === 'drought') {
-                // Show chance of rain instead of mm/in precipitation
-                const chance = entry.period.probabilityOfPrecipitation?.value;
-                message += `${entry.weather.daysWithoutRain} days without rain, Chance of Rain: ${typeof chance === 'number' ? chance + '%' : 'N/A'}`;
-              } else if (type === 'heat') message += `${entry.weather.temperature}°F`;
-              else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
-              else if (type === 'heavyRain') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
-              else if (type === 'frost') message += `${entry.weather.temperature}°F`;
-              else message += `${entry.severity}`;
-              message += '\n';
+            if (type === 'drought') {
+              const droughtPeriods = forecastedAlerts['drought'];
+              const allZero = droughtPeriods.every(e => (e.weather.precipitationMm ?? 0) === 0);
+              if (allZero) {
+                message += `    No rain expected for the next ${droughtPeriods.length} periods.\n`;
+              } else {
+                for (const entry of droughtPeriods) {
+                  const chance = entry.period.probabilityOfPrecipitation?.value;
+                  message += `    - ${entry.period.name} (${entry.period.startTime}): ${entry.weather.daysWithoutRain} days without rain, Chance of Rain: ${typeof chance === 'number' ? chance + '%' : 'N/A'}\n`;
+                }
+              }
+            } else {
+              for (const entry of forecastedAlerts[type]) {
+                message += `    - ${entry.period.name} (${entry.period.startTime}): `;
+                if (type === 'heat') message += `${entry.weather.temperature}°F`;
+                else if (type === 'wind') message += `${entry.weather.windSpeed} mph`;
+                else if (type === 'heavyRain') message += `${formatPrecipitation(entry.weather.precipitation, getHeavyRainUnit(sensitivities))} precipitation`;
+                else if (type === 'frost') message += `${entry.weather.temperature}°F`;
+                else message += `${entry.severity}`;
+                message += '\n';
+              }
             }
           } else {
             message += ' None\n';
