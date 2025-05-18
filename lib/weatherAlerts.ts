@@ -230,14 +230,14 @@ export async function processWeatherAlerts() {
         const now = new Date();
         const endDate = now.toISOString().slice(0, 10);
         const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=auto`;
+        // Fetch both daily and hourly precipitation
+        const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&hourly=precipitation&timezone=auto`;
         const meteoRes = await fetch(openMeteoUrl);
         const meteoData = await meteoRes.json();
         let precipArr = [];
         if (meteoData.daily && Array.isArray(meteoData.daily.precipitation_sum)) {
           precipArr = meteoData.daily.precipitation_sum;
         } else if (typeof meteoData.daily?.precipitation_sum === 'string') {
-          // If for some reason it's a string, try to parse as CSV
           precipArr = meteoData.daily.precipitation_sum.split(',').map(Number);
         }
         // Open-Meteo returns mm, convert to inches and round to two decimals
@@ -251,15 +251,24 @@ export async function processWeatherAlerts() {
             break;
           }
         }
-        // Heavy rain: use most recent day's precipitation
-        if (precipInchesArr.length > 0) {
-          observedPrecip24h = precipInchesArr[precipInchesArr.length - 1];
+        // --- Rolling 24h precipitation for heavy rain (current only) ---
+        if (meteoData.hourly && Array.isArray(meteoData.hourly.precipitation)) {
+          const hourlyPrecip = meteoData.hourly.precipitation;
+          // Get the last 24 values (most recent 24 hours)
+          const last24 = hourlyPrecip.slice(-24);
+          const sumMm = last24.reduce((a: number, b: number) => a + b, 0);
+          observedPrecip24h = Math.round((sumMm / 25.4) * 100) / 100; // inches, rounded to 2 decimals
+        } else {
+          // Fallback to most recent daily value if hourly not available
+          if (precipInchesArr.length > 0) {
+            observedPrecip24h = precipInchesArr[precipInchesArr.length - 1];
+          }
         }
         console.log(`[DEBUG][OpenMeteo] Daily precip (in) for ${plant.name} (${garden.zipcode}):`, precipInchesArr);
         console.log(`[DEBUG][OpenMeteo] Days without rain:`, daysWithoutRain);
-        console.log(`[DEBUG][OpenMeteo] Most recent precip (in):`, observedPrecip24h);
+        console.log(`[DEBUG][OpenMeteo] Rolling 24h precip (in):`, observedPrecip24h);
       } catch (err) {
-        console.warn('[WEATHER_ALERTS] Could not fetch Open-Meteo daily precip:', err);
+        console.warn('[WEATHER_ALERTS] Could not fetch Open-Meteo daily/hourly precip:', err);
       }
 
       // --- Group forecasted alerts by type ---
