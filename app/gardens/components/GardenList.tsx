@@ -8,7 +8,7 @@ import DeleteButton from '../../components/DeleteButton';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { Settings, Plus, ChevronDown, ChevronUp, Cloud, CloudSun, CloudLightning } from 'lucide-react';
+import { Settings, MoreVertical, ChevronDown, ChevronUp, Cloud, CloudSun, CloudLightning } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 import LogToggleButton from './LogToggleButton';
@@ -191,16 +191,17 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               <button
                 className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 title="Garden Settings"
-                onClick={() => setOpenEditModalGardenId(garden.id)}
+                onClick={() => setOpenModalGardenId(garden.id)}
               >
                 <Settings className="h-5 w-5" />
               </button>
+              {/* Kebab (3 vertical dots) button for edit modal */}
               <button
                 className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                title="Invite to Garden"
-                onClick={() => setOpenInviteModalGardenId(garden.id)}
+                title="Edit Garden"
+                onClick={() => setOpenEditModalGardenId(garden.id)}
               >
-                <Plus className="h-5 w-5" />
+                <MoreVertical className="h-5 w-5" />
               </button>
               <LogToggleButton gardenId={garden.id} />
               {session?.user?.id === garden.createdBy.id && (
@@ -262,7 +263,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               </div>
             </Link>
             {/* Settings Modal for this garden */}
-            <Dialog open={openModalGardenId === garden.id} onOpenChange={(open) => setOpenModalGardenId(open ? garden.id : null)}>
+            <Dialog open={openModalGardenId === garden.id} onOpenChange={(open: boolean) => setOpenModalGardenId(open ? garden.id : null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{garden.name}</DialogTitle>
@@ -293,7 +294,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               </DialogContent>
             </Dialog>
             {/* Invite Modal for this garden */}
-            <Dialog open={openInviteModalGardenId === garden.id} onOpenChange={(open) => setOpenInviteModalGardenId(open ? garden.id : null)}>
+            <Dialog open={openInviteModalGardenId === garden.id} onOpenChange={(open: boolean) => setOpenInviteModalGardenId(open ? garden.id : null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Invite to {garden.name}</DialogTitle>
@@ -363,7 +364,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               </DialogContent>
             </Dialog>
             {/* Edit Modal for this garden */}
-            <Dialog open={openEditModalGardenId === garden.id} onOpenChange={(open) => setOpenEditModalGardenId(open ? garden.id : null)}>
+            <Dialog open={openEditModalGardenId === garden.id} onOpenChange={(open: boolean) => setOpenEditModalGardenId(open ? garden.id : null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Edit Garden</DialogTitle>
@@ -501,7 +502,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               </div>
             )}
             {/* Manage Members Modal for this garden */}
-            <Dialog open={openManageMembersGardenId === garden.id} onOpenChange={(open) => setOpenManageMembersGardenId(open ? garden.id : null)}>
+            <Dialog open={openManageMembersGardenId === garden.id} onOpenChange={(open: boolean) => setOpenManageMembersGardenId(open ? garden.id : null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Manage Members of {garden.name}</DialogTitle>
