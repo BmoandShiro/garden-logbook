@@ -17,9 +17,16 @@ interface Notification {
   createdAt: string;
 }
 
+interface PendingInvite {
+  id: string;
+  garden: { name: string };
+  invitedAt: string;
+}
+
 interface NotificationsListProps {
   notifications: Notification[];
   userEmail?: string;
+  pendingInvites?: PendingInvite[];
 }
 
 function groupNotificationsByHierarchy(notifications: Notification[]) {
@@ -201,9 +208,12 @@ function getSinceLastNotification(notifications: Notification[], idx: number, se
   return null;
 }
 
-export default function NotificationsList({ notifications, userEmail }: NotificationsListProps) {
+export default function NotificationsList({ notifications, userEmail, pendingInvites = [] }: NotificationsListProps) {
   const [loading, setLoading] = useState(false);
   const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
+  const [accepting, setAccepting] = useState<string | null>(null);
+  const [declining, setDeclining] = useState<string | null>(null);
+  const [showInvites, setShowInvites] = useState(true);
 
   // --- Pagination state ---
   // { [plantId]: { page: number, pageSize: number } }
@@ -211,7 +221,9 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
   const PAGE_SIZE_OPTIONS = [1, 3, 10, 25, 50];
   const DEFAULT_PAGE_SIZE = 10;
 
-  // Group pending invite notifications
+  // Extract invite notifications
+  const inviteNotifications = localNotifications.filter((n: Notification) => n.type === 'invite' && n.meta?.inviteId);
+  // Group other notifications
   const otherNotifications = localNotifications.filter((n: Notification) => !(n.type === 'invite' && n.meta?.inviteId));
 
   // Group forecasted and current weather alerts by hierarchy
@@ -256,6 +268,27 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
     setLoading(false);
   }
 
+  // Accept invite handler
+  async function acceptInvite(inviteId: string, notificationId?: string) {
+    setAccepting(inviteId);
+    await fetch(`/api/gardens/invites/${inviteId}/accept`, { method: "POST" });
+    if (notificationId) {
+      await fetch(`/api/notifications/${notificationId}`, { method: "DELETE" });
+    }
+    setLocalNotifications((prev) => prev.filter((n) => n.meta?.inviteId !== inviteId));
+    setAccepting(null);
+  }
+  // Decline invite handler
+  async function declineInvite(inviteId: string, notificationId?: string) {
+    setDeclining(inviteId);
+    await fetch(`/api/gardens/invites/${inviteId}/decline`, { method: "POST" });
+    if (notificationId) {
+      await fetch(`/api/notifications/${notificationId}`, { method: "DELETE" });
+    }
+    setLocalNotifications((prev) => prev.filter((n) => n.meta?.inviteId !== inviteId));
+    setDeclining(null);
+  }
+
   return (
     <>
       <div className="flex items-center justify-between mb-6">
@@ -279,6 +312,45 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
           )}
         </div>
       </div>
+      {/* Pending Garden Invites Section (collapsible) */}
+      {pendingInvites.length > 0 && (
+        <div className="mb-6">
+          <button
+            className="text-blue-400 hover:underline text-sm mb-1"
+            onClick={() => setShowInvites((v) => !v)}
+          >
+            {showInvites ? 'Hide' : 'Show'} Pending Garden Invites ({pendingInvites.length})
+          </button>
+          {showInvites && (
+            <ul className="space-y-2 mt-2">
+              {pendingInvites.map((invite) => (
+                <li key={invite.id} className="flex items-center justify-between bg-dark-bg-primary rounded px-3 py-2">
+                  <div>
+                    <span className="font-semibold text-emerald-200">{invite.garden.name}</span>
+                    <span className="ml-2 text-xs text-dark-text-secondary">Invited: {new Date(invite.invitedAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onClick={() => acceptInvite(invite.id)}
+                      disabled={accepting === invite.id || declining === invite.id}
+                      className="px-3 py-1 rounded bg-garden-600 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
+                    >
+                      {accepting === invite.id ? "Accepting..." : "Accept"}
+                    </button>
+                    <button
+                      onClick={() => declineInvite(invite.id)}
+                      disabled={declining === invite.id || accepting === invite.id}
+                      className="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-500 disabled:opacity-50"
+                    >
+                      {declining === invite.id ? "Declining..." : "Decline"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {Object.keys(grouped).length === 0 && otherNotifications.filter(n => n.type !== 'invite').length === 0 ? (
         <div className="text-dark-text-secondary">No new notifications.</div>
       ) : (

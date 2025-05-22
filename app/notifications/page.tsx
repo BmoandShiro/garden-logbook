@@ -1,8 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import PendingInvitesWrapper from '../components/PendingInvitesWrapper';
-import NotificationsList from './NotificationsList'; // Import the new client component
+import NotificationsList from './NotificationsList';
 
 // Define Notification type - This will be passed to NotificationsList
 interface Notification {
@@ -17,9 +16,18 @@ interface Notification {
   createdAt: string;
 }
 
+interface PendingInvite {
+  id: string;
+  gardenId: string;
+  email: string;
+  invitedAt: string;
+  accepted: boolean;
+  garden: { id: string; name: string };
+}
+
 export default async function NotificationsPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !session.user.email) {
     return <div className="p-8 text-center text-red-500">You must be signed in to view notifications.</div>;
   }
   const notifications = await prisma.notification.findMany({
@@ -27,13 +35,15 @@ export default async function NotificationsPage() {
     orderBy: { createdAt: 'desc' },
     take: 100,
   });
-
+  // Fetch pending invites for this user
+  const invites = await prisma.gardenInvite.findMany({
+    where: { email: session.user.email, accepted: false },
+    include: { garden: { select: { id: true, name: true } } },
+    orderBy: { invitedAt: 'desc' },
+  });
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
-      {/* Pending Invites Dropdown */}
-      <PendingInvitesWrapper />
-      {/* Use the new client component to render the list */}
-      <NotificationsList notifications={notifications} userEmail={session.user.email} />
+      <NotificationsList notifications={notifications} userEmail={session.user.email} pendingInvites={invites} />
     </div>
   );
 } 
