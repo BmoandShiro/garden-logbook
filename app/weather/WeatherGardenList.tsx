@@ -131,6 +131,30 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
     }
   }
 
+  // Helper to calculate 'since last alert' for heavy rain in weather tab
+  function getSinceLastWeatherAlert(alerts: any[], idx: number, section: string) {
+    if (section !== 'heavyRain') return null;
+    for (let i = idx - 1; i >= 0; i--) {
+      const prev = alerts[i];
+      if (!prev || !prev.notes) continue;
+      if (prev.notes.includes('HeavyRain')) {
+        const prevMatch = prev.notes.match(/HeavyRain: ([\d.]+) in/);
+        const currMatch = alerts[idx].notes?.match(/HeavyRain: ([\d.]+) in/);
+        if (prevMatch && currMatch) {
+          const prevVal = parseFloat(prevMatch[1]);
+          const currVal = parseFloat(currMatch[1]);
+          const diff = currVal - prevVal;
+          if (diff > 0) {
+            return `+${diff.toFixed(2)} in since last log`;
+          } else {
+            return 'No new precipitation since last log';
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <div className="mb-4 flex items-center gap-4">
@@ -244,7 +268,7 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
                           }
                           return acc;
                         }, {})
-                      ).map((alert: any) => (
+                      ).map((alert: any, idx: number) => (
                         <li key={alert.id} className="bg-emerald-950/60 rounded p-2 text-xs text-red-200">
                           <div>
                             <span className="font-semibold">Plant:</span> <Link href={`/gardens/${alert.meta?.gardenId}/rooms/${alert.meta?.roomId}/zones/${alert.meta?.zoneId}/plants/${alert.meta?.plantId}`} className="text-emerald-300 hover:underline">{alert.meta?.plantName || alert.meta?.plantId}</Link>
@@ -253,7 +277,7 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
                           {/* Detailed breakdown for each alert type */}
                           {alert.meta?.currentAlerts ? (
                             <div className="mt-1 whitespace-pre-line">
-                              {['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'].map(type => {
+                              {['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'].map((type, idx) => {
                                 let value = 'None';
                                 const ca = alert.meta.currentAlerts[type];
                                 if (ca) {
@@ -262,6 +286,12 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
                                   else if (type === 'heavyRain' || type === 'flood') value = `${ca.weather.precipitation ?? 'N/A'} precipitation`;
                                   else if (type === 'drought') value = `${ca.weather.daysWithoutRain} days`;
                                   else value = `${ca.severity}`;
+                                }
+                                if (type === 'heavyRain' && value && getSinceLastWeatherAlert(alerts, idx, 'heavyRain')) {
+                                  <div className="text-xs text-blue-400 mt-1">
+                                    (Daily Total)
+                                    <span className="ml-2">{getSinceLastWeatherAlert(alerts, idx, 'heavyRain')}</span>
+                                  </div>
                                 }
                                 return <div key={type}>• {type.charAt(0).toUpperCase() + type.slice(1)}: {value}</div>;
                               })}

@@ -62,4 +62,27 @@ export function renderForecastedMessage(message: string) {
     rendered.push(<div key="outro" className="mt-2 whitespace-pre-line">{parts[parts.length - 1]}</div>);
   }
   return rendered;
+}
+
+// Helper to calculate 'since last log' for heavy rain in forecasted messages
+export function getSinceLastForecastedMessage(messages: string[], idx: number, section: string) {
+  if (section !== 'HeavyRain') return null;
+  for (let i = idx - 1; i >= 0; i--) {
+    const prev = messages[i];
+    if (prev && prev.includes('HeavyRain')) {
+      const prevMatch = prev.match(/HeavyRain: ([\d.]+) in/);
+      const currMatch = messages[idx]?.match(/HeavyRain: ([\d.]+) in/);
+      if (prevMatch && currMatch) {
+        const prevVal = parseFloat(prevMatch[1]);
+        const currVal = parseFloat(currMatch[1]);
+        const diff = currVal - prevVal;
+        if (diff > 0) {
+          return `+${diff.toFixed(2)} in since last log`;
+        } else {
+          return 'No new precipitation since last log';
+        }
+      }
+    }
+  }
+  return null;
 } 
