@@ -12,5 +12,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Build TypeScript files
+RUN npm run build
+
 # Start cron worker
-CMD ["npm", "run", "cron"] 
+CMD ["node", "dist/start-cron.js"] 

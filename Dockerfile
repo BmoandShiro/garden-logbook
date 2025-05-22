@@ -12,6 +12,7 @@ ENV NEXT_TYPESCRIPT_COMPILE_ERRORS false
 ENV ESLINT_SKIP_VALIDATION true
 # Copy Prisma client to a known location
 RUN cp -r node_modules/.prisma ./prisma-client
+# Build the application
 RUN npm run build
 
 # Production stage
@@ -25,8 +26,7 @@ ENV HUSKY=0
 # Copy necessary files from builder
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/prisma-client ./node_modules/.prisma
 
 # Install production dependencies
@@ -42,4 +42,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"] 
+CMD ["npm", "start"] 
