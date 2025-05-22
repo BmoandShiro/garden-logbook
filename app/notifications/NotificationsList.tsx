@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
@@ -26,7 +26,6 @@ interface PendingInvite {
 interface NotificationsListProps {
   notifications: Notification[];
   userEmail?: string;
-  pendingInvites?: PendingInvite[];
 }
 
 function groupNotificationsByHierarchy(notifications: Notification[]) {
@@ -208,12 +207,24 @@ function getSinceLastNotification(notifications: Notification[], idx: number, se
   return null;
 }
 
-export default function NotificationsList({ notifications, userEmail, pendingInvites = [] }: NotificationsListProps) {
+export default function NotificationsList({ notifications, userEmail }: NotificationsListProps) {
   const [loading, setLoading] = useState(false);
   const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
   const [accepting, setAccepting] = useState<string | null>(null);
   const [declining, setDeclining] = useState<string | null>(null);
   const [showInvites, setShowInvites] = useState(true);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+
+  // Fetch pending invites on mount and after actions
+  const fetchPendingInvites = useCallback(async () => {
+    const res = await fetch('/api/gardens/invites/pending');
+    const data = await res.json();
+    setPendingInvites(data.invites || []);
+  }, []);
+
+  useEffect(() => {
+    fetchPendingInvites();
+  }, [fetchPendingInvites]);
 
   // --- Pagination state ---
   // { [plantId]: { page: number, pageSize: number } }
@@ -269,23 +280,17 @@ export default function NotificationsList({ notifications, userEmail, pendingInv
   }
 
   // Accept invite handler
-  async function acceptInvite(inviteId: string, notificationId?: string) {
+  async function acceptInvite(inviteId: string) {
     setAccepting(inviteId);
     await fetch(`/api/gardens/invites/${inviteId}/accept`, { method: "POST" });
-    if (notificationId) {
-      await fetch(`/api/notifications/${notificationId}`, { method: "DELETE" });
-    }
-    setLocalNotifications((prev) => prev.filter((n) => n.meta?.inviteId !== inviteId));
+    await fetchPendingInvites();
     setAccepting(null);
   }
   // Decline invite handler
-  async function declineInvite(inviteId: string, notificationId?: string) {
+  async function declineInvite(inviteId: string) {
     setDeclining(inviteId);
     await fetch(`/api/gardens/invites/${inviteId}/decline`, { method: "POST" });
-    if (notificationId) {
-      await fetch(`/api/notifications/${notificationId}`, { method: "DELETE" });
-    }
-    setLocalNotifications((prev) => prev.filter((n) => n.meta?.inviteId !== inviteId));
+    await fetchPendingInvites();
     setDeclining(null);
   }
 
