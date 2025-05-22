@@ -11,6 +11,11 @@ export async function POST(request: Request) {
     }
     // Check if user exists
     const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      console.log('[INVITE] User found:', user.id, user.email);
+    } else {
+      console.log('[INVITE] No user found for email:', email);
+    }
     // Always create a pending invite (delete any old one first)
     const existingInvite = await prisma.gardenInvite.findUnique({
       where: {
@@ -35,7 +40,7 @@ export async function POST(request: Request) {
     if (user) {
       try {
         const garden = await prisma.garden.findUnique({ where: { id: gardenId } });
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
           data: {
             userId: user.id,
             type: 'invite',
@@ -45,7 +50,7 @@ export async function POST(request: Request) {
             meta: { inviteId: invite.id },
           },
         });
-        console.log('[INVITE] Notification created for user:', email);
+        console.log('[INVITE] Notification created for user:', email, notification);
       } catch (notifError) {
         console.error('[INVITE] Failed to create notification for user:', email, notifError);
       }
