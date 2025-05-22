@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Stopping and removing Docker containers..."
+sudo docker-compose down
+
+echo "Removing Docker volumes..."
+sudo docker volume rm garden-logbook_postgres_data 2>/dev/null || true
+
+echo "Cleaning up any remaining Docker processes..."
+sudo docker ps -a | grep garden-logbook | awk '{print $1}' | xargs -r sudo docker rm -f
+
+echo "Cleaning up Docker network..."
+sudo docker network prune -f
+
+echo "Docker cleanup complete! You can now run restart2.sh for development." 
