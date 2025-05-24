@@ -906,17 +906,7 @@ async function maybeSendOrUpdateAlert(
   severity: number
 ) {
   const now = new Date();
-  const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
   const today = now.toISOString().slice(0, 10);
-
-  // Format weather data for display
-  const weatherInfo = {
-    temperature: `${weather.temperature}°F`,
-    humidity: `${weather.humidity}%`,
-    windSpeed: `${weather.windSpeed} mph`,
-    precipitation: formatPrecipitation(weather.precipitation, getHeavyRainUnit(plant.sensitivities)),
-    conditions: weather.conditions
-  };
 
   // Fetch room and zone names if IDs are present
   let roomName = plant.roomId || 'Room/Plot';
@@ -930,20 +920,41 @@ async function maybeSendOrUpdateAlert(
     if (zone?.name) zoneName = zone.name;
   }
 
-  // Create a log entry for the plant
-  const logMessage = `Weather Alert: ${type} conditions detected.\n` +
-    `• Current Conditions: ${weatherInfo.conditions}\n` +
-    `• Temperature: ${weatherInfo.temperature}\n` +
-    `• Humidity: ${weatherInfo.humidity}\n` +
-    `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-    `• Precipitation: ${weatherInfo.precipitation}`;
+  // Build detailed message for all alert types
+  const allAlertTypes = ['heat', 'frost', 'drought', 'wind', 'flood', 'heavyRain'];
+  let message = `Current weather conditions in ${garden?.name} (${garden?.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:
+\n`;
+  for (const alertType of allAlertTypes) {
+    message += `• ${alertType.charAt(0).toUpperCase() + alertType.slice(1)}:`;
+    if (alertType === type) {
+      if (alertType === 'heat') message += ` ${weather.temperature}°F`;
+      else if (alertType === 'wind') message += ` ${weather.windSpeed} mph`;
+      else if (alertType === 'heavyRain') message += ` ${formatPrecipitation(weather.precipitation, getHeavyRainUnit(plant.sensitivities))}`;
+      else if (alertType === 'frost') message += ` ${weather.temperature}°F`;
+      else if (alertType === 'flood') message += ` ${formatPrecipitation(weather.precipitation, getHeavyRainUnit(plant.sensitivities))}`;
+      else if (alertType === 'drought') message += ` ${weather.daysWithoutRain} days`;
+      else message += ` ${severity}`;
+    } else {
+      message += ' None';
+    }
+    message += '\n';
+  }
+  message += '\nPlease take necessary precautions to protect your plant.';
 
+  // Create a log entry for the plant
+  const weatherInfo = {
+    temperature: `${weather.temperature}°F`,
+    humidity: `${weather.humidity}%`,
+    windSpeed: `${weather.windSpeed} mph`,
+    precipitation: formatPrecipitation(weather.precipitation, getHeavyRainUnit(plant.sensitivities)),
+    conditions: weather.conditions
+  };
   const createdLog = await prisma.log.create({
     data: {
       plantId: plant.id,
       userId: plant.userId,
       type: LogType.WEATHER_ALERT,
-      notes: logMessage,
+      notes: message,
       logDate: new Date(),
       stage: plant.stage || Stage.VEGETATIVE,
       data: {
@@ -961,7 +972,7 @@ async function maybeSendOrUpdateAlert(
       userId: plant.userId,
       type: 'WEATHER_ALERT',
       meta: { path: ['plantId'], equals: plant.id },
-      createdAt: { gte: new Date(Date.now() - 3 * 60 * 60 * 1000) } // last 3 hours
+      createdAt: { gte: new Date(Date.now() - 3 * 60 * 60 * 1000) }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -975,7 +986,7 @@ async function maybeSendOrUpdateAlert(
             userId,
             type: 'WEATHER_ALERT',
             title: `⚠️ Current Weather Alerts for ${plant.name}`,
-            message: logMessage,
+            message: message,
             link: `/gardens/${garden.id}/plants/${plant.id}`,
             meta: {
               plantId: plant.id,
