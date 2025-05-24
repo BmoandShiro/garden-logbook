@@ -1,6 +1,12 @@
 import { prisma } from '../lib/prisma';
 import { getWeatherDataForZip } from '../lib/weather';
-import { Stage, LogType } from '@prisma/client';
+import { Stage, LogType, Prisma } from '@prisma/client';
+
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+type JsonArray = JsonValue[];
 
 interface Weather {
   temperature: number;
@@ -13,7 +19,7 @@ interface Weather {
   daysWithoutRain: number;
   precipitationIn?: number;
   precipitationMm?: number;
-  [key: string]: any; // Add index signature for JSON compatibility
+  [key: string]: any;
 }
 
 interface PlantSensitivities {
@@ -24,7 +30,7 @@ interface PlantSensitivities {
   flood?: { enabled: boolean; threshold: number };
   heavyRain?: { enabled: boolean; threshold: number; unit?: string };
   unit?: string;
-  [key: string]: any; // Add index signature for JSON compatibility
+  [key: string]: any;
 }
 
 interface Plant {
@@ -41,12 +47,12 @@ interface Plant {
     creatorId: string;
     isPrivate: boolean;
     imageUrl: string | null;
-    weatherStatus: any;
+    weatherStatus: Prisma.JsonValue;
   } | null;
   gardenId?: string | null;
   roomId?: string | null;
   zoneId?: string | null;
-  sensitivities: PlantSensitivities | null;
+  sensitivities: Prisma.JsonValue;
   stage?: Stage;
 }
 
@@ -69,7 +75,7 @@ interface NotificationMeta {
   currentAlerts: Record<string, { weather: Weather; severity: number }>;
   date: string;
   logId?: string;
-  [key: string]: any; // Add index signature for JSON compatibility
+  [key: string]: any;
 }
 
 async function sendAllClearNotification(plant: Plant, garden: Plant['garden'], weather: Weather) {
@@ -168,10 +174,10 @@ function formatPrecipitation(value: number | null | undefined, unit: string) {
   return `${value} in`;
 }
 
-function getHeavyRainUnit(sensitivities: any): string {
-  return sensitivities && sensitivities.heavyRain && typeof sensitivities.heavyRain.unit === 'string'
-    ? sensitivities.heavyRain.unit
-    : 'in';
+function getHeavyRainUnit(sensitivities: Prisma.JsonValue): string {
+  if (!sensitivities || typeof sensitivities !== 'object') return 'in';
+  const typedSensitivities = sensitivities as PlantSensitivities;
+  return typedSensitivities?.heavyRain?.unit || 'in';
 }
 
 export async function processWeatherAlerts() {
@@ -207,26 +213,51 @@ export async function processWeatherAlerts() {
   }>();
 
   for (const plant of plants) {
-    // Debug log for plant and garden
-    console.log('[PLANT DEBUG]', {
-      id: plant.id,
-      name: plant.name,
-      gardenId: plant.gardenId,
-      garden: plant.garden
-    });
-    const garden = plant.garden;
-    const sensitivitiesTyped = plant.sensitivities as PlantSensitivities | undefined;
-    if (!garden || !garden.zipcode) {
-      console.log(`[WEATHER_ALERTS] Skipping plant ${plant.id} - no garden or zipcode`);
-      continue;
-    }
-    if (!sensitivitiesTyped) {
-      console.log(`[WEATHER_ALERTS] Skipping plant ${plant.id} - no sensitivities configured`);
-      continue;
-    }
-
     try {
-      const notificationPeriod = await getUserWeatherNotificationPeriod(plant.userId);
+      const plantWithGarden = plant as Plant;
+      if (!plantWithGarden.garden?.zipcode) {
+        console.log(`[WEATHER_ALERTS] Skipping plant ${plantWithGarden.name} - no zipcode`);
+        continue;
+      }
+
+      const weather = await fetchWeatherData(plantWithGarden.garden.zipcode);
+      const sensitivities = plantWithGarden.sensitivities as PlantSensitivities | null;
+
+      if (!sensitivities) {
+        console.log(`[WEATHER_ALERTS] Skipping plant ${plantWithGarden.name} - no sensitivities`);
+        continue;
+      }
+
+      // Process alerts based on sensitivities
+      if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
+        await maybeSendOrUpdateAlert(
+          plantWithGarden,
+          plantWithGarden.garden,
+          'heat',
+          weather,
+          Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5))
+        );
+      }
+
+      // Debug log for plant and garden
+      console.log('[PLANT DEBUG]', {
+        id: plantWithGarden.id,
+        name: plantWithGarden.name,
+        gardenId: plantWithGarden.gardenId,
+        garden: plantWithGarden.garden
+      });
+      const garden = plantWithGarden.garden;
+      const sensitivitiesTyped = sensitivities as PlantSensitivities | undefined;
+      if (!garden || !garden.zipcode) {
+        console.log(`[WEATHER_ALERTS] Skipping plant ${plantWithGarden.id} - no garden or zipcode`);
+        continue;
+      }
+      if (!sensitivitiesTyped) {
+        console.log(`[WEATHER_ALERTS] Skipping plant ${plantWithGarden.id} - no sensitivities configured`);
+        continue;
+      }
+
+      const notificationPeriod = await getUserWeatherNotificationPeriod(plantWithGarden.userId);
       const { lat, lon } = await getLatLonForZip(garden.zipcode);
       const response = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
       const data = await response.json();
@@ -296,7 +327,7 @@ export async function processWeatherAlerts() {
             observedPrecip24h = precipInchesArr[precipInchesArr.length - 1];
           }
         }
-        console.log(`[DEBUG][OpenMeteo] Daily precip (in) for ${plant.name} (${garden.zipcode}):`, precipInchesArr);
+        console.log(`[DEBUG][OpenMeteo] Daily precip (in) for ${plantWithGarden.name} (${garden.zipcode}):`, precipInchesArr);
         console.log(`[DEBUG][OpenMeteo] Days without rain:`, daysWithoutRain);
         console.log(`[DEBUG][OpenMeteo] Rolling 24h precip (in):`, observedPrecip24h);
       } catch (err) {
@@ -461,14 +492,14 @@ export async function processWeatherAlerts() {
       }
 
       // Fetch room and zone names if IDs are present
-      let roomName = plant.roomId || 'Room/Plot';
-      let zoneName = plant.zoneId || 'Zone';
-      if (plant.roomId) {
-        const room = await prisma.room.findUnique({ where: { id: plant.roomId }, select: { name: true } });
+      let roomName = plantWithGarden.roomId || 'Room/Plot';
+      let zoneName = plantWithGarden.zoneId || 'Zone';
+      if (plantWithGarden.roomId) {
+        const room = await prisma.room.findUnique({ where: { id: plantWithGarden.roomId }, select: { name: true } });
         if (room?.name) roomName = room.name;
       }
-      if (plant.zoneId) {
-        const zone = await prisma.zone.findUnique({ where: { id: plant.zoneId }, select: { name: true } });
+      if (plantWithGarden.zoneId) {
+        const zone = await prisma.zone.findUnique({ where: { id: plantWithGarden.zoneId }, select: { name: true } });
         if (zone?.name) zoneName = zone.name;
       }
 
@@ -493,7 +524,7 @@ export async function processWeatherAlerts() {
       const alertTypes = Object.keys(forecastedAlerts);
       if (alertTypes.length > 0) {
         // Build grouped message
-        let message = `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:
+        let message = `Forecasted weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plantWithGarden.name} in ${roomName}, ${zoneName}:
 \n`;
         for (const type of allAlertTypes) {
           // Skip flood for forecasted alerts
@@ -534,32 +565,32 @@ export async function processWeatherAlerts() {
         // Deduplicate: check if a grouped notification for this plant and forecast window already exists
         const existing = await prisma.notification.findFirst({
           where: {
-            userId: plant.userId,
+            userId: plantWithGarden.userId,
             type: 'WEATHER_FORECAST_ALERT',
-            meta: { path: ['plantId'], equals: plant.id },
+            meta: { path: ['plantId'], equals: plantWithGarden.id },
             createdAt: { gte: new Date(Date.now() - 4 * 60 * 60 * 1000) } // last 4 hours
           },
           orderBy: { createdAt: 'desc' }
         });
         if (garden && garden.zipcode) {
-          const userIds = await getAllGardenUserIds(garden.id, plant.userId);
+          const userIds = await getAllGardenUserIds(garden.id, plantWithGarden.userId);
           if (!existing) {
             await Promise.all(userIds.map(userId =>
               prisma.notification.create({
                 data: {
                   userId,
                   type: 'WEATHER_FORECAST_ALERT',
-                  title: `⏳ Forecasted Weather Alerts for ${plant.name}`,
+                  title: `⏳ Forecasted Weather Alerts for ${plantWithGarden.name}`,
                   message,
-                  link: `/gardens/${garden.id}/plants/${plant.id}`,
+                  link: `/gardens/${garden.id}/plants/${plantWithGarden.id}`,
                   meta: {
-                    plantId: plant.id,
-                    plantName: plant.name,
-                    gardenId: plant.gardenId,
+                    plantId: plantWithGarden.id,
+                    plantName: plantWithGarden.name,
+                    gardenId: plantWithGarden.gardenId,
                     gardenName: garden.name,
-                    roomId: plant.roomId,
+                    roomId: plantWithGarden.roomId,
                     roomName,
-                    zoneId: plant.zoneId,
+                    zoneId: plantWithGarden.zoneId,
                     zoneName,
                     alertTypes,
                     forecastedAlerts,
@@ -576,7 +607,7 @@ export async function processWeatherAlerts() {
       const currentAlertTypes = Object.keys(currentAlerts);
       if (currentAlertTypes.length > 0) {
         // Build grouped message
-        let message = `Current weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plant.name} in ${roomName}, ${zoneName}:
+        let message = `Current weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plantWithGarden.name} in ${roomName}, ${zoneName}:
 \n`;
         for (const type of allAlertTypes) {
           message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
@@ -610,12 +641,12 @@ export async function processWeatherAlerts() {
 
           const createdLog = await prisma.log.create({
             data: {
-              plantId: plant.id,
-              userId: plant.userId,
+              plantId: plantWithGarden.id,
+              userId: plantWithGarden.userId,
               type: LogType.WEATHER_ALERT,
               notes: message,
               logDate: new Date(),
-              stage: plant.stage || Stage.VEGETATIVE,
+              stage: plantWithGarden.stage || Stage.VEGETATIVE,
               data: {
                 weatherInfo,
                 severity: firstAlert.severity,
@@ -628,9 +659,9 @@ export async function processWeatherAlerts() {
           // Deduplicate: check if a grouped notification for this plant already exists in the last 3 hours
           const existing = await prisma.notification.findFirst({
             where: {
-              userId: plant.userId,
+              userId: plantWithGarden.userId,
               type: 'WEATHER_ALERT',
-              meta: { path: ['plantId'], equals: plant.id },
+              meta: { path: ['plantId'], equals: plantWithGarden.id },
               createdAt: { gte: new Date(Date.now() - 3 * 60 * 60 * 1000) } // last 3 hours
             },
             orderBy: { createdAt: 'desc' }
@@ -638,23 +669,23 @@ export async function processWeatherAlerts() {
 
           if (!existing) {
             if (garden && garden.zipcode) {
-              const userIds = await getAllGardenUserIds(garden.id, plant.userId);
+              const userIds = await getAllGardenUserIds(garden.id, plantWithGarden.userId);
               await Promise.all(userIds.map(userId =>
                 prisma.notification.create({
                   data: {
                     userId,
                     type: 'WEATHER_ALERT',
-                    title: `⚠️ Current Weather Alerts for ${plant.name}`,
+                    title: `⚠️ Current Weather Alerts for ${plantWithGarden.name}`,
                     message: message,
-                    link: `/gardens/${garden.id}/plants/${plant.id}`,
+                    link: `/gardens/${garden.id}/plants/${plantWithGarden.id}`,
                     meta: {
-                      plantId: plant.id,
-                      plantName: plant.name,
-                      gardenId: plant.gardenId,
+                      plantId: plantWithGarden.id,
+                      plantName: plantWithGarden.name,
+                      gardenId: plantWithGarden.gardenId,
                       gardenName: garden.name,
-                      roomId: plant.roomId,
+                      roomId: plantWithGarden.roomId,
                       roomName,
-                      zoneId: plant.zoneId,
+                      zoneId: plantWithGarden.zoneId,
                       zoneName,
                       alertTypes: currentAlertTypes,
                       currentAlerts,
@@ -681,8 +712,8 @@ export async function processWeatherAlerts() {
         currentStatus.alertCount++;
         currentStatus.lastChecked = new Date();
         currentStatus.alerts.push({
-          plantId: plant.id,
-          plantName: plant.name,
+          plantId: plantWithGarden.id,
+          plantName: plantWithGarden.name,
           alertType: triggeredType,
           weatherInfo: triggeredWeatherInfo,
           timestamp: new Date().toISOString()
@@ -691,7 +722,7 @@ export async function processWeatherAlerts() {
       gardenStatus.set(garden.id, currentStatus);
 
     } catch (error) {
-      console.error(`[WEATHER_ALERTS] Error checking weather alerts for plant ${plant.id}:`, error);
+      console.error(`[WEATHER_ALERTS] Error processing plant ${plant.name}:`, error);
     }
   }
 
