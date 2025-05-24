@@ -1,1 +1,1 @@
-import './lib/cron.ts'; 
+import './lib/cron'; 

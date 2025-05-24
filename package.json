@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cron": "tsc -p tsconfig.cron.json",
     "start": "next start",
     "lint": "next lint",
     "create-admin": "ts-node scripts/create-admin.ts",

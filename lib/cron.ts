@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { processWeatherAlerts } from './weatherAlerts.ts';
+import { processWeatherAlerts } from './weatherAlerts';
 
 let isRunning = false;
 
