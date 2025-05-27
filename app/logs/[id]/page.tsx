@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { format } from 'date-fns';
 import LogRawDataToggle from '../components/LogRawDataToggle';
 import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
+import { formatLogDate } from '../components/CreateLogModal';
 
 async function getLog(id: string) {
   const headersList = await headers();
@@ -54,7 +55,7 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
       <Section title="Log Info">
         <FieldRow label="Type" value={log.type?.replace(/_/g, ' ')} />
         <FieldRow label="Stage" value={log.stage} />
-        <FieldRow label="Date/Time" value={format(new Date(log.logDate), 'PPP p')} />
+        <FieldRow label="Date/Time" value={formatLogDate(log.logDate)} />
         <FieldRow label="User ID" value={log.userId} />
       </Section>
 

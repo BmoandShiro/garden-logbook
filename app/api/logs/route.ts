@@ -161,11 +161,20 @@ export async function POST(request: Request) {
 
     const data = await request.json();
     console.log('Received data:', JSON.stringify(data, null, 2));
-    const { date, time, selectedPlants, logType, ...rest } = data;
+    const { datetime, selectedPlants, logType, ...rest } = data;
 
-    // Convert date and time to DateTime
-    const logDate = new Date(`${date}T${time}`);
-    console.log('Converted logDate:', logDate);
+    // Parse the local datetime string and convert to UTC for storage
+    // datetime is in 'YYYY-MM-DDTHH:mm' (local time)
+    const logDateLocal = new Date(datetime);
+    const logDate = new Date(Date.UTC(
+      logDateLocal.getFullYear(),
+      logDateLocal.getMonth(),
+      logDateLocal.getDate(),
+      logDateLocal.getHours(),
+      logDateLocal.getMinutes(),
+      logDateLocal.getSeconds()
+    ));
+    console.log('Converted logDate (UTC):', logDate.toISOString());
 
     // Map form fields to schema fields
     const logData = {

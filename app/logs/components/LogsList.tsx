@@ -7,6 +7,7 @@ import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, convertTemperature
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import Link from 'next/link';
 import renderForecastedMessage from '@/components/MonthlyCalendar';
+import { formatLogDate } from './CreateLogModal';
 
 interface LogWithLocation {
   id: string;
@@ -182,7 +183,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                           {log.type.replace(/_/g, ' ')}
                         </p>
                         <p className="text-sm text-dark-text-secondary">
-                          {format(new Date(log.logDate), 'MMM d, yyyy h:mm a')}
+                          {formatLogDate(log.logDate)}
                         </p>
                       </div>
                       {/* Location string always visible */}
