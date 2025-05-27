@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Stopping Docker containers (if any)..."
+sudo docker-compose down
+
 echo "Killing Next.js processes..."
 pkill -f "next dev"
 
@@ -15,8 +18,6 @@ npm run cron &
 
 echo "Restarting development server..."
 npm run dev
-
-
 
 # Check if Tailscale Serve is already running on port 3000
 if ! tailscale serve status | grep -q "http://localhost:3000"; then

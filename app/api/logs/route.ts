@@ -163,18 +163,9 @@ export async function POST(request: Request) {
     console.log('Received data:', JSON.stringify(data, null, 2));
     const { datetime, selectedPlants, logType, ...rest } = data;
 
-    // Parse the local datetime string and convert to UTC for storage
-    // datetime is in 'YYYY-MM-DDTHH:mm' (local time)
-    const logDateLocal = new Date(datetime);
-    const logDate = new Date(Date.UTC(
-      logDateLocal.getFullYear(),
-      logDateLocal.getMonth(),
-      logDateLocal.getDate(),
-      logDateLocal.getHours(),
-      logDateLocal.getMinutes(),
-      logDateLocal.getSeconds()
-    ));
-    console.log('Converted logDate (UTC):', logDate.toISOString());
+    // Parse the local datetime string and use it directly for logDate (undo UTC conversion)
+    const logDate = new Date(datetime);
+    console.log('Converted logDate (local):', logDate.toISOString());
 
     // Map form fields to schema fields
     const logData = {
