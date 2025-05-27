@@ -78,67 +78,6 @@ interface NotificationMeta {
   [key: string]: any;
 }
 
-async function sendAllClearNotification(plant: Plant, garden: Plant['garden'], weather: Weather) {
-  if (!garden) throw new Error('Garden is null in sendAllClearNotification');
-  const nonNullGarden = garden as NonNullable<typeof garden>;
-  const weatherInfo = {
-    temperature: `${weather.temperature}°F`,
-    humidity: `${weather.humidity}%`,
-    windSpeed: `${weather.windSpeed} mph`,
-    precipitation: weather.precipitation ? `${weather.precipitation} inches` : 'None',
-    conditions: weather.conditions
-  };
-
-  // Create a log entry for the plant
-  const logMessage = `Daily Weather Check: All conditions within safe ranges.\n` +
-    `• Current Conditions: ${weatherInfo.conditions}\n` +
-    `• Temperature: ${weatherInfo.temperature}\n` +
-    `• Humidity: ${weatherInfo.humidity}\n` +
-    `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-    `• Precipitation: ${weatherInfo.precipitation}`;
-
-  await prisma.log.create({
-    data: {
-      plantId: plant.id,
-      userId: plant.userId,
-      type: 'WEATHER_ALERT',
-      notes: logMessage,
-      logDate: new Date(),
-      stage: Stage.VEGETATIVE,
-      data: {
-        weatherInfo,
-        status: 'all_clear'
-      }
-    }
-  });
-
-  // Send a notification to all garden members
-  const userIds = await getAllGardenUserIds(nonNullGarden.id, plant.userId);
-  await Promise.all(userIds.map(userId =>
-    prisma.notification.create({
-      data: {
-        userId,
-        type: 'WEATHER_ALERT',
-        title: `✅ Weather Check: ${plant.name} is doing well`,
-        message: `Daily weather check for ${plant.name} in ${nonNullGarden.name} (${nonNullGarden.zipcode}):\n\n` +
-          `• Current Conditions: ${weatherInfo.conditions}\n` +
-          `• Temperature: ${weatherInfo.temperature}\n` +
-          `• Humidity: ${weatherInfo.humidity}\n` +
-          `• Wind Speed: ${weatherInfo.windSpeed}\n` +
-          `• Precipitation: ${weatherInfo.precipitation}\n\n` +
-          `All conditions are within safe ranges for your plant.`,
-        link: `/gardens/${nonNullGarden.id}/plants/${plant.id}`,
-        meta: { 
-          plantId: plant.id,
-          date: new Date().toISOString().slice(0, 10),
-          weatherInfo,
-          status: 'all_clear'
-        }
-      }
-    })
-  ));
-}
-
 // Helper to get the user's weather notification period preference
 async function getUserWeatherNotificationPeriod(userId: string): Promise<string> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { weatherNotificationPeriod: true } });
@@ -594,7 +533,7 @@ export async function processWeatherAlerts() {
                     zoneName,
                     alertTypes,
                     forecastedAlerts,
-                    forecastWindow: notificationPeriod
+                    forecastWindow: notificationPeriod,
                   }
                 }
               })
@@ -643,6 +582,7 @@ export async function processWeatherAlerts() {
             data: {
               plantId: plantWithGarden.id,
               userId: plantWithGarden.userId,
+              gardenId: plantWithGarden.gardenId,
               type: LogType.WEATHER_ALERT,
               notes: message,
               logDate: new Date(),
@@ -690,7 +630,6 @@ export async function processWeatherAlerts() {
                       alertTypes: currentAlertTypes,
                       currentAlerts,
                       date: new Date().toISOString().slice(0, 10),
-                      logId: createdLog.id
                     } as NotificationMeta
                   }
                 })
@@ -953,6 +892,7 @@ async function maybeSendOrUpdateAlert(
     data: {
       plantId: plant.id,
       userId: plant.userId,
+      gardenId: plant.gardenId,
       type: LogType.WEATHER_ALERT,
       notes: message,
       logDate: new Date(),
@@ -1005,7 +945,6 @@ async function maybeSendOrUpdateAlert(
                 }
               },
               date: today,
-              logId: createdLog.id
             } as NotificationMeta
           }
         })
