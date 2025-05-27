@@ -169,13 +169,13 @@ export async function processWeatherAlerts() {
 
       // Process alerts based on sensitivities
       if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
-        await maybeSendOrUpdateAlert(
-          plantWithGarden,
-          plantWithGarden.garden,
-          'heat',
-          weather,
-          Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5))
-        );
+        // await maybeSendOrUpdateAlert(
+        //   plantWithGarden,
+        //   plantWithGarden.garden,
+        //   'heat',
+        //   weather,
+        //   Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5))
+        // );
       }
 
       // Debug log for plant and garden
@@ -566,75 +566,70 @@ export async function processWeatherAlerts() {
         }
         message += '\nPlease take necessary precautions to protect your plant.';
 
-        // Create a log entry for the plant using the first alert's weather data
-        const firstAlertType = currentAlertTypes[0];
-        const firstAlert = currentAlerts[firstAlertType];
-        if (firstAlert) {
-          const weatherInfo = {
-            temperature: `${firstAlert.weather.temperature}°F`,
-            humidity: `${firstAlert.weather.humidity}%`,
-            windSpeed: `${firstAlert.weather.windSpeed} mph`,
-            precipitation: formatPrecipitation(firstAlert.weather.precipitation, getHeavyRainUnit(sensitivitiesTyped)),
-            conditions: firstAlert.weather.conditions
-          };
-
-          const createdLog = await prisma.log.create({
+        // Create a log entry for the plant
+        const weatherInfo = {
+          temperature: `${weather.temperature}°F`,
+          humidity: `${weather.humidity}%`,
+          windSpeed: `${weather.windSpeed} mph`,
+          precipitation: formatPrecipitation(weather.precipitation, getHeavyRainUnit(sensitivitiesTyped)),
+          conditions: weather.conditions
+        };
+        const createdLog = await prisma.log.create({
+          data: {
+            plantId: plantWithGarden.id,
+            userId: plantWithGarden.userId,
+            gardenId: plantWithGarden.gardenId,
+            type: LogType.WEATHER_ALERT,
+            notes: message,
+            logDate: new Date(),
+            stage: plantWithGarden.stage || Stage.VEGETATIVE,
             data: {
-              plantId: plantWithGarden.id,
-              userId: plantWithGarden.userId,
-              gardenId: plantWithGarden.gardenId,
-              type: LogType.WEATHER_ALERT,
-              notes: message,
-              logDate: new Date(),
-              stage: plantWithGarden.stage || Stage.VEGETATIVE,
-              data: {
-                weatherInfo,
-                severity: firstAlert.severity,
-                type: firstAlertType,
-                weather: firstAlert.weather
-              }
+              weatherInfo,
+              severity: currentAlerts[currentAlertTypes[0]].severity,
+              type: currentAlertTypes[0],
+              weather: currentAlerts[currentAlertTypes[0]].weather
             }
-          });
+          }
+        });
 
-          // Deduplicate: check if a grouped notification for this plant already exists in the last 3 hours
-          const existing = await prisma.notification.findFirst({
-            where: {
-              userId: plantWithGarden.userId,
-              type: 'WEATHER_ALERT',
-              meta: { path: ['plantId'], equals: plantWithGarden.id },
-              createdAt: { gte: new Date(Date.now() - 3 * 60 * 60 * 1000) } // last 3 hours
-            },
-            orderBy: { createdAt: 'desc' }
-          });
+        // Deduplicate: check if a grouped notification for this plant already exists in the last 3 hours
+        const existing = await prisma.notification.findFirst({
+          where: {
+            userId: plantWithGarden.userId,
+            type: 'WEATHER_ALERT',
+            meta: { path: ['plantId'], equals: plantWithGarden.id },
+            createdAt: { gte: new Date(Date.now() - 3 * 60 * 60 * 1000) } // last 3 hours
+          },
+          orderBy: { createdAt: 'desc' }
+        });
 
-          if (!existing) {
-            if (garden && garden.zipcode) {
-              const userIds = await getAllGardenUserIds(garden.id, plantWithGarden.userId);
-              await Promise.all(userIds.map(userId =>
-                prisma.notification.create({
-                  data: {
-                    userId,
-                    type: 'WEATHER_ALERT',
-                    title: `⚠️ Current Weather Alerts for ${plantWithGarden.name}`,
-                    message: message,
-                    link: `/gardens/${garden.id}/plants/${plantWithGarden.id}`,
-                    meta: {
-                      plantId: plantWithGarden.id,
-                      plantName: plantWithGarden.name,
-                      gardenId: plantWithGarden.gardenId,
-                      gardenName: garden.name,
-                      roomId: plantWithGarden.roomId,
-                      roomName,
-                      zoneId: plantWithGarden.zoneId,
-                      zoneName,
-                      alertTypes: currentAlertTypes,
-                      currentAlerts,
-                      date: new Date().toISOString().slice(0, 10),
-                    } as NotificationMeta
-                  }
-                })
-              ));
-            }
+        if (!existing) {
+          if (garden && garden.zipcode) {
+            const userIds = await getAllGardenUserIds(garden.id, plantWithGarden.userId);
+            await Promise.all(userIds.map(userId =>
+              prisma.notification.create({
+                data: {
+                  userId,
+                  type: 'WEATHER_ALERT',
+                  title: `⚠️ Current Weather Alerts for ${plantWithGarden.name}`,
+                  message: message,
+                  link: `/gardens/${garden.id}/plants/${plantWithGarden.id}`,
+                  meta: {
+                    plantId: plantWithGarden.id,
+                    plantName: plantWithGarden.name,
+                    gardenId: plantWithGarden.gardenId,
+                    gardenName: garden.name,
+                    roomId: plantWithGarden.roomId,
+                    roomName,
+                    zoneId: plantWithGarden.zoneId,
+                    zoneName,
+                    alertTypes: currentAlertTypes,
+                    currentAlerts,
+                    date: new Date().toISOString().slice(0, 10),
+                  } as NotificationMeta
+                }
+              })
+            ));
           }
         }
       }
@@ -704,27 +699,27 @@ export async function checkWeatherAlerts() {
       // Check each sensitivity type
       const heat = (sensitivitiesTyped as PlantSensitivities).heat;
       if (heat && heat.enabled && heat.threshold !== undefined && weather.temperature >= heat.threshold) {
-        await maybeSendOrUpdateAlert(plant, nonNullGarden, 'heat', weather, weather.temperature);
+        // await maybeSendOrUpdateAlert(plant, nonNullGarden, 'heat', weather, weather.temperature);
       }
       const frost = (sensitivitiesTyped as PlantSensitivities).frost;
       if (frost && frost.enabled && weather.hasFrostAlert && isTodayInFrostWindow(plant)) {
-        await maybeSendOrUpdateAlert(plant, nonNullGarden, 'frost', weather, 1);
+        // await maybeSendOrUpdateAlert(plant, nonNullGarden, 'frost', weather, 1);
       }
       const wind = (sensitivitiesTyped as PlantSensitivities).wind;
       if (wind && wind.enabled && wind.threshold !== undefined && weather.windSpeed >= wind.threshold) {
-        await maybeSendOrUpdateAlert(plant, nonNullGarden, 'wind', weather, weather.windSpeed);
+        // await maybeSendOrUpdateAlert(plant, nonNullGarden, 'wind', weather, weather.windSpeed);
       }
       const drought = (sensitivitiesTyped as PlantSensitivities).drought;
       if (drought && drought.enabled && (drought.threshold !== undefined) && weather.daysWithoutRain >= drought.threshold) {
-        await maybeSendOrUpdateAlert(plant, nonNullGarden, 'drought', weather, weather.daysWithoutRain);
+        // await maybeSendOrUpdateAlert(plant, nonNullGarden, 'drought', weather, weather.daysWithoutRain);
       }
       const flood = (sensitivitiesTyped as PlantSensitivities).flood;
       if (flood && flood.enabled && weather.hasFloodAlert) {
-        await maybeSendOrUpdateAlert(plant, nonNullGarden, 'flood', weather, 1);
+        // await maybeSendOrUpdateAlert(plant, nonNullGarden, 'flood', weather, 1);
       }
       const heavyRain = (sensitivitiesTyped as PlantSensitivities).heavyRain;
       if (heavyRain && heavyRain.enabled && heavyRain.threshold !== undefined && weather.precipitation && weather.precipitation >= heavyRain.threshold) {
-        await maybeSendOrUpdateAlert(plant, nonNullGarden, 'heavyRain', weather, weather.precipitation);
+        // await maybeSendOrUpdateAlert(plant, nonNullGarden, 'heavyRain', weather, weather.precipitation);
       }
     } catch (error) {
       console.error(`Error checking weather alerts for plant ${plant.id}:`, error);
