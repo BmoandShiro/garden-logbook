@@ -98,16 +98,27 @@ export default async function GardenPage({ params }: GardenPageProps) {
   // Fetch 3 most recent logs for each room
   const logsByRoomId: Record<string, any[]> = {};
   for (const room of garden.rooms) {
-    logsByRoomId[room.id] = await prisma.log.findMany({
+    const roomLogs = await prisma.log.findMany({
       where: { roomId: room.id },
       orderBy: { logDate: 'desc' },
       take: 3,
       include: {
         plant: { select: { name: true } },
-        garden: { select: { name: true } },
+        garden: { select: { name: true, timezone: true, zipcode: true } },
         room: { select: { name: true } },
         zone: { select: { name: true } },
       },
+    });
+    logsByRoomId[room.id] = roomLogs.map((log: any) => {
+      let timezone = log.garden?.timezone || null;
+      if (!timezone && log.garden?.zipcode) {
+        try {
+          timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+        } catch (e) {
+          timezone = null;
+        }
+      }
+      return { ...log, timezone };
     });
   }
 
