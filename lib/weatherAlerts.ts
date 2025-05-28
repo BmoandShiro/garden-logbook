@@ -48,6 +48,7 @@ interface Plant {
     isPrivate: boolean;
     imageUrl: string | null;
     weatherStatus: Prisma.JsonValue;
+    timezone?: string;
   } | null;
   gardenId?: string | null;
   roomId?: string | null;
@@ -60,6 +61,7 @@ interface Garden {
   id: string;
   zipcode: string;
   name: string;
+  timezone?: string;
 }
 
 interface NotificationMeta {
@@ -75,6 +77,7 @@ interface NotificationMeta {
   currentAlerts: Record<string, { weather: Weather; severity: number }>;
   date: string;
   logId?: string;
+  timezone?: string;
   [key: string]: any;
 }
 
@@ -534,6 +537,7 @@ export async function processWeatherAlerts() {
                     alertTypes,
                     forecastedAlerts,
                     forecastWindow: notificationPeriod,
+                    timezone: garden.timezone || null,
                   }
                 }
               })
@@ -613,7 +617,7 @@ export async function processWeatherAlerts() {
                   type: 'WEATHER_ALERT',
                   title: `⚠️ Current Weather Alerts for ${plantWithGarden.name}`,
                   message: message,
-                  link: `/gardens/${garden.id}/plants/${plantWithGarden.id}`,
+                  link: `/logs/${createdLog.id}`,
                   meta: {
                     plantId: plantWithGarden.id,
                     plantName: plantWithGarden.name,
@@ -626,6 +630,8 @@ export async function processWeatherAlerts() {
                     alertTypes: currentAlertTypes,
                     currentAlerts,
                     date: new Date().toISOString().slice(0, 10),
+                    logId: createdLog.id,
+                    timezone: garden.timezone || null,
                   } as NotificationMeta
                 }
               })
@@ -922,7 +928,7 @@ async function maybeSendOrUpdateAlert(
             type: 'WEATHER_ALERT',
             title: `⚠️ Current Weather Alerts for ${plant.name}`,
             message: message,
-            link: `/gardens/${garden.id}/plants/${plant.id}`,
+            link: `/logs/${createdLog.id}`,
             meta: {
               plantId: plant.id,
               plantName: plant.name,
@@ -940,6 +946,8 @@ async function maybeSendOrUpdateAlert(
                 }
               },
               date: today,
+              logId: createdLog.id,
+              timezone: garden.timezone || null,
             } as NotificationMeta
           }
         })
