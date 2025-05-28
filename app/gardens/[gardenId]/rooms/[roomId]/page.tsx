@@ -6,6 +6,8 @@ import ZoneList from './components/ZoneList';
 import CreateZoneButton from './components/CreateZoneButton';
 import { Prisma } from '@prisma/client';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
+// @ts-expect-error: no types for zipcode-to-timezone
+import zipcodeToTimezone from 'zipcode-to-timezone';
 
 interface PageProps {
   params: {
@@ -76,15 +78,26 @@ export default async function RoomPage({ params }) {
     redirect('/gardens');
   }
 
-  const logs = await prisma.log.findMany({
+  const logsRaw = await prisma.log.findMany({
     where: { roomId: roomId },
     orderBy: { logDate: 'desc' },
     include: {
       plant: { select: { name: true } },
-      garden: { select: { name: true } },
+      garden: { select: { name: true, timezone: true, zipcode: true } },
       room: { select: { name: true } },
       zone: { select: { name: true } },
     },
+  });
+  const logs = logsRaw.map((log: any) => {
+    let timezone = log.garden?.timezone || null;
+    if (!timezone && log.garden?.zipcode) {
+      try {
+        timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+      } catch (e) {
+        timezone = null;
+      }
+    }
+    return { ...log, timezone };
   });
 
   return (
