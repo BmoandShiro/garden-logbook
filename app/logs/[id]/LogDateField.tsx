@@ -2,11 +2,15 @@
 import { format, toZonedTime } from 'date-fns-tz';
 
 export default function LogDateField({ date, timezone }: { date: string, timezone?: string }) {
-  const utcString = format(new Date(date), 'yyyy-MM-dd HH:mm:ss') + ' UTC';
+  let utcString = 'Invalid date';
   let gardenString = null;
-  if (timezone) {
-    const zonedDate = toZonedTime(date, timezone);
-    gardenString = format(zonedDate, 'yyyy-MM-dd hh:mm a zzz', { timeZone: timezone });
+  const d = new Date(date);
+  if (date && !isNaN(d.getTime())) {
+    utcString = format(d, 'yyyy-MM-dd HH:mm:ss') + ' UTC';
+    if (timezone) {
+      const zonedDate = toZonedTime(d, timezone);
+      gardenString = format(zonedDate, 'yyyy-MM-dd hh:mm a zzz', { timeZone: timezone });
+    }
   }
   return (
     <div>

@@ -6,6 +6,8 @@ import CreateGardenButton from "./components/CreateGardenButton";
 import ManageGardensButton from "./components/ManageGardensButton";
 import { GardenList } from "./components/GardenList";
 import LogsListWrapper from "@/app/logs/components/LogsListWrapper";
+// @ts-expect-error: no types for zipcode-to-timezone
+import zipcodeToTimezone from 'zipcode-to-timezone';
 
 export default async function GardensPage() {
   const session = await getServerSession(authOptions);
@@ -75,21 +77,32 @@ export default async function GardensPage() {
   // Fetch recent logs for each garden
   const logsByGardenId: Record<string, any[]> = {};
   for (const garden of gardens) {
-    logsByGardenId[garden.id] = await prisma.log.findMany({
+    const logs = await prisma.log.findMany({
       where: { gardenId: garden.id },
       orderBy: { logDate: 'desc' },
       take: 3,
       include: {
         plant: { select: { name: true } },
-        garden: { select: { name: true } },
+        garden: { select: { name: true, timezone: true, zipcode: true } },
         room: { select: { name: true } },
         zone: { select: { name: true } },
       },
     });
+    logsByGardenId[garden.id] = logs.map((log: any) => {
+      let timezone = log.garden?.timezone || null;
+      if (!timezone && log.garden?.zipcode) {
+        try {
+          timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+        } catch (e) {
+          timezone = null;
+        }
+      }
+      return { ...log, timezone };
+    });
   }
 
   // Fetch 15 most recent logs across all gardens the user can access
-  const allRecentLogs = await prisma.log.findMany({
+  const allRecentLogsRaw = await prisma.log.findMany({
     where: {
       gardenId: { in: gardens.map((g: { id: string }) => g.id) }
     },
@@ -97,10 +110,21 @@ export default async function GardensPage() {
     take: 15,
     include: {
       plant: { select: { name: true } },
-      garden: { select: { name: true } },
+      garden: { select: { name: true, timezone: true, zipcode: true } },
       room: { select: { name: true } },
       zone: { select: { name: true } },
     },
+  });
+  const allRecentLogs = allRecentLogsRaw.map((log: any) => {
+    let timezone = log.garden?.timezone || null;
+    if (!timezone && log.garden?.zipcode) {
+      try {
+        timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+      } catch (e) {
+        timezone = null;
+      }
+    }
+    return { ...log, timezone };
   });
 
   return (
