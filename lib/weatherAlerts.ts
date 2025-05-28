@@ -1,3 +1,5 @@
+// @ts-expect-error: no types for zipcode-to-timezone
+import zipcodeToTimezone from 'zipcode-to-timezone';
 import { prisma } from '../lib/prisma';
 import { getWeatherDataForZip } from '../lib/weather';
 import { Stage, LogType, Prisma } from '@prisma/client';
@@ -120,6 +122,19 @@ function getHeavyRainUnit(sensitivities: Prisma.JsonValue): string {
   if (!sensitivities || typeof sensitivities !== 'object') return 'in';
   const typedSensitivities = sensitivities as PlantSensitivities;
   return typedSensitivities?.heavyRain?.unit || 'in';
+}
+
+// Helper to get the timezone for a garden, falling back to zipcode
+function getGardenTimezone(garden: { timezone?: string | null; zipcode?: string | null }): string | null {
+  if (garden.timezone) return garden.timezone;
+  if (garden.zipcode) {
+    try {
+      return zipcodeToTimezone.lookup(garden.zipcode) || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export async function processWeatherAlerts() {
@@ -537,7 +552,7 @@ export async function processWeatherAlerts() {
                     alertTypes,
                     forecastedAlerts,
                     forecastWindow: notificationPeriod,
-                    timezone: garden.timezone || null,
+                    timezone: getGardenTimezone(garden),
                   }
                 }
               })
@@ -631,7 +646,7 @@ export async function processWeatherAlerts() {
                     currentAlerts,
                     date: new Date().toISOString().slice(0, 10),
                     logId: createdLog.id,
-                    timezone: garden.timezone || null,
+                    timezone: getGardenTimezone(garden),
                   } as NotificationMeta
                 }
               })
@@ -947,7 +962,7 @@ async function maybeSendOrUpdateAlert(
               },
               date: today,
               logId: createdLog.id,
-              timezone: garden.timezone || null,
+              timezone: getGardenTimezone(garden),
             } as NotificationMeta
           }
         })
