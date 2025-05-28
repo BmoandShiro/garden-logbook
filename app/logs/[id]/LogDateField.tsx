@@ -6,12 +6,12 @@ export default function LogDateField({ date, timezone }: { date: string, timezon
   let gardenString = null;
   if (timezone) {
     const zonedDate = toZonedTime(date, timezone);
-    gardenString = format(zonedDate, 'yyyy-MM-dd hh:mm a zzz', { timeZone: timezone }) + ' (Garden Time)';
+    gardenString = format(zonedDate, 'yyyy-MM-dd hh:mm a zzz', { timeZone: timezone });
   }
   return (
     <div>
-      <div><strong>UTC:</strong> {utcString}</div>
-      {gardenString && <div><strong>Garden Time:</strong> {gardenString}</div>}
+      <div>{utcString}</div>
+      {gardenString && <div>{gardenString}</div>}
     </div>
   );
 } 
