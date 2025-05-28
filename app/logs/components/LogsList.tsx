@@ -184,9 +184,9 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                         <p className="text-sm font-medium text-dark-text-primary truncate">
                           {log.type.replace(/_/g, ' ')}
                         </p>
-                        <p className="text-sm text-dark-text-secondary">
+                        <span className="text-sm text-dark-text-secondary">
                           <LogDateField date={String(log.logDate)} timezone={log.timezone} />
-                        </p>
+                        </span>
                       </div>
                       {/* Location string always visible */}
                       <p className="mt-1 text-sm text-dark-text-secondary">
