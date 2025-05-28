@@ -71,6 +71,7 @@ export async function GET(request: Request) {
       zoneId: n.meta?.zoneId,
       createdAt: n.createdAt,
       message: n.message,
+      timezone: n.meta?.timezone || null,
     });
   }
   // Convert sets to counts and arrays
