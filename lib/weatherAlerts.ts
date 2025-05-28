@@ -50,7 +50,7 @@ interface Plant {
     isPrivate: boolean;
     imageUrl: string | null;
     weatherStatus: Prisma.JsonValue;
-    timezone?: string;
+    timezone: string | null;
   } | null;
   gardenId?: string | null;
   roomId?: string | null;
@@ -63,7 +63,7 @@ interface Garden {
   id: string;
   zipcode: string;
   name: string;
-  timezone?: string;
+  timezone: string | null;
 }
 
 interface NotificationMeta {
