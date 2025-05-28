@@ -322,6 +322,7 @@ model Garden {
   isPrivate    Boolean        @default(true)
   imageUrl     String?
   zipcode      String?        // US Zipcode
+  timezone     String?        // IANA timezone identifier (e.g. "America/New_York")
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   creatorId    String
