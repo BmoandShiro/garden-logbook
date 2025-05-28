@@ -8,6 +8,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import Link from 'next/link';
 import renderForecastedMessage from '@/components/MonthlyCalendar';
 import { formatLogDate } from './CreateLogModal';
+import LogDateField from '../../logs/[id]/LogDateField';
 
 interface LogWithLocation {
   id: string;
@@ -47,6 +48,7 @@ interface LogWithLocation {
     username?: string | null;
     email?: string | null;
   };
+  timezone?: string;
 }
 
 interface LogsListProps {
@@ -183,7 +185,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                           {log.type.replace(/_/g, ' ')}
                         </p>
                         <p className="text-sm text-dark-text-secondary">
-                          {formatLogDate(log.logDate)}
+                          <LogDateField date={String(log.logDate)} timezone={log.timezone} />
                         </p>
                       </div>
                       {/* Location string always visible */}
