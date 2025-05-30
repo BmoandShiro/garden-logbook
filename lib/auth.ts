@@ -4,6 +4,31 @@ import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
 import { db } from "./db";
 
+// Extend next-auth types
+declare module "next-auth" {
+  interface User {
+    id: string;
+    role: string;
+    permissions: string[];
+  }
+  
+  interface Session {
+    user: User & {
+      id: string;
+      role: string;
+      permissions: string[];
+    }
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: string;
+    permissions: string[];
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
   secret: process.env.NEXTAUTH_SECRET,
@@ -39,9 +64,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session?.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as any;
-        session.user.permissions = token.permissions as any[];
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.permissions = token.permissions;
       }
       return session;
     },

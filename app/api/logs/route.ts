@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { LogType } from '@prisma/client';
+import zipcodeToTimezone from 'zipcode-to-timezone';
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -115,7 +116,7 @@ export async function GET(request: Request) {
         type: true,
         notes: true,
         plant: { select: { name: true, stage: true } },
-        garden: { select: { name: true } },
+        garden: { select: { name: true, timezone: true, zipcode: true } },
         room: { select: { name: true } },
         zone: { select: { name: true } },
         temperature: true,
@@ -133,7 +134,20 @@ export async function GET(request: Request) {
       take: 50,
     });
 
-    return NextResponse.json(logs);
+    // Add timezone to each log
+    const logsWithTimezone = logs.map(log => {
+      let timezone = log.garden?.timezone || null;
+      if (!timezone && log.garden?.zipcode) {
+        try {
+          timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+        } catch (e) {
+          timezone = null;
+        }
+      }
+      return { ...log, timezone };
+    });
+
+    return NextResponse.json(logsWithTimezone);
   } catch (error: any) {
     console.error('Error fetching logs:', error);
     return NextResponse.json(
@@ -161,11 +175,11 @@ export async function POST(request: Request) {
 
     const data = await request.json();
     console.log('Received data:', JSON.stringify(data, null, 2));
-    const { date, time, selectedPlants, logType, ...rest } = data;
+    const { datetime, selectedPlants, logType, ...rest } = data;
 
-    // Convert date and time to DateTime
-    const logDate = new Date(`${date}T${time}`);
-    console.log('Converted logDate:', logDate);
+    // Parse the local datetime string and use it directly for logDate (undo UTC conversion)
+    const logDate = new Date(datetime);
+    console.log('Converted logDate (local):', logDate.toISOString());
 
     // Map form fields to schema fields
     const logData = {

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Cloud, CloudSun, CloudLightning, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { format, addHours, differenceInSeconds } from 'date-fns';
+import LogDateField from '../logs/[id]/LogDateField';
 
 export interface WeatherStatus {
   hasAlerts: boolean;
@@ -155,6 +156,20 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
     return null;
   }
 
+  function formatAlertDate(dateString: string, timezone: string | null | undefined) {
+    if (!dateString) return 'Invalid date';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    let utcString = format(date, 'yyyy-MM-dd HH:mm:ss') + ' UTC';
+    let localString = '';
+    if (timezone) {
+      try {
+        localString = date.toLocaleString('en-US', { timeZone: timezone, hour12: false });
+      } catch {}
+    }
+    return localString ? `${localString} (${timezone})\n${utcString}` : utcString;
+  }
+
   return (
     <div className="space-y-4">
       <div className="mb-4 flex items-center gap-4">
@@ -305,7 +320,9 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
                           ) : alert.message ? (
                             <div className="mt-1 whitespace-pre-line">{alert.message}</div>
                           ) : null}
-                          <div><span className="font-semibold">Time:</span> {alert.createdAt ? format(new Date(alert.createdAt), 'PPpp') : ''}</div>
+                          <div><span className="font-semibold">Time:</span><br />
+                            <LogDateField date={alert.createdAt} timezone={alert.meta?.timezone} />
+                          </div>
                         </li>
                       ))}
                     </ul>

@@ -13,7 +13,7 @@ COPY . .
 RUN npx prisma generate
 
 # Build TypeScript files
-RUN npm run build
+RUN npm run build:cron
 
 # Start cron worker
 CMD ["node", "dist/start-cron.js"] 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import zipcodeToTimezone from 'zipcode-to-timezone';
 
 export async function GET(
   request: Request,
@@ -18,7 +19,15 @@ export async function GET(
     if (!log) {
       return NextResponse.json({ error: 'Log not found' }, { status: 404 });
     }
-    return NextResponse.json(log);
+    let timezone = log.garden?.timezone || null;
+    if (!timezone && log.garden?.zipcode) {
+      try {
+        timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+      } catch (e) {
+        timezone = null;
+      }
+    }
+    return NextResponse.json({ ...log, timezone });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch log' }, { status: 500 });
   }

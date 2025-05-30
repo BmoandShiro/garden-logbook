@@ -3,8 +3,23 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import LogDateField from '../logs/[id]/LogDateField';
 
 // Define Notification type
+interface NotificationMeta {
+  inviteId?: string;
+  gardenId?: string;
+  gardenName?: string;
+  roomId?: string;
+  roomName?: string;
+  zoneId?: string;
+  zoneName?: string;
+  plantId?: string;
+  plantName?: string;
+  timezone?: string;
+  logId?: string;
+}
+
 interface Notification {
   id: string;
   userId: string;
@@ -12,7 +27,7 @@ interface Notification {
   title: string;
   message: string;
   link?: string;
-  meta?: { inviteId?: string, gardenId?: string, gardenName?: string, roomId?: string, roomName?: string, zoneId?: string, zoneName?: string, plantId?: string, plantName?: string };
+  meta?: NotificationMeta;
   read: boolean;
   createdAt: string;
 }
@@ -417,13 +432,15 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                       return (
                                                                         <a
                                                                           key={n.id}
-                                                                          href={n.link || (n.meta?.plantId ? `/logs?plantId=${n.meta.plantId}` : undefined)}
+                                                                          href={n.meta?.logId ? `/logs/${n.meta.logId}` : n.link || (n.meta?.plantId ? `/logs?plantId=${n.meta.plantId}` : undefined)}
                                                                           className={`block p-4 rounded border transition cursor-pointer mb-2 ${n.read ? 'bg-dark-bg-primary border-dark-border' : 'bg-garden-950/60 border-garden-600 shadow-lg'} hover:bg-dark-bg-hover`}
                                                                         >
                                                                           <div className="flex items-center justify-between">
                                                                             <div className="font-semibold text-garden-400">{n.title}</div>
-                                                                            <div className="flex items-center gap-2">
-                                                                              <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                            <div className="flex flex-col items-end gap-1">
+                                                                              <div className="text-xs text-dark-text-secondary">
+                                                                                <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
+                                                                              </div>
                                                                             </div>
                                                                           </div>
                                                                           {n.meta && (n.meta.roomName || n.meta.zoneName) && (
@@ -458,7 +475,9 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                           <div className="flex items-center justify-between">
                                                                             <div className="font-semibold text-garden-400">{n.title}</div>
                                                                             <div className="flex items-center gap-2">
-                                                                              <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                                                                              <div className="text-xs text-dark-text-secondary">
+                                                                                <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
+                                                                              </div>
                                                                             </div>
                                                                           </div>
                                                                           {n.meta && (n.meta.roomName || n.meta.zoneName) && (
@@ -553,7 +572,9 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
               <div className="flex items-center justify-between">
                 <div className="font-semibold text-garden-400">{n.title}</div>
                 <div className="flex items-center gap-2">
-                  <div className="text-xs text-dark-text-secondary">{new Date(n.createdAt).toLocaleString()}</div>
+                  <div className="text-xs text-dark-text-secondary">
+                    <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
+                  </div>
                 </div>
               </div>
               {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (

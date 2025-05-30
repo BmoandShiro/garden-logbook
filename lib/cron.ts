@@ -1,12 +1,12 @@
 import cron from 'node-cron';
-import { processWeatherAlerts } from './weatherAlerts.ts';
+import { processWeatherAlerts } from './weatherAlerts';
 
 let isRunning = false;
 
 // Log the last run time
 let lastRun: Date | null = null;
 
-// Schedule the job to run at 0, 4, 8, 12, 16, and 20 hours
+// Schedule the job to run at 0, 4, 8, 12, 16, and 20 hours UTC
 cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
   if (isRunning) {
     console.log('[CRON] Weather check already running, skipping this interval.');
@@ -14,11 +14,11 @@ cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
   }
   isRunning = true;
   const now = new Date();
-  console.log(`[CRON] Weather check started at ${now.toLocaleString()}`);
+  console.log(`[CRON] Weather check started at ${now.toISOString()} UTC`);
   try {
     await processWeatherAlerts();
     lastRun = now;
-    console.log(`[CRON] Weather check completed at ${new Date().toLocaleString()}`);
+    console.log(`[CRON] Weather check completed at ${new Date().toISOString()} UTC`);
   } catch (err) {
     console.error('[CRON] Weather check failed:', err);
   } finally {

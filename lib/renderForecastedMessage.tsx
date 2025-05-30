@@ -27,6 +27,14 @@ export function renderForecastedMessage(message: string) {
         const dateIdx = line.indexOf(dateMatch[0]);
         before = line.slice(0, dateIdx);
         date = dateMatch[0];
+        // Add timezone label
+        let tzLabel = '';
+        if (date.includes('+') || date.includes('-')) {
+          tzLabel = ' (local time)';
+        } else if (date.includes('Z')) {
+          tzLabel = ' (UTC)';
+        }
+        date = `${date}${tzLabel}`;
       }
       if (valueMatch) {
         const valueIdx = line.lastIndexOf(valueMatch[1]);

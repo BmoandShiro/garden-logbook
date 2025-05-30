@@ -371,8 +371,7 @@ interface FormData {
   // Basic Info
   logType: LogType;
   stage: Stage;
-  date: string;
-  time: string;
+  datetime: string; // ISO local datetime string (e.g., '2025-05-27T16:15')
   logTitle: string;
   notes: string;
   imageUrls: string[];
@@ -583,12 +582,23 @@ interface CreateLogModalProps {
   onSuccess?: () => void;
 }
 
+// Utility to robustly parse and display log dates in local time
+export function formatLogDate(date: string | Date) {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString();
+}
+
 export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: CreateLogModalProps) {
   const [formData, setFormData] = useState<FormData>({
     logType: LogType.EQUIPMENT,
     stage: Stage.VEGETATIVE,
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
+    datetime: (() => {
+      const d = new Date();
+      d.setSeconds(0, 0); // Remove seconds/milliseconds for input compatibility
+      return d.toISOString().slice(0, 16); // 'YYYY-MM-DDTHH:mm'
+    })(),
     logTitle: '',
     notes: '',
     imageUrls: [],
@@ -2927,31 +2937,12 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
               </select>
             </div>
             <div>
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="datetime">Date & Time</Label>
               <Input
-                type="date"
-                id="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-              />
-            </div>
-            <div>
-              <Label htmlFor="time">Time</Label>
-              <Input
-                type="time"
-                id="time"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-              />
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="logTitle">Title</Label>
-              <Input
-                id="logTitle"
-                value={formData.logTitle}
-                onChange={(e) => setFormData({ ...formData, logTitle: e.target.value })}
+                type="datetime-local"
+                id="datetime"
+                value={formData.datetime}
+                onChange={(e) => setFormData({ ...formData, datetime: e.target.value })}
                 className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
               />
             </div>

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
+import LogDateField from '../app/logs/[id]/LogDateField';
 
 function getLogColor(type: string) {
   switch (type) {
@@ -704,7 +705,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       {d.roomName && <div><span className="font-semibold">Room:</span> {d.roomName}</div>}
                       {d.zoneName && <div><span className="font-semibold">Zone:</span> {d.zoneName}</div>}
                       {d.plantName && <div><span className="font-semibold">Plant:</span> <span className="text-emerald-400">{d.plantName}</span></div>}
-                      {d.createdAt && <div><span className="font-semibold">Time:</span> {format(new Date(d.createdAt), 'PPpp')}</div>}
+                      {d.createdAt && <div><span className="font-semibold">Time:</span> <LogDateField date={d.createdAt} timezone={d.timezone} /></div>}
                       {d.message && <div className="mt-2 whitespace-pre-line">{renderForecastedMessage(d.message)}</div>}
                       {d.alertTypes && d.alertTypes.length > 0 && (
                         <div className="mt-2">

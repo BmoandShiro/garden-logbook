@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import PlantLogsListWrapper from './components/PlantLogsListWrapper';
 import EditPlantModal from './components/EditPlantModal';
 import { Plant } from '@prisma/client';
+// @ts-expect-error: no types for zipcode-to-timezone
+import zipcodeToTimezone from 'zipcode-to-timezone';
 
 interface PageProps {
   params: {
@@ -75,15 +77,26 @@ export default async function PlantPage({ params }) {
     : null;
 
   // Fetch logs for this plant
-  const logs = await prisma.log.findMany({
+  const logsRaw = await prisma.log.findMany({
     where: { plantId: plantId },
     orderBy: { logDate: 'desc' },
     include: {
       plant: { select: { name: true } },
-      garden: { select: { name: true } },
+      garden: { select: { name: true, timezone: true, zipcode: true } },
       room: { select: { name: true } },
       zone: { select: { name: true } },
     },
+  });
+  const logs = logsRaw.map((log: any) => {
+    let timezone = log.garden?.timezone || null;
+    if (!timezone && log.garden?.zipcode) {
+      try {
+        timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+      } catch (e) {
+        timezone = null;
+      }
+    }
+    return { ...log, timezone };
   });
 
   // Log the plant object for debugging
