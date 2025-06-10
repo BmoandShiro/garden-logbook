@@ -2,12 +2,12 @@ import cron from 'node-cron';
 import { processWeatherAlerts } from './weatherAlerts';
 
 let isRunning = false;
-
-// Log the last run time
 let lastRun: Date | null = null;
+let missedRuns = 0;
+const SCHEDULED_HOURS = [0, 4, 8, 12, 16, 20];
 
-// Schedule the job to run at 0, 4, 8, 12, 16, and 20 hours UTC
-cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
+// Function to process weather alerts
+async function runWeatherCheck() {
   if (isRunning) {
     console.log('[CRON] Weather check already running, skipping this interval.');
     return;
@@ -18,11 +18,51 @@ cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
   try {
     await processWeatherAlerts();
     lastRun = now;
+    missedRuns = 0; // Reset missed runs counter on successful run
     console.log(`[CRON] Weather check completed at ${new Date().toISOString()} UTC`);
   } catch (err) {
     console.error('[CRON] Weather check failed:', err);
   } finally {
     isRunning = false;
+  }
+}
+
+// Function to check if we missed a scheduled time
+function checkMissedSchedule() {
+  if (!lastRun) return true;
+  
+  const now = new Date();
+  const lastRunHour = lastRun.getUTCHours();
+  const currentHour = now.getUTCHours();
+  
+  // Find the next scheduled hour after the last run
+  const lastRunIndex = SCHEDULED_HOURS.indexOf(lastRunHour);
+  const nextScheduledHour = SCHEDULED_HOURS[(lastRunIndex + 1) % SCHEDULED_HOURS.length];
+  
+  // If we're past the next scheduled hour, we missed a run
+  return currentHour > nextScheduledHour;
+}
+
+// Primary schedule: specific times (0,4,8,12,16,20)
+cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
+  if (checkMissedSchedule()) {
+    missedRuns++;
+    console.log(`[CRON] Missed run detected. Count: ${missedRuns}`);
+  }
+  await runWeatherCheck();
+});
+
+// Fallback schedule: every 6 hours
+cron.schedule('0 */6 * * *', async () => {
+  const now = new Date();
+  const hour = now.getUTCHours();
+  
+  // Only run fallback if:
+  // 1. We're not at a scheduled time
+  // 2. We've missed 2 consecutive runs
+  if (!SCHEDULED_HOURS.includes(hour) && missedRuns >= 2) {
+    console.log(`[CRON] Fallback triggered at ${now.toISOString()} UTC (hour: ${hour}, missed runs: ${missedRuns})`);
+    await runWeatherCheck();
   }
 });
 
