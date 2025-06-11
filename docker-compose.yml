@@ -24,15 +24,15 @@ services:
       - /app/node_modules
       - /app/.next
 
-  cron:
-    build:
-      context: .
-      dockerfile: Dockerfile.cron
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/garden
-    depends_on:
-      db:
-        condition: service_healthy
+#  cron:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.cron
+#    environment:
+#      - DATABASE_URL=postgresql://postgres:postgres@db:5432/garden
+#    depends_on:
+#      db:
+#        condition: service_healthy
 
   db:
     image: postgres:15-alpine
