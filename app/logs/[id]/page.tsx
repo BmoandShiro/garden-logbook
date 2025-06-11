@@ -249,6 +249,15 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         </Section>
       )}
 
+      {/* WEATHER ALERT-specific section - Only for WEATHER_ALERT logs */}
+      {(log.type === 'WEATHER_ALERT' || log.type === 'WEATHER ALERT') && merged.sinceLastPrecipDiff && (
+        <Section title="Heavy Rain (Since Last Log)">
+          <div className="text-blue-700 font-semibold text-sm">
+            {merged.sinceLastPrecipDiff}
+          </div>
+        </Section>
+      )}
+
       {/* Notes Section */}
       <Section title="Notes">
         {String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT' ? (

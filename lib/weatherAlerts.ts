@@ -611,10 +611,6 @@ export async function processWeatherAlerts() {
           }
         }
 
-        if (sinceLastLogMsg) {
-          message += `\n(Daily Total) ${sinceLastLogMsg}`;
-        }
-
         // Create a log entry for the plant
         const weatherInfo = {
           temperature: `${weather.temperature}°F`,
@@ -638,7 +634,8 @@ export async function processWeatherAlerts() {
               weatherInfo,
               severity: currentAlerts[currentAlertTypes[0]].severity,
               type: currentAlertTypes[0],
-              weather: currentAlerts[currentAlertTypes[0]].weather
+              weather: currentAlerts[currentAlertTypes[0]].weather,
+              sinceLastPrecipDiff: sinceLastLogMsg || undefined
             }
           }
         });
@@ -981,7 +978,8 @@ async function maybeSendOrUpdateAlert(
         weatherInfo,
         severity,
         type,
-        weather
+        weather,
+        sinceLastPrecipDiff: sinceLastLogMsg || undefined
       }
     }
   });

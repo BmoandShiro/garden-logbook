@@ -53,7 +53,7 @@ interface LogWithLocation {
 
 interface LogsListProps {
   logs: LogWithLocation[];
-  onLogDeleted?: (deletedLogId: string) => void;
+  onLogDeleted?: (...args: any[]) => void;
 }
 
 const getLogIcon = (type: string) => {
@@ -117,6 +117,13 @@ function renderCondensedWeatherAlert(message: string) {
   return badges.length > 0 ? <div className="flex flex-wrap items-center mt-2 text-sm">{badges}</div> : null;
 }
 
+function extractSinceLastLogMsg(notes: string | null | undefined): string | null {
+  if (!notes) return null;
+  // Look for a line like (Daily Total) ... since last log
+  const match = notes.match(/\(Daily Total\)\s*(.+since last log|No new precipitation since last log)/i);
+  return match ? match[1] : null;
+}
+
 export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
   const { preferences } = useUserPreferences();
   const unitPreferences = preferences.units;
@@ -176,6 +183,12 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                         (String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT') ? (
                           <div>
                             {renderCondensedWeatherAlert(log.notes)}
+                            {/* Show since last log message if present in data */}
+                            {merged.sinceLastPrecipDiff && (
+                              <div className="text-blue-700 font-semibold text-sm mt-1">
+                                {merged.sinceLastPrecipDiff}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
