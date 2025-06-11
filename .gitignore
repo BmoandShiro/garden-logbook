@@ -38,3 +38,5 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+garden-logbook-cron.tar
+garden-logbook-app.tar
