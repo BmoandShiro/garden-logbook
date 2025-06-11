@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: garden-logbook-cron
+spec:
+  schedule: "0 0,4,8,12,16,20 * * *" # Every 4 hours UTC
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: garden-logbook-cron
+            image: garden-logbook-cron:latest
+            imagePullPolicy: IfNotPresent
+            command: ["node", "dist/start-cron.js"]
+            env:
+              - name: DATABASE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: DATABASE_URL
+              - name: NEXTAUTH_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: NEXTAUTH_SECRET
+              - name: NEXTAUTH_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: NEXTAUTH_URL
+              - name: EMAIL_SERVER_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: EMAIL_SERVER_HOST
+              - name: EMAIL_SERVER_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: EMAIL_SERVER_PORT
+              - name: EMAIL_SERVER_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: EMAIL_SERVER_USER
+              - name: EMAIL_SERVER_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: EMAIL_SERVER_PASSWORD
+              - name: EMAIL_FROM
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: EMAIL_FROM
+              - name: GOOGLE_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: GOOGLE_CLIENT_ID
+              - name: GOOGLE_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: garden-logbook-secrets
+                    key: GOOGLE_CLIENT_SECRET
+          restartPolicy: OnFailure
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3 

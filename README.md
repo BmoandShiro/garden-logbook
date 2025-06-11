@@ -11,6 +11,7 @@ A web application for tracking and managing garden activities. This guide will h
 - [Troubleshooting](#troubleshooting)
 - [Database Migration Workflow](#database-migration-workflow)
 - [Authentication Setup](#authentication-setup)
+- [Kubernetes Deployment (K3s, Minikube, etc.)](#kubernetes-deployment-k3s-minikube-etc)
 
 ## What You'll Need
 
@@ -790,3 +791,47 @@ Garden Logbook supports two authentication modes:
 ## Example .env
 
 See `.env.example` for a template. Never commit your real `.env` to version control!
+
+## Kubernetes Deployment (K3s, Minikube, etc.)
+
+This project includes Kubernetes manifests in the `k8s/` directory for easy deployment of the cron job and (optionally) other services.
+
+### Deploying the Cron Job
+
+1. **Build your Docker image:**
+   ```bash
+   docker build -t garden-logbook-cron:latest -f Dockerfile.cron .
+   ```
+
+2. **Import the image into K3s (if running locally):**
+   ```bash
+   sudo k3s ctr images import garden-logbook-cron.tar
+   # Or save and import if needed:
+   # docker save -o garden-logbook-cron.tar garden-logbook-cron:latest
+   # sudo k3s ctr images import garden-logbook-cron.tar
+   ```
+
+3. **Apply the Kubernetes manifest:**
+   ```bash
+   kubectl apply -f k8s/cronjob.yaml
+   ```
+
+4. **Check status:**
+   ```bash
+   kubectl get cronjobs
+   kubectl get jobs
+   kubectl get pods
+   ```
+
+5. **View logs for a job pod:**
+   ```bash
+   kubectl logs <pod-name>
+   ```
+
+### Notes
+- The cron job will run every 4 hours (UTC) by default.
+- You can edit the schedule in `k8s/cronjob.yaml`.
+- If you are migrating from Docker, disable or remove the Docker-based cron job to avoid duplicate runs.
+- You can add more manifests (e.g., for the main app) to the `k8s/` directory as needed.
+
+---

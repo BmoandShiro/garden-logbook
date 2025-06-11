@@ -43,8 +43,23 @@ function checkMissedSchedule() {
   return currentHour > nextScheduledHour;
 }
 
+// Heartbeat: log every 10 minutes to show event loop is alive
+setInterval(() => {
+  console.log(`[HEARTBEAT] Event loop alive at ${new Date().toISOString()}`);
+}, 10 * 60 * 1000);
+
+// Catch unhandled promise rejections and uncaught exceptions
+type AnyErr = any;
+process.on('unhandledRejection', (reason: AnyErr, promise) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+process.on('uncaughtException', (err: AnyErr) => {
+  console.error('[UNCAUGHT EXCEPTION]', err);
+});
+
 // Primary schedule: specific times (0,4,8,12,16,20)
 cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
+  console.log(`[CRON] Scheduled job triggered at ${new Date().toISOString()} UTC`);
   if (checkMissedSchedule()) {
     missedRuns++;
     console.log(`[CRON] Missed run detected. Count: ${missedRuns}`);
@@ -54,6 +69,7 @@ cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
 
 // Fallback schedule: every 6 hours
 cron.schedule('0 */6 * * *', async () => {
+  console.log(`[CRON] Fallback schedule triggered at ${new Date().toISOString()} UTC`);
   const now = new Date();
   const hour = now.getUTCHours();
   
