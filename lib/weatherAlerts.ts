@@ -585,6 +585,36 @@ export async function processWeatherAlerts() {
         }
         message += '\nPlease take necessary precautions to protect your plant.';
 
+        // Backend calculation for 'since last log' for heavy rain
+        let sinceLastLogMsg = '';
+        if (currentAlertTypes.includes('heavyRain') && typeof currentAlerts['heavyRain'].weather.precipitation === 'number') {
+          const prevLog = await prisma.log.findFirst({
+            where: {
+              plantId: plantWithGarden.id,
+              type: LogType.WEATHER_ALERT,
+              notes: { contains: 'HeavyRain' },
+            },
+            orderBy: { logDate: 'desc' },
+          });
+          if (prevLog) {
+            const prevMatch = prevLog.notes.match(/HeavyRain: ([\d.]+) in/);
+            const currVal = currentAlerts['heavyRain'].weather.precipitation;
+            if (prevMatch) {
+              const prevVal = parseFloat(prevMatch[1]);
+              const diff = currVal - prevVal;
+              if (diff > 0) {
+                sinceLastLogMsg = `+${diff.toFixed(2)} in since last log`;
+              } else {
+                sinceLastLogMsg = 'No new precipitation since last log';
+              }
+            }
+          }
+        }
+
+        if (sinceLastLogMsg) {
+          message += `\n(Daily Total) ${sinceLastLogMsg}`;
+        }
+
         // Create a log entry for the plant
         const weatherInfo = {
           temperature: `${weather.temperature}°F`,
@@ -896,7 +926,37 @@ async function maybeSendOrUpdateAlert(
     }
     message += '\n';
   }
+
+  // Backend calculation for 'since last log' for heavy rain
+  let sinceLastLogMsg = '';
+  if (type === 'heavyRain' && typeof weather.precipitation === 'number') {
+    const prevLog = await prisma.log.findFirst({
+      where: {
+        plantId: plant.id,
+        type: LogType.WEATHER_ALERT,
+        notes: { contains: 'HeavyRain' },
+      },
+      orderBy: { logDate: 'desc' },
+    });
+    if (prevLog) {
+      const prevMatch = prevLog.notes.match(/HeavyRain: ([\d.]+) in/);
+      const currVal = weather.precipitation;
+      if (prevMatch) {
+        const prevVal = parseFloat(prevMatch[1]);
+        const diff = currVal - prevVal;
+        if (diff > 0) {
+          sinceLastLogMsg = `+${diff.toFixed(2)} in since last log`;
+        } else {
+          sinceLastLogMsg = 'No new precipitation since last log';
+        }
+      }
+    }
+  }
+
   message += '\nPlease take necessary precautions to protect your plant.';
+  if (sinceLastLogMsg) {
+    message += `\n(Daily Total) ${sinceLastLogMsg}`;
+  }
 
   // Create a log entry for the plant
   const weatherInfo = {

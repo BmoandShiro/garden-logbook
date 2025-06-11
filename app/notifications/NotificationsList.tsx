@@ -199,29 +199,6 @@ function renderForecastedMessage(message: string) {
   return rendered;
 }
 
-// Helper to calculate 'since last log' for heavy rain in notifications
-function getSinceLastNotification(notifications: Notification[], idx: number, section: string) {
-  if (section !== 'HeavyRain') return null;
-  for (let i = idx - 1; i >= 0; i--) {
-    const prev = notifications[i];
-    if (prev.message && prev.message.includes('HeavyRain')) {
-      const prevMatch = prev.message.match(/HeavyRain: ([\d.]+) in/);
-      const currMatch = notifications[idx].message?.match(/HeavyRain: ([\d.]+) in/);
-      if (prevMatch && currMatch) {
-        const prevVal = parseFloat(prevMatch[1]);
-        const currVal = parseFloat(currMatch[1]);
-        const diff = currVal - prevVal;
-        if (diff > 0) {
-          return `+${diff.toFixed(2)} in since last log`;
-        } else {
-          return 'No new precipitation since last log';
-        }
-      }
-    }
-  }
-  return null;
-}
-
 export default function NotificationsList({ notifications, userEmail }: NotificationsListProps) {
   const [loading, setLoading] = useState(false);
   const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
@@ -451,18 +428,6 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                           )}
                                                                           <div className="mt-1 space-y-1">
                                                                             {renderCurrentAlertLabels(n.message)}
-                                                                            {(() => {
-                                                                              const match = n.message.match(/HeavyRain: ([\d.]+) in/);
-                                                                              if (match) {
-                                                                                return (
-                                                                                  <div className="text-xs text-blue-400 mt-1">
-                                                                                    (Daily Total)
-                                                                                    <span className="ml-2">{getSinceLastNotification(notifications, idx, 'HeavyRain')}</span>
-                                                                                  </div>
-                                                                                );
-                                                                              }
-                                                                              return null;
-                                                                            })()}
                                                                           </div>
                                                                         </a>
                                                                       );

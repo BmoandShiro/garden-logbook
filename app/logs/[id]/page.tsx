@@ -4,15 +4,35 @@ import { format } from 'date-fns';
 import LogRawDataToggle from '../components/LogRawDataToggle';
 import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
 import LogDateField from './LogDateField';
+import { db } from '@/lib/db';
+import zipcodeToTimezone from 'zipcode-to-timezone';
 
 async function getLog(id: string) {
-  const headersList = await headers();
-  const host = headersList.get('host');
-  const protocol = headersList.get('x-forwarded-proto') || 'http';
-  const baseUrl = `${protocol}://${host}`;
-  const res = await fetch(`${baseUrl}/api/logs/${id}`);
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const log = await db.log.findUnique({
+      where: { id },
+      include: {
+        plant: true,
+        garden: true,
+        room: true,
+        zone: true,
+      },
+    });
+    if (!log) return null;
+    
+    let timezone = log.garden?.timezone || null;
+    if (!timezone && log.garden?.zipcode) {
+      try {
+        timezone = zipcodeToTimezone.lookup(log.garden.zipcode) || null;
+      } catch (e) {
+        timezone = null;
+      }
+    }
+    return { ...log, timezone };
+  } catch (error) {
+    console.error('Error fetching log:', error);
+    return null;
+  }
 }
 
 function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {

@@ -132,30 +132,6 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
     }
   }
 
-  // Helper to calculate 'since last alert' for heavy rain in weather tab
-  function getSinceLastWeatherAlert(alerts: any[], idx: number, section: string) {
-    if (section !== 'heavyRain') return null;
-    for (let i = idx - 1; i >= 0; i--) {
-      const prev = alerts[i];
-      if (!prev || !prev.notes) continue;
-      if (prev.notes.includes('HeavyRain')) {
-        const prevMatch = prev.notes.match(/HeavyRain: ([\d.]+) in/);
-        const currMatch = alerts[idx].notes?.match(/HeavyRain: ([\d.]+) in/);
-        if (prevMatch && currMatch) {
-          const prevVal = parseFloat(prevMatch[1]);
-          const currVal = parseFloat(currMatch[1]);
-          const diff = currVal - prevVal;
-          if (diff > 0) {
-            return `+${diff.toFixed(2)} in since last log`;
-          } else {
-            return 'No new precipitation since last log';
-          }
-        }
-      }
-    }
-    return null;
-  }
-
   function formatAlertDate(dateString: string, timezone: string | null | undefined) {
     if (!dateString) return 'Invalid date';
     const date = new Date(dateString);
@@ -301,12 +277,6 @@ export function WeatherGardenList({ gardens: initialGardens, userId, userEmail }
                                   else if (type === 'heavyRain' || type === 'flood') value = `${ca.weather.precipitation ?? 'N/A'} precipitation`;
                                   else if (type === 'drought') value = `${ca.weather.daysWithoutRain} days`;
                                   else value = `${ca.severity}`;
-                                }
-                                if (type === 'heavyRain' && value && getSinceLastWeatherAlert(alerts, idx, 'heavyRain')) {
-                                  <div className="text-xs text-blue-400 mt-1">
-                                    (Daily Total)
-                                    <span className="ml-2">{getSinceLastWeatherAlert(alerts, idx, 'heavyRain')}</span>
-                                  </div>
                                 }
                                 return <div key={type}>• {type.charAt(0).toUpperCase() + type.slice(1)}: {value}</div>;
                               })}

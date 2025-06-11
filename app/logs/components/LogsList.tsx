@@ -121,31 +121,6 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
   const { preferences } = useUserPreferences();
   const unitPreferences = preferences.units;
 
-  // Helper to calculate 'since last log' for heavy rain
-  function getSinceLastLog(logs: LogWithLocation[], idx: number, section: string) {
-    if (section !== 'HeavyRain') return null;
-    // Find previous log with heavy rain value
-    for (let i = idx - 1; i >= 0; i--) {
-      const prev = logs[i];
-      if (prev.notes && prev.notes.includes('HeavyRain')) {
-        // Extract value from previous log
-        const prevMatch = prev.notes.match(/HeavyRain: ([\d.]+) in/);
-        const currMatch = logs[idx].notes?.match(/HeavyRain: ([\d.]+) in/);
-        if (prevMatch && currMatch) {
-          const prevVal = parseFloat(prevMatch[1]);
-          const currVal = parseFloat(currMatch[1]);
-          const diff = currVal - prevVal;
-          if (diff > 0) {
-            return `+${diff.toFixed(2)} in since last log`;
-          } else {
-            return 'No new precipitation since last log';
-          }
-        }
-      }
-    }
-    return null;
-  }
-
   const formatMeasurementWithPreferences = (value: number | null | undefined, sourceUnit: string | undefined, targetUnit: string) => {
     if (value === null || value === undefined) return null;
     
@@ -201,19 +176,6 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                         (String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT') ? (
                           <div>
                             {renderCondensedWeatherAlert(log.notes)}
-                            {/* Add since last log for heavy rain */}
-                            {(() => {
-                              const match = log.notes.match(/HeavyRain: ([\d.]+) in/);
-                              if (match) {
-                                return (
-                                  <div className="text-xs text-blue-400 mt-1">
-                                    (Daily Total)
-                                    <span className="ml-2">{getSinceLastLog(logs, idx, 'HeavyRain')}</span>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
                           </div>
                         ) : (
                           <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>

@@ -336,7 +336,7 @@ export default function LogsView({ userId }: LogsViewProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/plants/${log.plantId}/logs/${log.id}`)}
+                      onClick={() => router.push(`/logs/${log.id}`)}
                     >
                       View
                     </Button>
