@@ -333,6 +333,8 @@ model Garden {
   logTemplates LogTemplate[]
   plants       Plant[]
   rooms        Room[]
+  equipment    Equipment[]
+  maintenanceTasks MaintenanceTask[]
   gardenInvites GardenInvite[]
   calendarNotes CalendarNote[]
   weatherStatus Json?
@@ -360,9 +362,14 @@ model Equipment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   roomId      String
+  zoneId      String
+  gardenId    String
   creatorId   String
   createdBy   User     @relation(fields: [creatorId], references: [id])
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  zone        Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  maintenanceTasks MaintenanceTask[]
 }
 
 model CleaningSOP {
@@ -384,13 +391,18 @@ model MaintenanceTask {
   description String?
   frequency   String
   nextDueDate DateTime
+  lastCompletedDate DateTime?
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  roomId      String
+  roomId      String?
+  equipmentId String?
+  gardenId    String
   creatorId   String
   createdBy   User     @relation(fields: [creatorId], references: [id])
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room        Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
 }
 
 model RoomTemplate {
@@ -423,6 +435,7 @@ model Zone {
   createdBy   User        @relation(fields: [creatorId], references: [id])
   room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
   calendarNotes CalendarNote[]
+  equipment   Equipment[]
 }
 
 model Seed {
