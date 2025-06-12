@@ -1,6 +1,139 @@
 # Garden Logbook 🌱
 
-A web application for tracking and managing garden activities. This guide will help you set up the application, even if you're new to web development or Arch Linux.
+A web application for tracking and managing garden activities.
+
+---
+
+## Quick Start: Which Section Should I Use?
+
+| Use Case                | Section to Read         |
+|------------------------|------------------------|
+| Run in Docker Compose  | General Use            |
+| Deploy to Kubernetes/k3s | General Use (Kubernetes) |
+| Local development/coding | Development            |
+| Database migrations    | Development            |
+
+---
+
+# General Use
+
+## Docker Compose (Production or Local)
+
+1. **Build and start the app:**
+   ```bash
+   sudo docker compose build
+   sudo docker compose up -d
+   ```
+2. **Access the app:**
+   - http://localhost:3000 (or your server's IP)
+
+3. **Run database migrations (if needed):**
+   ```bash
+   sudo docker compose exec app npx prisma migrate deploy
+   ```
+
+---
+
+## Kubernetes/k3s Deployment
+
+### For k3s (or any cluster using containerd):
+
+1. **Build the Docker image locally:**
+   ```bash
+   sudo docker compose build
+   ```
+2. **Save the image to a tarball:**
+   ```bash
+   sudo docker save -o garden-logbook-cron.tar garden-logbook-cron:latest
+   ```
+3. **Import the image into k3s/containerd:**
+   ```bash
+   sudo ctr -n k8s.io images import garden-logbook-cron.tar
+   ```
+4. **Apply the Kubernetes manifest:**
+   ```bash
+   kubectl apply -f k8s/cronjob.yaml
+   ```
+5. **(Optional) For app image:**
+   - Repeat the above steps for `garden-logbook-app.tar` if you update the main app image.
+
+**Note:** If your cluster is remote or multi-node, push your image to a registry and update the manifest's `image:` field accordingly.
+
+---
+
+# Development
+
+## Local Development
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+2. **Set up the database:**
+   ```bash
+   npm run db:setup
+   ```
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+4. **Access the app:**
+   - http://localhost:3000
+
+## Database Migration Workflow
+
+- **Create a new migration:**
+  ```bash
+  npx prisma migrate dev --name <migration-name>
+  ```
+- **Deploy migrations (production):**
+  ```bash
+  npx prisma migrate deploy
+  ```
+
+## Running Tests
+
+- (Add your test instructions here if you have tests)
+
+---
+
+# Kubernetes CronJob: Updating the Image
+
+Whenever you change code for the cron job (e.g., `cron-kube.ts`):
+
+1. **Rebuild the Docker image:**
+   ```bash
+   sudo docker compose build
+   ```
+2. **Save the new image to a tarball:**
+   ```bash
+   sudo docker save -o garden-logbook-cron.tar garden-logbook-cron:latest
+   ```
+3. **Import the tarball into k3s/containerd:**
+   ```bash
+   sudo ctr -n k8s.io images import garden-logbook-cron.tar
+   ```
+4. **Re-apply the manifest if you changed the image or command:**
+   ```bash
+   kubectl apply -f k8s/cronjob.yaml
+   ```
+
+---
+
+# Troubleshooting
+
+- See the original troubleshooting section below for common issues with Node.js, PostgreSQL, and Docker.
+- For k3s image issues, make sure you import the tarball after every code change.
+
+---
+
+# Original Documentation
+
+<!-- Keep the rest of your original README content here, such as detailed setup for Arch Linux, environment variables, etc. -->
+
+---
+
+Happy gardening! 🌿
 
 ## Table of Contents
 - [What You'll Need](#what-youll-need)
@@ -745,7 +878,6 @@ npm run db:backup
 # After pulling
 npm install
 npx prisma migrate deploy
-npm run check:migrations
 
 # If something goes wrong
 npm run db:reset
