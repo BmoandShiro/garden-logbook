@@ -18,6 +18,7 @@
   "include": [
     "start-cron.ts",
     "lib/cron.ts",
+    "lib/cron-kube.ts",
     "lib/**/*.ts",
     "prisma/**/*.ts"
   ],

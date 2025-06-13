@@ -99,6 +99,7 @@ model Plant {
   growingSeasonEnd              String?
   onlyTriggerAlertsDuringSeason Boolean   @default(false)
   sensitivities                 Json?
+  goveeDevices                  GoveeDevice[]
 }
 
 model Strain {
@@ -316,28 +317,33 @@ model VerificationToken {
 }
 
 model Garden {
-  id           String         @id @default(cuid())
-  name         String
-  description  String?
-  isPrivate    Boolean        @default(true)
-  imageUrl     String?
-  zipcode      String?        // US Zipcode
-  timezone     String?        // IANA timezone identifier (e.g. "America/New_York")
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  creatorId    String
-  createdBy    User           @relation("GardenCreator", fields: [creatorId], references: [id])
-  members      GardenMember[]
-  logs         Log[]
-  logEntries   LogEntry[]
-  logTemplates LogTemplate[]
-  plants       Plant[]
-  rooms        Room[]
-  equipment    Equipment[]
-  maintenanceTasks MaintenanceTask[]
-  gardenInvites GardenInvite[]
-  calendarNotes CalendarNote[]
-  weatherStatus Json?
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  isPrivate         Boolean  @default(true)
+  imageUrl          String?
+  zipcode           String?  // US Zipcode
+  timezone          String?  // IANA timezone identifier (e.g. "America/New_York")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  creatorId         String
+  creator           User     @relation("GardenCreator", fields: [creatorId], references: [id])
+  members           GardenMember[]
+  rooms             Room[]
+  plants            Plant[]
+  logs              Log[]
+  zones             Zone[]
+  goveeApiKey       String?  // Only visible to creator
+  goveeDevices      GoveeDevice[]
+  weatherChecks     WeatherCheck[]
+  logVisibilityPrefs GardenLogVisibilityPreference[]
+  logEntries        LogEntry[]
+  logTemplates      LogTemplate[]
+  equipment         Equipment[]
+  maintenanceTasks  MaintenanceTask[]
+  gardenInvites     GardenInvite[]
+  calendarNotes     CalendarNote[]
+  weatherStatus     Json?
 }
 
 model GardenMember {
@@ -420,22 +426,23 @@ model RoomTemplate {
 }
 
 model Zone {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  type        String?
-  dimensions  String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  roomId      String
-  creatorId   String
-  logs        Log[]
-  logEntries  LogEntry[]
-  plants      Plant[]
-  createdBy   User        @relation(fields: [creatorId], references: [id])
-  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  roomId        String
+  room          Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  plants        Plant[]
+  logs          Log[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gardenId      String
+  garden        Garden         @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  goveeDevices  GoveeDevice[]
+  logEntries    LogEntry[]
+  equipment     Equipment[]
   calendarNotes CalendarNote[]
-  equipment   Equipment[]
 }
 
 model Seed {
@@ -500,19 +507,50 @@ model Notification {
 
 model GardenLogVisibilityPreference {
   id        String   @id @default(cuid())
-  userId    String
   gardenId  String
-  showLogs  Boolean  @default(true)
-  @@unique([userId, gardenId])
+  garden    Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  logType   LogType
+  isVisible Boolean  @default(true)
 }
 
 model WeatherCheck {
-  id           String   @id @default(cuid())
-  zip          String   @unique
-  lat          Float
-  lon          Float
-  lastChecked  DateTime
-  data         Json?
+  id        String   @id @default(cuid())
+  gardenId  String
+  garden    Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  timestamp DateTime @default(now())
+  data      Json
+}
+
+model GoveeDevice {
+  id          String   @id @default(cuid())
+  deviceId    String   @unique
+  name        String
+  model       String
+  gardenId    String
+  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  zoneId      String?
+  zone        Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  plantId     String?
+  plant       Plant?   @relation(fields: [plantId], references: [id], onDelete: SetNull)
+  readings    GoveeReading[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  minTemp     Float?
+  maxTemp     Float?
+  minHumidity Float?
+  maxHumidity Float?
+  isActive    Boolean  @default(true)
+}
+
+model GoveeReading {
+  id          String   @id @default(cuid())
+  deviceId    String
+  device      GoveeDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  temperature Float
+  humidity    Float
+  battery     Int?
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
 }
 
 enum Role {

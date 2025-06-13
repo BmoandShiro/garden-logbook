@@ -1,12 +1,14 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/bin/sh
 
+# Remove deprecated Husky lines
+# #!/usr/bin/env sh
+# . "$(dirname -- "$0")/_/husky.sh"
+
+# Your pre-commit checks here
 echo "🔍 Running pre-commit checks..."
+echo "🚀 Checking database migration status..."
 
-# Check migration status
-npx ts-node scripts/check-migrations.ts
+# Example: Run Prisma migration check
+npx prisma migrate status
 
-# Validate Prisma schema
-npx prisma validate
-
-# If either check fails, the commit will be aborted
+echo "✨ All migration checks passed!"

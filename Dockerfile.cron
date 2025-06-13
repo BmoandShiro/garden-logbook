@@ -16,4 +16,4 @@ RUN npx prisma generate
 RUN npm run build:cron
 
 # Start cron worker
-CMD ["node", "dist/start-cron.js"] 
+CMD ["node", "dist/lib/cron-kube.js"] 

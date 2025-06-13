@@ -13,8 +13,7 @@ spec:
           - name: garden-logbook-cron
             image: garden-logbook-cron:latest
             imagePullPolicy: IfNotPresent
-            # command: ["node", "dist/start-cron.js"]
-            command: ["node", "dist/cron-kube.js"]
+            command: ["node", "dist/lib/cron-kube.js"]
             env:
               - name: DATABASE_URL
                 valueFrom:

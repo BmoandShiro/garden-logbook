@@ -596,7 +596,7 @@ export async function processWeatherAlerts() {
             },
             orderBy: { logDate: 'desc' },
           });
-          if (prevLog) {
+          if (prevLog && prevLog.notes) {
             const prevMatch = prevLog.notes.match(/HeavyRain: ([\d.]+) in/);
             const currVal = currentAlerts['heavyRain'].weather.precipitation;
             if (prevMatch) {
@@ -935,7 +935,7 @@ async function maybeSendOrUpdateAlert(
       },
       orderBy: { logDate: 'desc' },
     });
-    if (prevLog) {
+    if (prevLog && prevLog.notes) {
       const prevMatch = prevLog.notes.match(/HeavyRain: ([\d.]+) in/);
       const currVal = weather.precipitation;
       if (prevMatch) {
