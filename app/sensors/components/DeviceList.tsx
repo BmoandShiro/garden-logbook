@@ -20,7 +20,7 @@ interface GoveeDevice {
   deviceId: string;
   name: string;
   type: string;
-  isOnline: boolean;
+  isActive: boolean;
   lastState: any;
   lastStateAt: Date | null;
   linkedEntity: any;
@@ -72,8 +72,8 @@ export function DeviceList({ devices, gardens, userId }: DeviceListProps) {
                 <CardTitle>{device.name}</CardTitle>
                 <CardDescription>{device.type}</CardDescription>
               </div>
-              <Badge variant={device.isOnline ? "default" : "destructive"}>
-                {device.isOnline ? "Online" : "Offline"}
+              <Badge variant={device.isActive ? "default" : "destructive"}>
+                {device.isActive ? "Active" : "Inactive"}
               </Badge>
             </div>
           </CardHeader>

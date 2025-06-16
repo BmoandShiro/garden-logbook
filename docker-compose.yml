@@ -3,9 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        GOVEE_API_KEY_ENCRYPTION_KEY: ${GOVEE_API_KEY_ENCRYPTION_KEY}
     ports:
       - "3000:3000"
     environment:
+      - GOVEE_API_KEY_ENCRYPTION_KEY=cZN/NYhw+exaGAQJVyml/UQ9bVYcQihtq/Z6FcfIx7c=
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/garden
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}

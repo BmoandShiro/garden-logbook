@@ -19,7 +19,7 @@ interface GoveeDevice {
   deviceId: string;
   name: string;
   type: string;
-  isOnline: boolean;
+  isActive: boolean;
   lastState: any;
   lastStateAt: Date | null;
   linkedEntity: any;
