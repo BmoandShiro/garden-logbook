@@ -40,6 +40,7 @@ model User {
   notifications     Notification[]
   weatherNotificationPeriod String? @default("current")
   goveeDevices      GoveeDevice[]
+  encryptedGoveeApiKey String?
 }
 
 model Account {
