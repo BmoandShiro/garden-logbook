@@ -6,11 +6,17 @@ import React, { useEffect, useRef, useState } from "react";
  */
 export function Spinner({ className = "h-12 w-12" }: { className?: string }) {
   const [angle, setAngle] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const requestRef = useRef<number | null>(null);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const animate = () => {
-      setAngle((a) => (a + 2) % 360);
+      setAngle((a) => (a + 0.5) % 360); // slower spin
       requestRef.current = requestAnimationFrame(animate);
     };
     requestRef.current = requestAnimationFrame(animate);
@@ -19,22 +25,20 @@ export function Spinner({ className = "h-12 w-12" }: { className?: string }) {
         cancelAnimationFrame(requestRef.current);
       }
     };
-  }, []);
+  }, [mounted]);
 
-  // Sphere math
+  // Fewer dots
+  const rings = 7;
+  const dotsPerRing = 14;
+  const rad = (mounted ? angle : 0) * Math.PI / 180;
   const dots = [];
-  const rings = 12;
-  const dotsPerRing = 24;
-  const rad = (angle * Math.PI) / 180;
   for (let i = 0; i < rings; i++) {
     const phi = Math.PI * (i / (rings - 1));
     for (let j = 0; j < dotsPerRing; j++) {
       const theta = (2 * Math.PI * j) / dotsPerRing + rad;
-      // 3D rotation around Y axis
       const x3d = Math.sin(phi) * Math.cos(theta);
       const y3d = Math.cos(phi);
       const z3d = Math.sin(phi) * Math.sin(theta);
-      // Perspective projection
       const perspective = 1.5 / (2 - z3d);
       const x = 25 + 20 * x3d * perspective;
       const y = 25 + 20 * y3d * perspective;
@@ -43,7 +47,7 @@ export function Spinner({ className = "h-12 w-12" }: { className?: string }) {
           key={`${i}-${j}`}
           cx={x.toFixed(4)}
           cy={y.toFixed(4)}
-          r="1.2"
+          r="1.5"
           fill="#34d399"
           opacity={0.7 + 0.3 * (z3d + 1) / 2}
         />
