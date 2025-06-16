@@ -78,7 +78,9 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
         </Button>
       </div>
       {loading ? (
-        <div className="text-center text-gray-500">Loading sensor data...</div>
+        <div className="flex justify-center items-center py-8">
+          <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent"></span>
+        </div>
       ) : error ? (
         <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-800">
           <div className="flex items-center space-x-2">
