@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import MonthlyCalendar from "../../components/MonthlyCalendar";
 import { format } from "date-fns";
 import { useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 async function fetchLogs(userId: string) {
   const response = await fetch(`/api/logs?userId=${userId}`);
@@ -70,8 +71,12 @@ export default function CalendarPage() {
         weatherAlertsByDate={weatherAlertsByDate}
         monthChange={handleMonthChange}
       />
-      {isLoading && <div className="text-dark-text-secondary mt-4">Loading logs...</div>}
-      {loadingAlerts && <div className="text-dark-text-secondary mt-4">Loading weather alerts...</div>}
+      {isLoading && (
+        <div className="flex justify-center mt-4"><Spinner className="h-8 w-8" /></div>
+      )}
+      {loadingAlerts && (
+        <div className="flex justify-center mt-4"><Spinner className="h-8 w-8" /></div>
+      )}
     </div>
   );
 } 
