@@ -75,4 +75,19 @@ select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+}
+
+/* Global spinner gradient ring */
+.gradient-spinner {
+  background: conic-gradient(from 0deg, #34d399, #059669 120deg, #34d399 360deg);
+  -webkit-mask-image: radial-gradient(circle, white 60%, transparent 61%);
+  mask-image: radial-gradient(circle, white 60%, transparent 61%);
+}
+
+@keyframes spin-sphere {
+  100% { transform: rotateY(360deg); }
+}
+.animate-spin-sphere {
+  animation: spin-sphere 1.5s linear infinite;
+  transform-style: preserve-3d;
 } 

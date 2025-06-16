@@ -5,6 +5,7 @@ import { GoveeDevice } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, RefreshCw, Info } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface GoveeDeviceListProps {
   devices: GoveeDevice[];
@@ -79,7 +80,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
       </div>
       {loading ? (
         <div className="flex justify-center items-center py-8">
-          <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent"></span>
+          <Spinner className="h-8 w-8" />
         </div>
       ) : error ? (
         <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-800">
