@@ -523,7 +523,7 @@ model GoveeDevice {
   deviceId     String
   name         String
   type         String
-  isOnline     Boolean  @default(false)
+  isActive     Boolean  @default(false)
   lastState    Json?
   lastStateAt  DateTime?
   linkedEntity Json?
@@ -531,6 +531,8 @@ model GoveeDevice {
   updatedAt    DateTime @updatedAt
 
   user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, deviceId])
 }
 
 enum Role {
