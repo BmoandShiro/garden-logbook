@@ -97,7 +97,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
           let parsed: { temperature?: number; humidity?: number; online?: boolean } = {};
           if (Array.isArray(data)) parsed = parseSensorData(data);
           return (
-            <Card key={device.id} className="bg-[#181c1f] border border-[#23282c] text-white">
+            <Card key={device.id} className="bg-[#23272b] border border-[#23282c] text-white">
               <CardHeader>
                 <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
                 <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
