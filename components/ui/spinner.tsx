@@ -47,7 +47,7 @@ export function Spinner({ className = "h-12 w-12" }: { className?: string }) {
           key={`${i}-${j}`}
           cx={x.toFixed(4)}
           cy={y.toFixed(4)}
-          r="1.5"
+          r="1.0"
           fill="#34d399"
           opacity={0.7 + 0.3 * (z3d + 1) / 2}
         />
