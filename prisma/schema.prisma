@@ -39,6 +39,7 @@ model User {
   calendarNotes     CalendarNote[]
   notifications     Notification[]
   weatherNotificationPeriod String? @default("current")
+  goveeDevices      GoveeDevice[]
 }
 
 model Account {
@@ -513,6 +514,22 @@ model WeatherCheck {
   lon          Float
   lastChecked  DateTime
   data         Json?
+}
+
+model GoveeDevice {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceId     String
+  name         String
+  type         String
+  isOnline     Boolean  @default(false)
+  lastState    Json?
+  lastStateAt  DateTime?
+  linkedEntity Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 enum Role {
