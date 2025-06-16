@@ -4,10 +4,20 @@ import { useState, useEffect } from 'react';
 import { GoveeDevice } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, RefreshCw, Info } from 'lucide-react';
 
 interface GoveeDeviceListProps {
   devices: GoveeDevice[];
+}
+
+function parseSensorData(capabilities: any[]): { temperature?: number; humidity?: number; online?: boolean } {
+  let temperature, humidity, online;
+  for (const cap of capabilities) {
+    if (cap.instance === 'sensorTemperature') temperature = cap.state?.value;
+    if (cap.instance === 'sensorHumidity') humidity = cap.state?.value;
+    if (cap.instance === 'online') online = cap.state?.value;
+  }
+  return { temperature, humidity, online };
 }
 
 export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProps) {
@@ -16,6 +26,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
   const [loading, setLoading] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalData, setModalData] = useState<any | null>(null);
 
   const fetchSensorData = async (deviceList: GoveeDevice[]) => {
     setLoading(true);
@@ -50,7 +61,6 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
       }
       const data = await response.json();
       setDevices(data.devices);
-      // Optionally, refetch sensor data for new devices
       fetchSensorData(data.devices);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -82,35 +92,64 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
           No devices found. Add your Govee API key in the Settings tab to discover your devices.
         </div>
       ) : (
-        devices.map((device) => (
-          <Card key={device.id}>
-            <CardHeader>
-              <CardTitle>{device.name}</CardTitle>
-              <CardDescription>Device ID: {device.deviceId}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {device.isActive ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-red-500" />
-                  )}
-                  <span>{device.isActive ? 'Active' : 'Inactive'}</span>
+        devices.map((device) => {
+          const data = sensorData[device.deviceId];
+          let parsed: { temperature?: number; humidity?: number; online?: boolean } = {};
+          if (Array.isArray(data)) parsed = parseSensorData(data);
+          return (
+            <Card key={device.id} className="bg-[#181c1f] border border-[#23282c] text-white">
+              <CardHeader>
+                <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
+                <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    {parsed.online !== false ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    )}
+                    <span className="font-semibold text-emerald-300">
+                      {parsed.online !== false ? 'Active' : 'Offline'}
+                    </span>
+                  </div>
+                  <Button variant="outline" onClick={() => setModalData(data)}>
+                    <Info className="h-4 w-4 mr-1" /> View Details
+                  </Button>
                 </div>
-                <Button variant="outline">View Details</Button>
-              </div>
-              {sensorData[device.deviceId] && (
-                <div className="mt-4">
-                  <h6 className="font-medium">Sensor Data</h6>
-                  <pre className="mt-2 p-2 bg-gray-100 rounded">
-                    {JSON.stringify(sensorData[device.deviceId], null, 2)}
-                  </pre>
+                <div className="flex space-x-8 mt-2">
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-400 text-xs">Temperature</span>
+                    <span className="text-2xl font-bold text-emerald-300">
+                      {parsed.temperature !== undefined ? `${parsed.temperature}°F` : '--'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-400 text-xs">Humidity</span>
+                    <span className="text-2xl font-bold text-emerald-300">
+                      {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        ))
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
+      {/* Modal for raw data */}
+      {modalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-[#23282c] p-6 rounded-lg shadow-lg max-w-lg w-full">
+            <h3 className="text-lg font-bold text-emerald-400 mb-2">Raw Sensor Data</h3>
+            <pre className="bg-[#181c1f] text-gray-200 p-4 rounded overflow-x-auto max-h-96">
+              {JSON.stringify(modalData, null, 2)}
+            </pre>
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setModalData(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
