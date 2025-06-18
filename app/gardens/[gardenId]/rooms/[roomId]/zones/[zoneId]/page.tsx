@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import PlantList from './components/PlantList';
 import CreatePlantButton from './components/CreatePlantButton';
 import CreateEquipmentButton from './components/CreateEquipmentButton';
+import ZoneSensorData from './components/ZoneSensorData';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 // @ts-expect-error: no types for zipcode-to-timezone
 import zipcodeToTimezone from 'zipcode-to-timezone';
@@ -17,7 +18,7 @@ interface PageProps {
   };
 }
 
-export default async function ZonePage({ params }) {
+export default async function ZonePage({ params }: PageProps) {
   const { roomId, gardenId, zoneId } = await params;
   const session = await getServerSession(authOptions);
 
@@ -52,7 +53,21 @@ export default async function ZonePage({ params }) {
           createdAt: 'desc'
         }
       },
-      createdBy: true
+      createdBy: true,
+      goveeDevices: {
+        select: {
+          id: true,
+          deviceId: true,
+          name: true,
+          type: true,
+          model: true,
+          isActive: true,
+          isOnline: true,
+          batteryLevel: true,
+          lastState: true,
+          lastStateAt: true
+        }
+      }
     }
   });
 
@@ -100,8 +115,8 @@ export default async function ZonePage({ params }) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
           <div className="p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
             <h2 className="text-xl font-semibold mb-2 text-emerald-100">Zone Details</h2>
             <p className="text-emerald-300/70">{zone.description}</p>
@@ -126,17 +141,26 @@ export default async function ZonePage({ params }) {
                 <p className="text-sm text-emerald-300/70">Total Plants</p>
                 <p className="text-2xl font-semibold text-emerald-100">{zone.plants.length}</p>
               </div>
-              {/* Add more statistics as needed */}
+              <div>
+                <p className="text-sm text-emerald-300/70">Linked Sensors</p>
+                <p className="text-2xl font-semibold text-emerald-100">{zone.goveeDevices.length}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-4">
           <PlantList 
             plants={zone.plants} 
             gardenId={gardenId} 
             roomId={roomId} 
             zoneId={zoneId} 
+          />
+        </div>
+
+        <div className="space-y-4">
+          <ZoneSensorData
+            zoneId={zoneId}
+            weatherAlertSource={zone.weatherAlertSource}
+            sensorAlertThresholds={zone.sensorAlertThresholds}
           />
         </div>
       </div>
