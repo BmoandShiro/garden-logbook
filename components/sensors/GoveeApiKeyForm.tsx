@@ -40,7 +40,7 @@ export function GoveeApiKeyForm() {
   };
 
   return (
-    <Card>
+    <Card className="bg-[#23272b] border border-[#23282c] text-white">
       <CardHeader>
         <CardTitle>Govee API Key</CardTitle>
         <CardDescription>Add or update your Govee API key to manage your devices.</CardDescription>
@@ -53,6 +53,7 @@ export function GoveeApiKeyForm() {
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             required
+            className="bg-[#181c1f] border-[#23282c] text-emerald-100"
           />
           {error && (
             <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-800">
@@ -69,7 +70,7 @@ export function GoveeApiKeyForm() {
               <p className="mt-1 text-sm">API key saved successfully.</p>
             </div>
           )}
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-500">
             {loading ? 'Saving...' : 'Save API Key'}
           </Button>
         </form>

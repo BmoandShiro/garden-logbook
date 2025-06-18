@@ -9,48 +9,55 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { zoneId } = params;
-    const updates = await request.json();
+    const body = await request.json();
 
-    // Verify the zone exists and user has access
+    // Verify the zone belongs to the user
     const zone = await prisma.zone.findFirst({
       where: {
         id: zoneId,
-        creatorId: session.user.id
-      }
+        creatorId: session.user.id,
+      },
     });
 
     if (!zone) {
       return NextResponse.json(
-        { error: "Zone not found or access denied" },
+        { error: "Zone not found" },
         { status: 404 }
       );
     }
 
-    // Validate weather alert source
-    if (updates.weatherAlertSource && 
-        !['WEATHER_API', 'SENSORS', 'BOTH'].includes(updates.weatherAlertSource)) {
-      return NextResponse.json(
-        { error: "Invalid weather alert source" },
-        { status: 400 }
-      );
-    }
-
-    // Update the zone
+    // Update the zone with the provided data
     const updatedZone = await prisma.zone.update({
-      where: { id: zoneId },
-      data: updates
+      where: {
+        id: zoneId,
+      },
+      data: {
+        weatherAlertSource: body.weatherAlertSource,
+        sensorAlertThresholds: body.sensorAlertThresholds,
+      },
+      include: {
+        goveeDevices: {
+          select: {
+            id: true,
+            name: true,
+            isOnline: true,
+            batteryLevel: true,
+            lastStateAt: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(updatedZone);
   } catch (error) {
-    console.error("Error updating zone settings:", error);
+    console.error("Error updating zone:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to update zone" },
       { status: 500 }
     );
   }

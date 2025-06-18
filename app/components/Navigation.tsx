@@ -17,6 +17,7 @@ const navigation = [
   { name: 'Calc', href: '/calc' },
   { name: 'Calendar', href: '/calendar' },
   { name: 'Weather', href: '/weather' },
+  { name: 'Sensor Dashboard', href: '/sensor-dashboard' },
   { name: 'Sensors', href: '/sensors' },
 ];
 

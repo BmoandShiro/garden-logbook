@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { GoveeDeviceList } from '@/components/sensors/GoveeDeviceList';
 import { GoveeApiKeyForm } from '@/components/sensors/GoveeApiKeyForm';
+import { ZoneManagement } from '@/components/sensors/ZoneManagement';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -57,7 +58,10 @@ export default async function SensorsPage() {
                 )}
               </TabsContent>
               <TabsContent value="settings">
-                <GoveeApiKeyForm />
+                <div className="space-y-6">
+                  <GoveeApiKeyForm />
+                  {hasApiKey && <ZoneManagement userId={session.user.id} />}
+                </div>
               </TabsContent>
             </Tabs>
           </div>

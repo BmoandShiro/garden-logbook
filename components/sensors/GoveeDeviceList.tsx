@@ -4,21 +4,30 @@ import { useState, useEffect } from 'react';
 import { GoveeDevice } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, RefreshCw, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, CheckCircle2, RefreshCw, Info, Battery, Clock, MapPin, Wifi, WifiOff } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 
 interface GoveeDeviceListProps {
   devices: GoveeDevice[];
 }
 
-function parseSensorData(capabilities: any[]): { temperature?: number; humidity?: number; online?: boolean } {
-  let temperature, humidity, online;
+function parseSensorData(capabilities: any[]): { 
+  temperature?: number; 
+  humidity?: number; 
+  online?: boolean;
+  battery?: number;
+  lastUpdate?: string;
+} {
+  let temperature, humidity, online, battery, lastUpdate;
   for (const cap of capabilities) {
     if (cap.instance === 'sensorTemperature') temperature = cap.state?.value;
     if (cap.instance === 'sensorHumidity') humidity = cap.state?.value;
     if (cap.instance === 'online') online = cap.state?.value;
+    if (cap.instance === 'battery') battery = cap.state?.value;
+    if (cap.instance === 'lastUpdate') lastUpdate = cap.state?.value;
   }
-  return { temperature, humidity, online };
+  return { temperature, humidity, online, battery, lastUpdate };
 }
 
 export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProps) {
@@ -70,6 +79,19 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
     }
   };
 
+  const getBatteryColor = (level: number) => {
+    if (level > 50) return 'text-emerald-400';
+    if (level > 20) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  const getBatteryIcon = (level: number) => {
+    if (level > 80) return '🔋';
+    if (level > 50) return '🔋';
+    if (level > 20) return '🔋';
+    return '🔋';
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end mb-2">
@@ -97,31 +119,67 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
       ) : (
         devices.map((device) => {
           const data = sensorData[device.deviceId];
-          let parsed: { temperature?: number; humidity?: number; online?: boolean } = {};
+          let parsed: { temperature?: number; humidity?: number; online?: boolean; battery?: number; lastUpdate?: string } = {};
           if (Array.isArray(data)) parsed = parseSensorData(data);
+          
           return (
             <Card key={device.id} className="bg-[#23272b] border border-[#23282c] text-white">
               <CardHeader>
-                <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
-                <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
+                    <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {device.linkedEntity && (
+                      <Badge variant="outline" className="text-emerald-300 border-emerald-300">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {typeof device.linkedEntity === 'object' && device.linkedEntity !== null && 'name' in device.linkedEntity 
+                          ? (device.linkedEntity as any).name 
+                          : 'Linked'}
+                      </Badge>
+                    )}
+                    <Button variant="outline" onClick={() => setModalData(data)}>
+                      <Info className="h-4 w-4 mr-1" /> View Details
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between mb-2">
+                {/* Status and Health Indicators */}
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     {parsed.online !== false ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                      <Wifi className="h-5 w-5 text-emerald-400" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-red-500" />
+                      <WifiOff className="h-5 w-5 text-red-500" />
                     )}
                     <span className="font-semibold text-emerald-300">
-                      {parsed.online !== false ? 'Active' : 'Offline'}
+                      {parsed.online !== false ? 'Online' : 'Offline'}
                     </span>
                   </div>
-                  <Button variant="outline" onClick={() => setModalData(data)}>
-                    <Info className="h-4 w-4 mr-1" /> View Details
-                  </Button>
+                  
+                  {/* Battery Level */}
+                  {parsed.battery !== undefined && (
+                    <div className="flex items-center space-x-2">
+                      <Battery className={`h-4 w-4 ${getBatteryColor(parsed.battery)}`} />
+                      <span className={`text-sm font-medium ${getBatteryColor(parsed.battery)}`}>
+                        {parsed.battery}%
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex space-x-8 mt-2">
+
+                {/* Last Reading Time */}
+                {device.lastStateAt && (
+                  <div className="flex items-center space-x-2 mb-4 text-gray-400 text-sm">
+                    <Clock className="h-4 w-4" />
+                    <span>Last reading: {new Date(device.lastStateAt).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Sensor Readings */}
+                <div className="flex space-x-8 mt-4">
                   <div className="flex flex-col items-center">
                     <span className="text-gray-400 text-xs">Temperature</span>
                     <span className="text-2xl font-bold text-emerald-300">
@@ -133,6 +191,16 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                     <span className="text-2xl font-bold text-emerald-300">
                       {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
                     </span>
+                  </div>
+                </div>
+
+                {/* Device Status */}
+                <div className="mt-4 pt-4 border-t border-[#23282c]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Device Status:</span>
+                    <Badge variant={device.isActive ? "default" : "destructive"} className="text-xs">
+                      {device.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>

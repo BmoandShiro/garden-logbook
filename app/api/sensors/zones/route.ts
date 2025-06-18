@@ -6,40 +6,40 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const zones = await prisma.zone.findMany({
       where: {
-        creatorId: session.user.id
+        creatorId: session.user.id,
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        weatherAlertSource: true,
+        sensorAlertThresholds: true,
         goveeDevices: {
           select: {
             id: true,
-            deviceId: true,
             name: true,
-            type: true,
-            model: true,
-            isActive: true,
             isOnline: true,
             batteryLevel: true,
-            lastState: true,
-            lastStateAt: true
-          }
-        }
+            lastStateAt: true,
+          },
+        },
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: 'asc',
+      },
     });
 
     return NextResponse.json(zones);
   } catch (error) {
     console.error("Error fetching zones:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch zones" },
       { status: 500 }
     );
   }

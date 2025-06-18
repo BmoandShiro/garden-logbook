@@ -1,5 +1,15 @@
 #!/bin/bash
 
+echo "WARNING: This will remove all unused Docker data (images, containers, volumes)."
+read -p "Proceed with Docker cleanup? (y/N): " confirm
+if [[ $confirm =~ ^[Yy]$ ]]; then
+  sudo docker system prune -af --volumes
+  echo "Docker cleanup complete."
+else
+  echo "Docker cleanup skipped."
+fi
+
+
 echo "Stopping and removing all Docker containers..."
 sudo docker compose down
 

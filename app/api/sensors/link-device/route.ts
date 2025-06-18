@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -23,43 +23,55 @@ export async function POST(request: NextRequest) {
     const device = await prisma.goveeDevice.findFirst({
       where: {
         id: deviceId,
-        userId: session.user.id
-      }
+        userId: session.user.id,
+      },
     });
 
     if (!device) {
       return NextResponse.json(
-        { error: "Device not found or access denied" },
+        { error: "Device not found" },
         { status: 404 }
       );
     }
 
-    // Verify the zone exists and user has access
+    // Verify the zone belongs to the user
     const zone = await prisma.zone.findFirst({
       where: {
         id: zoneId,
-        creatorId: session.user.id
-      }
+        creatorId: session.user.id,
+      },
     });
 
     if (!zone) {
       return NextResponse.json(
-        { error: "Zone not found or access denied" },
+        { error: "Zone not found" },
         { status: 404 }
       );
     }
 
     // Update the device to link it to the zone
     const updatedDevice = await prisma.goveeDevice.update({
-      where: { id: deviceId },
-      data: { zoneId }
+      where: {
+        id: deviceId,
+      },
+      data: {
+        zoneId: zoneId,
+      },
+      include: {
+        zone: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(updatedDevice);
   } catch (error) {
-    console.error("Error linking device to zone:", error);
+    console.error("Error linking device:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to link device" },
       { status: 500 }
     );
   }
