@@ -438,6 +438,11 @@ model Zone {
   room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
   calendarNotes CalendarNote[]
   equipment   Equipment[]
+  
+  // Govee sensor integration
+  goveeDevices GoveeDevice[]
+  weatherAlertSource WeatherAlertSource @default(WEATHER_API)
+  sensorAlertThresholds Json? // Store temperature/humidity thresholds for sensor-based alerts
 }
 
 model Seed {
@@ -529,10 +534,36 @@ model GoveeDevice {
   linkedEntity Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
+  
+  // Enhanced fields for better organization
+  model        String?  // Device model (e.g., "H5179")
+  capabilities Json?    // Device capabilities from Govee API
+  batteryLevel Int?     // Battery percentage if applicable
+  isOnline     Boolean  @default(true)
+  
+  // Relations
   user         User     @relation(fields: [userId], references: [id])
+  zone         Zone?    @relation(fields: [zoneId], references: [id])
+  zoneId       String?
+  readings     GoveeReading[]
 
   @@unique([userId, deviceId])
+}
+
+model GoveeReading {
+  id          String   @id @default(cuid())
+  deviceId    String
+  timestamp   DateTime @default(now())
+  temperature Float?   // Temperature in Celsius
+  humidity    Float?   // Humidity percentage
+  battery     Int?     // Battery level if applicable
+  rawData     Json?    // Raw data from Govee API
+  source      String   @default("API") // API, MQTT, etc.
+  
+  device      GoveeDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  
+  @@index([deviceId, timestamp])
+  @@index([timestamp])
 }
 
 enum Role {
@@ -712,4 +743,10 @@ enum TrainingMethod {
   SUPER_CROP
   LOLLIPOP
   OTHER
+}
+
+enum WeatherAlertSource {
+  WEATHER_API
+  SENSORS
+  BOTH
 }
