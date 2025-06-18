@@ -136,12 +136,12 @@ export default function ZoneSensorLink({
             <div className="space-y-2">
               <Label htmlFor="zone-select">Select Zone</Label>
               <Select value={selectedZone} onValueChange={setSelectedZone}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#23272b] border-[#23282c] text-emerald-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#23272b] border-[#23282c]">
                   {zones.map((zone) => (
-                    <SelectItem key={zone.id} value={zone.id}>
+                    <SelectItem key={zone.id} value={zone.id} className="text-emerald-100">
                       {zone.name}
                     </SelectItem>
                   ))}
@@ -152,12 +152,12 @@ export default function ZoneSensorLink({
             <div className="space-y-2">
               <Label htmlFor="device-select">Select Sensor</Label>
               <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#23272b] border-[#23282c] text-emerald-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#23272b] border-[#23282c]">
                   {unlinkedDevices.map((device) => (
-                    <SelectItem key={device.id} value={device.id}>
+                    <SelectItem key={device.id} value={device.id} className="text-emerald-100">
                       {device.name} ({device.model || device.type})
                     </SelectItem>
                   ))}

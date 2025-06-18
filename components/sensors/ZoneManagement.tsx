@@ -188,33 +188,33 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="zone-select" className="text-emerald-300">Select Zone</Label>
-              <Select value={selectedZone} onValueChange={setSelectedZone}>
-                <SelectTrigger className="bg-[#23272b] border-[#23282c] text-emerald-100">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#23272b] border-[#23282c]">
-                  {zones.map((zone) => (
-                    <SelectItem key={zone.id} value={zone.id} className="text-emerald-100">
-                      {zone.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+              <Select
+                value={selectedZone}
+                onValueChange={setSelectedZone}
+                className="bg-[#23272b] border-[#23282c] text-emerald-100"
+              >
+                <option value="" disabled>Select a zone...</option>
+                {zones.map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
+                  </option>
+                ))}
               </Select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="device-select" className="text-emerald-300">Select Sensor</Label>
-              <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-                <SelectTrigger className="bg-[#23272b] border-[#23282c] text-emerald-100">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#23272b] border-[#23282c]">
-                  {unlinkedDevices.map((device) => (
-                    <SelectItem key={device.id} value={device.id} className="text-emerald-100">
-                      {device.name} ({device.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+              <Select
+                value={selectedDevice}
+                onValueChange={setSelectedDevice}
+                className="bg-[#23272b] border-[#23282c] text-emerald-100"
+              >
+                <option value="" disabled>Select a sensor...</option>
+                {unlinkedDevices.map((device) => (
+                  <option key={device.id} value={device.id}>
+                    {device.name} ({device.type})
+                  </option>
+                ))}
               </Select>
             </div>
           </div>
