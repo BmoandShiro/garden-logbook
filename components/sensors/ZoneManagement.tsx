@@ -248,20 +248,16 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                 {/* Weather Alert Source */}
                 <div className="space-y-2">
                   <Label className="text-emerald-300">Weather Alert Source</Label>
-                  <Select 
-                    value={zone.weatherAlertSource} 
-                    onValueChange={(value) => 
+                  <Select
+                    value={zone.weatherAlertSource}
+                    onValueChange={(value) =>
                       handleWeatherSourceChange(zone.id, value as 'WEATHER_API' | 'SENSORS' | 'BOTH')
                     }
+                    className="bg-[#23272b] border-[#23282c] text-emerald-100"
                   >
-                    <SelectTrigger className="bg-[#181c1f] border-[#23282c] text-emerald-100">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#181c1f] border-[#23282c]">
-                      <SelectItem value="WEATHER_API" className="text-emerald-100">Weather API Only</SelectItem>
-                      <SelectItem value="SENSORS" className="text-emerald-100">Sensors Only</SelectItem>
-                      <SelectItem value="BOTH" className="text-emerald-100">Both Weather API & Sensors</SelectItem>
-                    </SelectContent>
+                    <option value="WEATHER_API">Weather API Only</option>
+                    <option value="SENSORS">Sensors Only</option>
+                    <option value="BOTH">Both Weather API & Sensors</option>
                   </Select>
                 </div>
                 {/* Linked Sensors */}
