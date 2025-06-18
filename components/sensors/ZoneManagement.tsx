@@ -168,11 +168,6 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
 
   return (
     <div className="space-y-6">
-      {/* Debug output for zones and unlinkedDevices */}
-      <div className="bg-[#181c1f] text-emerald-200 text-xs p-2 rounded border border-emerald-900 mb-2">
-        <div><b>Zones:</b> {JSON.stringify(zones, null, 2)}</div>
-        <div className="mt-1"><b>Unlinked Devices:</b> {JSON.stringify(unlinkedDevices, null, 2)}</div>
-      </div>
       {/* Link Device to Zone */}
       <Card className="bg-[#23272b] border border-[#23282c]">
         <CardHeader>
