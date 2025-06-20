@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { SensorDashboard } from './SensorDashboard';
 
 export default async function SensorsPage() {
   const session = await getServerSession(authOptions);
@@ -16,13 +17,49 @@ export default async function SensorsPage() {
     redirect('/auth/signin');
   }
 
-  const [devices, user] = await Promise.all([
+  const userId = session.user.id;
+
+  const [devices, zones, readings, user] = await Promise.all([
     prisma.goveeDevice.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
+      include: {
+        zone: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     }),
+    prisma.zone.findMany({
+      where: {
+        creatorId: userId,
+        weatherAlertSource: { not: 'WEATHER_API' },
+      },
+      include: {
+        goveeDevices: {
+          select: {
+            id: true,
+            name: true,
+            isOnline: true,
+            batteryLevel: true,
+            lastStateAt: true,
+          },
+        },
+      },
+    }),
+    prisma.goveeReading.findMany({
+      where: {
+        device: {
+          userId: userId,
+        },
+      },
+      orderBy: { timestamp: 'desc' },
+      take: 100,
+    }),
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { encryptedGoveeApiKey: true },
     }),
   ]);
@@ -31,8 +68,9 @@ export default async function SensorsPage() {
 
   return (
     <div className="container mx-auto py-6">
+      <SensorDashboard devices={devices} zones={zones} readings={readings} />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold leading-tight tracking-tight text-emerald-100">Sensors</h1>
+        <h1 className="text-3xl font-bold leading-tight tracking-tight text-emerald-100">Govee Device Management</h1>
       </div>
       <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="px-4 py-8 sm:px-0">
