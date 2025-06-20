@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Spinner } from "@/components/ui/spinner";
 import { 
   Thermometer, 
   Droplets, 
@@ -68,9 +69,11 @@ export default function ZoneSensorData({
   const [thresholds, setThresholds] = useState(sensorAlertThresholds || {});
   const [usePlantAlerts, setUsePlantAlerts] = useState(usePlantSpecificAlerts);
   const [sensorData, setSensorData] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSensorData = async () => {
+      setLoading(true);
       try {
         const response = await fetch('/api/sensors/data');
         if (response.ok) {
@@ -79,6 +82,8 @@ export default function ZoneSensorData({
         }
       } catch (error) {
         console.error("Failed to fetch live sensor data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -243,48 +248,54 @@ export default function ZoneSensorData({
                     <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 </Button>
             </div>
-            <div className="space-y-3">
-            {devices.map((device) => {
-              const liveData = sensorData[device.deviceId];
-              let parsed: { temperature?: number; humidity?: number } = {};
-              if (Array.isArray(liveData)) parsed = parseSensorData(liveData);
-              const lastTemp = parsed.temperature;
-              const lastHumidity = parsed.humidity;
+            {loading ? (
+              <div className="flex justify-center items-center py-4">
+                <Spinner />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {devices.map((device) => {
+                  const liveData = sensorData[device.deviceId];
+                  let parsed: { temperature?: number; humidity?: number } = {};
+                  if (Array.isArray(liveData)) parsed = parseSensorData(liveData);
+                  const lastTemp = parsed.temperature;
+                  const lastHumidity = parsed.humidity;
 
-              return (
-                <div key={device.id} className="flex items-center justify-between p-3 bg-dark-bg-tertiary border border-dark-border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {device.isOnline ? (
-                      <Wifi className="h-4 w-4 text-green-400" />
-                    ) : (
-                      <WifiOff className="h-4 w-4 text-red-400" />
-                    )}
-                    <div>
-                      <p className="font-medium text-emerald-100">{device.name}</p>
-                      <p className="text-sm text-emerald-300/70">{device.model}</p>
+                  return (
+                    <div key={device.id} className="flex items-center justify-between p-3 bg-dark-bg-tertiary border border-dark-border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {device.isOnline ? (
+                          <Wifi className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <WifiOff className="h-4 w-4 text-red-400" />
+                        )}
+                        <div>
+                          <p className="font-medium text-emerald-100">{device.name}</p>
+                          <p className="text-sm text-emerald-300/70">{device.model}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                           {lastTemp !== undefined && (
+                            <p className="text-sm text-emerald-100">{lastTemp.toFixed(1)}°F</p>
+                          )}
+                          {lastHumidity !== undefined && (
+                            <p className="text-sm text-emerald-300/70">{lastHumidity.toFixed(1)}%</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-emerald-300/70">
+                          <Battery className="h-4 w-4" />
+                          <span>{device.batteryLevel ?? '--'}%</span>
+                        </div>
+                        <Badge variant={device.isActive ? 'default' : 'secondary'} className={device.isActive ? 'bg-green-600/20 text-green-300 border-green-500/30' : ''}>
+                          {device.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                       {lastTemp !== undefined && (
-                        <p className="text-sm text-emerald-100">{lastTemp.toFixed(1)}°F</p>
-                      )}
-                      {lastHumidity !== undefined && (
-                        <p className="text-sm text-emerald-300/70">{lastHumidity.toFixed(1)}%</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-emerald-300/70">
-                      <Battery className="h-4 w-4" />
-                      <span>{device.batteryLevel ?? '--'}%</span>
-                    </div>
-                    <Badge variant={device.isActive ? 'default' : 'secondary'} className={device.isActive ? 'bg-green-600/20 text-green-300 border-green-500/30' : ''}>
-                      {device.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            )}
         </div>
       )}
     </div>
