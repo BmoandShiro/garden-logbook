@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { 
   MapPin, 
   Settings, 
@@ -28,6 +29,7 @@ interface Zone {
     temperature?: { min?: number; max?: number };
     humidity?: { min?: number; max?: number };
   };
+  usePlantSpecificAlerts?: boolean;
   goveeDevices?: Array<{
     id: string;
     name: string;
@@ -134,21 +136,21 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
     }
   };
 
-  const handleWeatherSourceChange = async (zoneId: string, source: 'WEATHER_API' | 'SENSORS' | 'BOTH') => {
+  const updateZoneSetting = async (zoneId: string, payload: any) => {
     try {
       const response = await fetch(`/api/sensors/zones/${zoneId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weatherAlertSource: source })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        await fetchData(); // Refresh data
+        await fetchData(); // Refresh all data
       } else {
-        throw new Error('Failed to update weather source');
+        throw new Error('Failed to update zone setting');
       }
     } catch (error) {
-      console.error("Failed to update weather source:", error);
+      console.error("Failed to update zone setting:", error);
     }
   };
 
@@ -227,8 +229,8 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
       {/* Zone Settings */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-emerald-100">Zone Settings</h3>
-        {zones.filter(zone => devices.some(device => device.zoneId === zone.id)).map((zone) => {
-          const zoneDevices = devices.filter(device => device.zoneId === zone.id);
+        {zones.filter(zone => (zone.goveeDevices?.length || 0) > 0).map((zone) => {
+          const zoneDevices = zone.goveeDevices || [];
           return (
             <Card key={zone.id} className="bg-[#23272b] border border-[#23282c]">
               <CardHeader>
@@ -243,18 +245,33 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                 {/* Weather Alert Source */}
                 <div className="space-y-2">
                   <Label className="text-emerald-300">Weather Alert Source</Label>
-                  <Select
+                  <select
                     value={zone.weatherAlertSource}
-                    onValueChange={(value) =>
-                      handleWeatherSourceChange(zone.id, value as 'WEATHER_API' | 'SENSORS' | 'BOTH')
+                    onChange={(e) =>
+                      updateZoneSetting(zone.id, { weatherAlertSource: e.target.value as 'WEATHER_API' | 'SENSORS' | 'BOTH' })
                     }
-                    className="bg-[#23272b] border-[#23282c] text-emerald-100"
+                    className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm"
                   >
                     <option value="WEATHER_API">Weather API Only</option>
                     <option value="SENSORS">Sensors Only</option>
                     <option value="BOTH">Both Weather API & Sensors</option>
-                  </Select>
+                  </select>
                 </div>
+                
+                {/* Use Plant Specific Alerts Toggle */}
+                {(zone.weatherAlertSource === 'SENSORS' || zone.weatherAlertSource === 'BOTH') && (
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id={`plant-alerts-toggle-${zone.id}`}
+                      checked={zone.usePlantSpecificAlerts}
+                      onCheckedChange={(checked) => updateZoneSetting(zone.id, { usePlantSpecificAlerts: checked })}
+                    />
+                    <Label htmlFor={`plant-alerts-toggle-${zone.id}`} className="text-emerald-300/70">
+                      Use Plant-Specific Alert Thresholds
+                    </Label>
+                  </div>
+                )}
+
                 {/* Linked Sensors */}
                 {zoneDevices.length > 0 && (
                   <div className="space-y-2">

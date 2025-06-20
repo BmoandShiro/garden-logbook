@@ -4,7 +4,7 @@
 echo "🔍 Running pre-commit checks..."
 
 # Check migration status
-npx ts-node scripts/check-migrations.ts
+npx --no-install ts-node --esm scripts/check-migrations.ts
 
 # Validate Prisma schema
 npx prisma validate

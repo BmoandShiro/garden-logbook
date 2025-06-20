@@ -39,6 +39,7 @@ export async function PATCH(
       data: {
         weatherAlertSource: body.weatherAlertSource,
         sensorAlertThresholds: body.sensorAlertThresholds,
+        ...(body.usePlantSpecificAlerts !== undefined && { usePlantSpecificAlerts: body.usePlantSpecificAlerts }),
       },
       include: {
         goveeDevices: {

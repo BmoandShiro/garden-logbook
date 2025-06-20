@@ -20,10 +20,12 @@ export async function GET(request: NextRequest) {
         description: true,
         weatherAlertSource: true,
         sensorAlertThresholds: true,
+        usePlantSpecificAlerts: true,
         goveeDevices: {
           select: {
             id: true,
             name: true,
+            type: true,
             isOnline: true,
             batteryLevel: true,
             lastStateAt: true,

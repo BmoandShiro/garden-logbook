@@ -5,7 +5,7 @@ import path from 'path';
 function checkMigrationStatus() {
   try {
     console.log('🔍 Checking migration status...');
-    const status = execSync('npx prisma migrate status', { stdio: 'pipe' }).toString();
+    const status = execSync('docker compose exec app npx prisma migrate status', { stdio: 'pipe' }).toString();
     
     if (status.includes('Database schema is up to date')) {
       console.log('✅ Database schema is up to date');

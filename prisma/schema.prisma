@@ -422,27 +422,29 @@ model RoomTemplate {
 }
 
 model Zone {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  type        String?
-  dimensions  String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  roomId      String
-  creatorId   String
-  logs        Log[]
-  logEntries  LogEntry[]
-  plants      Plant[]
-  createdBy   User        @relation(fields: [creatorId], references: [id])
-  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(cuid())
+  name                    String
+  description             String?
+  type                    String?
+  dimensions              String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  creatorId               String
+  roomId                  String
+  gardenId                String?
+  weatherAlertSource      WeatherAlertSource @default(WEATHER_API)
+  sensorAlertThresholds   Json?
+  usePlantSpecificAlerts  Boolean   @default(false)
+
+  // Relations
+  room          Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  logs          Log[]
+  logEntries    LogEntry[]
+  plants        Plant[]
+  createdBy     User          @relation(fields: [creatorId], references: [id])
+  equipment     Equipment[]
+  goveeDevices  GoveeDevice[]
   calendarNotes CalendarNote[]
-  equipment   Equipment[]
-  
-  // Govee sensor integration
-  goveeDevices GoveeDevice[]
-  weatherAlertSource WeatherAlertSource @default(WEATHER_API)
-  sensorAlertThresholds Json? // Store temperature/humidity thresholds for sensor-based alerts
 }
 
 model Seed {

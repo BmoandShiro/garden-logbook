@@ -159,8 +159,10 @@ export default async function ZonePage({ params }: PageProps) {
         <div className="space-y-4">
           <ZoneSensorData
             zoneId={zoneId}
+            devices={zone.goveeDevices}
             weatherAlertSource={zone.weatherAlertSource}
             sensorAlertThresholds={zone.sensorAlertThresholds}
+            usePlantSpecificAlerts={zone.usePlantSpecificAlerts}
           />
         </div>
       </div>
