@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,18 @@ interface ZoneSensorDataProps {
   usePlantSpecificAlerts: boolean;
 }
 
+function parseSensorData(capabilities: any[]): { 
+  temperature?: number; 
+  humidity?: number; 
+} {
+  let temperature, humidity;
+  for (const cap of capabilities) {
+    if (cap.instance === 'sensorTemperature') temperature = cap.state?.value;
+    if (cap.instance === 'sensorHumidity') humidity = cap.state?.value;
+  }
+  return { temperature, humidity };
+}
+
 export default function ZoneSensorData({ 
   zoneId, 
   devices,
@@ -55,6 +67,23 @@ export default function ZoneSensorData({
   const [currentSource, setCurrentSource] = useState(weatherAlertSource);
   const [thresholds, setThresholds] = useState(sensorAlertThresholds || {});
   const [usePlantAlerts, setUsePlantAlerts] = useState(usePlantSpecificAlerts);
+  const [sensorData, setSensorData] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const fetchSensorData = async () => {
+      try {
+        const response = await fetch('/api/sensors/data');
+        if (response.ok) {
+          const data = await response.json();
+          setSensorData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch live sensor data:", error);
+      }
+    };
+
+    fetchSensorData();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -216,8 +245,11 @@ export default function ZoneSensorData({
             </div>
             <div className="space-y-3">
             {devices.map((device) => {
-              const lastTemp = device.lastState && typeof device.lastState === 'object' && 'temperature' in device.lastState ? device.lastState.temperature as number : null;
-              const lastHumidity = device.lastState && typeof device.lastState === 'object' && 'humidity' in device.lastState ? device.lastState.humidity as number : null;
+              const liveData = sensorData[device.deviceId];
+              let parsed: { temperature?: number; humidity?: number } = {};
+              if (Array.isArray(liveData)) parsed = parseSensorData(liveData);
+              const lastTemp = parsed.temperature;
+              const lastHumidity = parsed.humidity;
 
               return (
                 <div key={device.id} className="flex items-center justify-between p-3 bg-dark-bg-tertiary border border-dark-border rounded-lg">
@@ -234,10 +266,10 @@ export default function ZoneSensorData({
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                       {lastTemp !== null && (
-                        <p className="text-sm text-emerald-100">{lastTemp.toFixed(1)}°C</p>
+                       {lastTemp !== undefined && (
+                        <p className="text-sm text-emerald-100">{lastTemp.toFixed(1)}°F</p>
                       )}
-                      {lastHumidity !== null && (
+                      {lastHumidity !== undefined && (
                         <p className="text-sm text-emerald-300/70">{lastHumidity.toFixed(1)}%</p>
                       )}
                     </div>
