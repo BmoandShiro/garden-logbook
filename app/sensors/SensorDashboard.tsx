@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   Thermometer, 
   Battery, 
@@ -34,6 +38,24 @@ interface SensorDashboardProps {
 }
 
 export function SensorDashboard({ devices, zones, readings }: SensorDashboardProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const readingsPerPage = 5;
+
+  // Pagination logic
+  const totalPages = Math.ceil(readings.length / readingsPerPage);
+  const paginatedReadings = readings.slice(
+    (currentPage - 1) * readingsPerPage,
+    currentPage * readingsPerPage
+  );
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
     // Calculate statistics
     const totalSensors = devices.length;
     const onlineSensors = devices.filter(d => d.isOnline ?? true).length;
@@ -141,8 +163,8 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                         </CardHeader>
                         <CardContent>
                         <div className="space-y-4">
-                            {recentReadings.length > 0 ? (
-                            recentReadings.map((reading) => {
+                            {paginatedReadings.length > 0 ? (
+                            paginatedReadings.map((reading) => {
                                 const device = devices.find(d => d.id === reading.deviceId);
                                 return (
                                 <div key={reading.id} className="flex items-center justify-between p-3 border border-[#23282c] rounded-lg">
@@ -167,6 +189,29 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                             <p className="text-emerald-300/70 text-center py-4">No recent sensor readings</p>
                             )}
                         </div>
+                        {totalPages > 1 && (
+                            <div className="flex justify-between items-center mt-4">
+                            <Button
+                                variant="dark-outline"
+                                size="sm"
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <span className="text-sm text-emerald-300/70">
+                                Page {currentPage} of {totalPages}
+                            </span>
+                            <Button
+                                variant="dark-outline"
+                                size="sm"
+                                onClick={handleNextPage}
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </Button>
+                            </div>
+                        )}
                         </CardContent>
                     </Card>
 

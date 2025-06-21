@@ -102,7 +102,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
   return (
     <div className="space-y-4">
       <div className="flex justify-end mb-2">
-        <Button onClick={handleDiscover} disabled={discovering} variant="outline">
+        <Button onClick={handleDiscover} disabled={discovering} variant="dark-outline">
           <RefreshCw className="h-4 w-4 mr-2 animate-spin" style={{ display: discovering ? 'inline' : 'none' }} />
           {discovering ? 'Discovering...' : 'Discover Devices'}
         </Button>
@@ -212,7 +212,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                   <div className="mt-4 pt-4 border-t border-[#23282c]">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400 text-sm">Device Status:</span>
-                      <Badge variant={device.isActive ? "default" : "destructive"} className="text-xs">
+                      <Badge variant={device.isActive ? "success" : "destructive"} className="text-xs">
                         {device.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
