@@ -147,11 +147,11 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                             : 'Linked'}
                         </Badge>
                       )}
-                      <Button variant="outline" onClick={(e) => { e.stopPropagation(); setModalData(data); }}>
+                      <Button variant="dark-outline" onClick={(e) => { e.stopPropagation(); setModalData(data); }}>
                         <Info className="h-4 w-4 mr-1" /> View Details
                       </Button>
                       <CollapsibleTrigger asChild>
-                        <Button variant="outline">
+                        <Button variant="dark-outline">
                           <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${expandedCharts[device.id] ? 'rotate-180' : ''}`} />
                           View History
                         </Button>
