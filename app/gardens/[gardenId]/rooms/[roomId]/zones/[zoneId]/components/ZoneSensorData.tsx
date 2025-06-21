@@ -249,54 +249,66 @@ export default function ZoneSensorData({
                     <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 </Button>
             </div>
-            {loading ? (
-              <div className="flex justify-center items-center py-4">
-                <Spinner />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {devices.map((device) => {
-                  const liveData = sensorData[device.deviceId];
-                  let parsed: { temperature?: number; humidity?: number } = {};
-                  if (Array.isArray(liveData)) parsed = parseSensorData(liveData);
-                  const lastTemp = parsed.temperature;
-                  const lastHumidity = parsed.humidity;
-
-                  return (
-                    <div key={device.id} className="flex items-center justify-between p-3 bg-dark-bg-tertiary border border-dark-border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {device.isOnline ? (
-                          <Wifi className="h-4 w-4 text-green-400" />
+            <div className="space-y-4">
+              {devices.map((device) => {
+                const data = sensorData[device.deviceId];
+                let parsed: { temperature?: number; humidity?: number; online?: boolean; battery?: number; } = {};
+                if (data?.currentState) {
+                  for (const cap of data.currentState) {
+                    if (cap.instance === 'sensorTemperature') parsed.temperature = cap.state?.value;
+                    if (cap.instance === 'sensorHumidity') parsed.humidity = cap.state?.value;
+                    if (cap.instance === 'online') parsed.online = cap.state?.value;
+                    if (cap.instance === 'battery') parsed.battery = cap.state?.value;
+                  }
+                }
+                
+                return (
+                  <div key={device.id} className="p-3 border border-[#23282c] rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {parsed.online !== false ? (
+                          <Wifi className="h-4 w-4 text-emerald-400" />
                         ) : (
-                          <WifiOff className="h-4 w-4 text-red-400" />
+                          <WifiOff className="h-4 w-4 text-red-500" />
                         )}
-                        <div>
-                          <p className="font-medium text-emerald-100">{device.name}</p>
-                          <p className="text-sm text-emerald-300/70">{device.model}</p>
-                        </div>
+                        <span className="font-semibold text-emerald-100">{device.name}</span>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                           {lastTemp !== undefined && (
-                            <p className="text-sm text-emerald-100">{lastTemp.toFixed(1)}°F</p>
-                          )}
-                          {lastHumidity !== undefined && (
-                            <p className="text-sm text-emerald-300/70">{lastHumidity.toFixed(1)}%</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-emerald-300/70">
-                          <Battery className="h-4 w-4" />
-                          <span>{device.batteryLevel ?? '--'}%</span>
-                        </div>
-                        <Badge variant={device.isActive ? 'default' : 'secondary'} className={device.isActive ? 'bg-green-600/20 text-green-300 border-green-500/30' : ''}>
-                          {device.isActive ? "Active" : "Inactive"}
+                      <div className="flex items-center gap-2">
+                        {parsed.battery != null && (
+                          <Badge variant="outline" className="text-xs">
+                            <Battery className="h-3 w-3 mr-1" />
+                            {parsed.battery}%
+                          </Badge>
+                        )}
+                        <Badge variant={device.isActive ? "success" : "destructive"} className="text-xs">
+                          {device.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pl-6">
+                      <div className="flex flex-col">
+                        <span className="text-emerald-300">
+                          {parsed.temperature?.toFixed(1) ?? '--'}°F
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-emerald-300">
+                          {parsed.humidity?.toFixed(1) ?? '--'}%
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.tempHigh24h?.toFixed(1) ?? '--'}°F</span></p>
+                        <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.tempLow24h?.toFixed(1) ?? '--'}°F</span></p>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
+                        <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
         </div>
       )}
     </div>

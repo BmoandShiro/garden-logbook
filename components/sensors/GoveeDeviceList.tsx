@@ -127,7 +127,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
         devices.map((device) => {
           const data = sensorData[device.deviceId];
           let parsed: { temperature?: number; humidity?: number; online?: boolean; battery?: number; lastUpdate?: string } = {};
-          if (Array.isArray(data)) parsed = parseSensorData(data);
+          if (Array.isArray(data?.currentState)) parsed = parseSensorData(data.currentState);
           
           return (
             <Collapsible key={device.id} open={expandedCharts[device.id]} onOpenChange={() => toggleChart(device.id)}>
@@ -147,7 +147,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                             : 'Linked'}
                         </Badge>
                       )}
-                      <Button variant="dark-outline" onClick={(e) => { e.stopPropagation(); setModalData(data); }}>
+                      <Button variant="dark-outline" onClick={(e) => { e.stopPropagation(); setModalData(data?.currentState); }}>
                         <Info className="h-4 w-4 mr-1" /> View Details
                       </Button>
                       <CollapsibleTrigger asChild>
@@ -193,7 +193,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                   )}
 
                   {/* Sensor Readings */}
-                  <div className="flex space-x-8 mt-4">
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-4">
                     <div className="flex flex-col items-center">
                       <span className="text-gray-400 text-xs">Temperature</span>
                       <span className="text-2xl font-bold text-emerald-300">
@@ -205,6 +205,16 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       <span className="text-2xl font-bold text-emerald-300">
                         {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
                       </span>
+                    </div>
+
+                    {/* 24h High/Low */}
+                    <div className="text-center text-xs text-gray-400">
+                      <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.tempHigh24h?.toFixed(1) ?? '--'}°F</span></p>
+                      <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.tempLow24h?.toFixed(1) ?? '--'}°F</span></p>
+                    </div>
+                     <div className="text-center text-xs text-gray-400">
+                      <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
+                      <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                     </div>
                   </div>
 
