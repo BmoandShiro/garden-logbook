@@ -207,11 +207,13 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                 className="bg-[#23272b] border-[#23282c] text-emerald-100"
               >
                 <option value="" disabled>Select a sensor...</option>
-                {unlinkedDevices.map((device) => (
-                  <option key={device.id} value={device.id}>
-                    {device.name} ({device.type})
-                  </option>
-                ))}
+                <SelectContent className="bg-[#1a1b1e] border-[#2f3136] text-emerald-100">
+                  {unlinkedDevices.map((device) => (
+                    <SelectItem key={device.id} value={device.id}>
+                      {device.name} ({device.model})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -260,7 +262,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                 
                 {/* Use Plant Specific Alerts Toggle */}
                 {(zone.weatherAlertSource === 'SENSORS' || zone.weatherAlertSource === 'BOTH') && (
-                  <div className="flex items-center space-x-2 pt-2">
+                  <div className="flex items-center space-x-2">
                     <Switch
                       id={`plant-alerts-toggle-${zone.id}`}
                       checked={zone.usePlantSpecificAlerts}
