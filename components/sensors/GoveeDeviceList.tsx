@@ -5,8 +5,10 @@ import { GoveeDevice } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, RefreshCw, Info, Battery, Clock, MapPin, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, CheckCircle2, RefreshCw, Info, Battery, Clock, MapPin, Wifi, WifiOff, ChevronDown } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SensorChart } from './SensorChart';
 
 interface GoveeDeviceListProps {
   devices: GoveeDevice[];
@@ -37,6 +39,11 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
   const [discovering, setDiscovering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalData, setModalData] = useState<any | null>(null);
+  const [expandedCharts, setExpandedCharts] = useState<Record<string, boolean>>({});
+
+  const toggleChart = (deviceId: string) => {
+    setExpandedCharts(prev => ({ ...prev, [deviceId]: !prev[deviceId] }));
+  };
 
   const fetchSensorData = async (deviceList: GoveeDevice[]) => {
     setLoading(true);
@@ -123,88 +130,99 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
           if (Array.isArray(data)) parsed = parseSensorData(data);
           
           return (
-            <Card key={device.id} className="bg-[#23272b] border border-[#23282c] text-white">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
-                    <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
+            <Collapsible key={device.id} open={expandedCharts[device.id]} onOpenChange={() => toggleChart(device.id)}>
+              <Card className="bg-[#23272b] border border-[#23282c] text-white">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
+                      <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {device.linkedEntity && (
+                        <Badge variant="outline" className="text-emerald-300 border-emerald-300">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {typeof device.linkedEntity === 'object' && device.linkedEntity !== null && 'name' in device.linkedEntity 
+                            ? (device.linkedEntity as any).name 
+                            : 'Linked'}
+                        </Badge>
+                      )}
+                      <Button variant="outline" onClick={(e) => { e.stopPropagation(); setModalData(data); }}>
+                        <Info className="h-4 w-4 mr-1" /> View Details
+                      </Button>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline">
+                          <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${expandedCharts[device.id] ? 'rotate-180' : ''}`} />
+                          View History
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {device.linkedEntity && (
-                      <Badge variant="outline" className="text-emerald-300 border-emerald-300">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {typeof device.linkedEntity === 'object' && device.linkedEntity !== null && 'name' in device.linkedEntity 
-                          ? (device.linkedEntity as any).name 
-                          : 'Linked'}
-                      </Badge>
-                    )}
-                    <Button variant="outline" onClick={() => setModalData(data)}>
-                      <Info className="h-4 w-4 mr-1" /> View Details
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Status and Health Indicators */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    {parsed.online !== false ? (
-                      <Wifi className="h-5 w-5 text-emerald-400" />
-                    ) : (
-                      <WifiOff className="h-5 w-5 text-red-500" />
-                    )}
-                    <span className="font-semibold text-emerald-300">
-                      {parsed.online !== false ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                  
-                  {/* Battery Level */}
-                  {parsed.battery !== undefined && (
+                </CardHeader>
+                <CardContent>
+                  {/* Status and Health Indicators */}
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
-                      <Battery className={`h-4 w-4 ${getBatteryColor(parsed.battery)}`} />
-                      <span className={`text-sm font-medium ${getBatteryColor(parsed.battery)}`}>
-                        {parsed.battery}%
+                      {parsed.online !== false ? (
+                        <Wifi className="h-5 w-5 text-emerald-400" />
+                      ) : (
+                        <WifiOff className="h-5 w-5 text-red-500" />
+                      )}
+                      <span className="font-semibold text-emerald-300">
+                        {parsed.online !== false ? 'Online' : 'Offline'}
                       </span>
                     </div>
+                    
+                    {/* Battery Level */}
+                    {parsed.battery !== undefined && (
+                      <div className="flex items-center space-x-2">
+                        <Battery className={`h-4 w-4 ${getBatteryColor(parsed.battery)}`} />
+                        <span className={`text-sm font-medium ${getBatteryColor(parsed.battery)}`}>
+                          {parsed.battery}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Last Reading Time */}
+                  {device.lastStateAt && (
+                    <div className="flex items-center space-x-2 mb-4 text-gray-400 text-sm">
+                      <Clock className="h-4 w-4" />
+                      <span>Last reading: {new Date(device.lastStateAt).toLocaleString()}</span>
+                    </div>
                   )}
-                </div>
 
-                {/* Last Reading Time */}
-                {device.lastStateAt && (
-                  <div className="flex items-center space-x-2 mb-4 text-gray-400 text-sm">
-                    <Clock className="h-4 w-4" />
-                    <span>Last reading: {new Date(device.lastStateAt).toLocaleString()}</span>
+                  {/* Sensor Readings */}
+                  <div className="flex space-x-8 mt-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-400 text-xs">Temperature</span>
+                      <span className="text-2xl font-bold text-emerald-300">
+                        {parsed.temperature !== undefined ? `${parsed.temperature}°F` : '--'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-400 text-xs">Humidity</span>
+                      <span className="text-2xl font-bold text-emerald-300">
+                        {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
+                      </span>
+                    </div>
                   </div>
-                )}
 
-                {/* Sensor Readings */}
-                <div className="flex space-x-8 mt-4">
-                  <div className="flex flex-col items-center">
-                    <span className="text-gray-400 text-xs">Temperature</span>
-                    <span className="text-2xl font-bold text-emerald-300">
-                      {parsed.temperature !== undefined ? `${parsed.temperature}°F` : '--'}
-                    </span>
+                  {/* Device Status */}
+                  <div className="mt-4 pt-4 border-t border-[#23282c]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Device Status:</span>
+                      <Badge variant={device.isActive ? "default" : "destructive"} className="text-xs">
+                        {device.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-gray-400 text-xs">Humidity</span>
-                    <span className="text-2xl font-bold text-emerald-300">
-                      {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Device Status */}
-                <div className="mt-4 pt-4 border-t border-[#23282c]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">Device Status:</span>
-                    <Badge variant={device.isActive ? "default" : "destructive"} className="text-xs">
-                      {device.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+                <CollapsibleContent>
+                  <SensorChart deviceId={device.id} />
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           );
         })
       )}
