@@ -18,6 +18,8 @@ interface NotificationMeta {
   plantName?: string;
   timezone?: string;
   logId?: string;
+  sensorTemperature?: number;
+  sensorHumidity?: number;
 }
 
 interface Notification {
@@ -44,7 +46,7 @@ interface NotificationsListProps {
 }
 
 function groupNotificationsByHierarchy(notifications: Notification[]) {
-  // Only group forecasted and current weather alerts
+  // Only group forecasted and current weather/sensor alerts
   const grouped: any = {};
   for (const n of notifications) {
     if (!n.meta || !n.meta.plantId) continue;
@@ -227,9 +229,9 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
   // Extract invite notifications
   const inviteNotifications = localNotifications.filter((n: Notification) => n.type === 'invite' && n.meta?.inviteId);
   // Group other notifications
-  const otherNotifications = localNotifications.filter((n: Notification) => !(n.type === 'invite' && n.meta?.inviteId));
+  const otherNotifications = localNotifications.filter((n: Notification) => n.type !== 'invite');
 
-  // Group forecasted and current weather alerts by hierarchy
+  // Group forecasted and current weather/sensor alerts by hierarchy
   const grouped = groupNotificationsByHierarchy(otherNotifications);
 
   // Helper to get pagination state for a plant
@@ -451,11 +453,23 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                               {n.meta.zoneName && <span>Zone: {n.meta.zoneName}</span>}
                                                                             </div>
                                                                           )}
-                                                                          {n.type === 'WEATHER_FORECAST_ALERT' && n.message ? (
-                                                                            <div className="mt-1">{renderForecastedMessage(n.message)}</div>
-                                                                          ) : (
-                                                                            <div className="text-dark-text-primary mt-1 whitespace-pre-line">{n.message}</div>
-                                                                          )}
+                                                                          <div className="text-sm text-dark-text-primary mt-1 whitespace-pre-line">
+                                                                            {n.type === 'WEATHER_FORECAST_ALERT' ?
+                                                                              renderForecastedMessage(n.message) :
+                                                                              renderCurrentAlertLabels(n.message)}
+
+                                                                            {n.meta?.sensorTemperature != null && n.meta?.sensorHumidity != null && (
+                                                                              <div className="mt-2 pt-2 border-t border-emerald-800">
+                                                                                <p className="text-sm font-semibold text-cyan-300">Sensor Readings:</p>
+                                                                                <p className="text-sm text-cyan-200">
+                                                                                  Temp: {n.meta.sensorTemperature.toFixed(1)}°F, Humidity: {n.meta.sensorHumidity.toFixed(1)}%
+                                                                                </p>
+                                                                              </div>
+                                                                            )}
+                                                                          </div>
+                                                                          <div className="mt-4 text-xs text-emerald-400">
+                                                                            <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
+                                                                          </div>
                                                                         </li>
                                                                       );
                                                                     }

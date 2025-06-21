@@ -74,6 +74,7 @@ export default function PlantForm({
     onlyTriggerAlertsDuringSeason: initialValues.onlyTriggerAlertsDuringSeason ?? false,
     sensitivities: initialValues.sensitivities ?? {
       heat: { enabled: false, threshold: '', unit: 'F' },
+      humidity: { enabled: false, min: '', max: '' },
       frost: { enabled: false, windows: [] },
       drought: { enabled: false, days: '' },
       wind: { enabled: false, threshold: '' },
@@ -236,6 +237,37 @@ export default function PlantForm({
                 <option value="F">°F</option>
                 <option value="C">°C</option>
               </select>
+            </>
+          )}
+        </div>
+        {/* Humidity Sensitivity */}
+        <div className="flex items-center gap-2 mb-2">
+          <Switch
+            checked={form.sensitivities.humidity?.enabled || false}
+            onCheckedChange={checked => updateSensitivity('humidity', { enabled: checked })}
+            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.humidity?.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+          />
+          <Label className="mr-2">Humidity Sensitive</Label>
+          {form.sensitivities.humidity?.enabled && (
+            <>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={form.sensitivities.humidity.min || ''}
+                onChange={e => updateSensitivity('humidity', { min: e.target.value })}
+                placeholder="Min %"
+                className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+              />
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={form.sensitivities.humidity.max || ''}
+                onChange={e => updateSensitivity('humidity', { max: e.target.value })}
+                placeholder="Max %"
+                className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+              />
             </>
           )}
         </div>

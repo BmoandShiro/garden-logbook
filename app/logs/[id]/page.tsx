@@ -249,7 +249,15 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         </Section>
       )}
 
-      {/* WEATHER ALERT-specific section - Only for WEATHER_ALERT logs */}
+      {/* WEATHER_ALERT or SENSOR_ALERT-specific section */}
+      {(log.type === 'WEATHER_ALERT' || log.type === 'SENSOR_ALERT') && merged.sensorTemperature && (
+        <Section title="Sensor Readings">
+          <FieldRow label="Sensor Temperature" value={`${merged.sensorTemperature}°F`} />
+          <FieldRow label="Sensor Humidity" value={`${merged.sensorHumidity}%`} />
+        </Section>
+      )}
+
+      {/* WEATHER_ALERT-specific section */}
       {(log.type === 'WEATHER_ALERT' || log.type === 'WEATHER ALERT') && merged.sinceLastPrecipDiff && (
         <Section title="Heavy Rain (Since Last Log)">
           <div className="text-blue-700 font-semibold text-sm">

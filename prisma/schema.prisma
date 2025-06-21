@@ -550,6 +550,7 @@ model GoveeDevice {
   readings     GoveeReading[]
 
   @@unique([userId, deviceId])
+  @@index([userId])
 }
 
 model GoveeReading {
@@ -644,6 +645,8 @@ enum LogType {
   FLUSHING
   GENERAL
   WEATHER_ALERT
+  SENSOR_ALERT
+  NOTE
 }
 
 enum LSTIntensity {
