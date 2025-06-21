@@ -174,6 +174,7 @@ export default function ZoneSensorData({
                   id="plant-alerts-toggle"
                   checked={usePlantAlerts}
                   onCheckedChange={handleUsePlantAlertsChange}
+                  className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#1a1b1e]"
                 />
                 <Label htmlFor="plant-alerts-toggle" className="text-emerald-300/70">
                   Use Plant-Specific Alert Thresholds

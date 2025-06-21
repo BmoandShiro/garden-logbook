@@ -265,6 +265,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                       id={`plant-alerts-toggle-${zone.id}`}
                       checked={zone.usePlantSpecificAlerts}
                       onCheckedChange={(checked) => updateZoneSetting(zone.id, { usePlantSpecificAlerts: checked })}
+                      className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#1a1b1e]"
                     />
                     <Label htmlFor={`plant-alerts-toggle-${zone.id}`} className="text-emerald-300/70">
                       Use Plant-Specific Alert Thresholds
