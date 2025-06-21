@@ -78,6 +78,7 @@ const getLogIcon = (type: string) => {
     FLUSHING: '🚿',
     GENERAL: '📝',
     WEATHER_ALERT: '⛈️',
+    SENSOR_ALERT: '📶',
   };
   return icons[type] || '📝';
 };
@@ -98,6 +99,13 @@ const weatherAlertColors: Record<string, string> = {
   Wind: 'text-slate-400',
   Flood: 'text-amber-700',
   HeavyRain: 'text-blue-700',
+};
+
+const sensorAlertColors: Record<string, string> = {
+  'High Temperature (Sensor)': 'text-red-400',
+  'Low Temperature (Sensor)': 'text-sky-300',
+  'High Humidity (Sensor)': 'text-blue-400',
+  'Low Humidity (Sensor)': 'text-yellow-400',
 };
 
 function renderCondensedWeatherAlert(message: string) {
@@ -179,20 +187,34 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                           By: {log.user.username || log.user.email || log.user.id}
                         </p>
                       )}
-                      {log.notes &&
-                        (String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT') ? (
-                          <div>
-                            {renderCondensedWeatherAlert(log.notes)}
-                            {/* Show since last log message if present in data */}
-                            {merged.sinceLastPrecipDiff && (
-                              <div className="text-blue-700 font-semibold text-sm mt-1">
-                                {merged.sinceLastPrecipDiff}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
-                        )}
+                      {log.notes && (String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT') ? (
+                        <div>
+                          {renderCondensedWeatherAlert(log.notes)}
+                          {/* Show since last log message if present in data */}
+                          {merged.sinceLastPrecipDiff && (
+                            <div className="text-blue-700 font-semibold text-sm mt-1">
+                              {merged.sinceLastPrecipDiff}
+                            </div>
+                          )}
+                        </div>
+                      ) : String(log.type) === 'SENSOR_ALERT' ? (
+                        <div className="mt-2 text-sm">
+                          <span
+                            className={`inline-block mr-3 font-semibold ${
+                              sensorAlertColors[merged.type] || 'text-dark-text-primary'
+                            }`}
+                          >
+                            {merged.type.includes('Temperature')
+                              ? `${merged.type}: ${formatMeasurement(
+                                  merged.sensorTemperature,
+                                  unitPreferences.temperature
+                                )}`
+                              : `${merged.type}: ${merged.sensorHumidity}%`}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
+                      )}
                       <div className="mt-2 flex flex-wrap gap-2">
                         {log.type !== 'ENVIRONMENTAL' && log.temperature !== null && log.temperature !== undefined && (
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
