@@ -133,14 +133,14 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
             <Collapsible key={device.id} open={expandedCharts[device.id]} onOpenChange={() => toggleChart(device.id)}>
               <Card className="bg-[#23272b] border border-[#23282c] text-white">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="sm:mr-4">
                       <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
                       <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                       {device.linkedEntity && (
-                        <Badge variant="outline" className="text-emerald-300 border-emerald-300">
+                        <Badge variant="outline" className="text-emerald-300 border-emerald-300 justify-center">
                           <MapPin className="h-3 w-3 mr-1" />
                           {typeof device.linkedEntity === 'object' && device.linkedEntity !== null && 'name' in device.linkedEntity 
                             ? (device.linkedEntity as any).name 
