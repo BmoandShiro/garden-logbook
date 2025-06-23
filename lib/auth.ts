@@ -5,6 +5,7 @@ import GitHubProvider from "next-auth/providers/github";
 import DiscordProvider from "next-auth/providers/discord";
 import EmailProvider from "next-auth/providers/email";
 import { db } from "./db";
+import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -81,40 +82,53 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
     }),
     EmailProvider({
+      server: {
+        host: process.env.EMAIL_SERVER_HOST,
+        port: Number(process.env.EMAIL_SERVER_PORT),
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD,
+        },
+        secure: true,
+      },
       from: process.env.EMAIL_FROM,
       generateVerificationToken: async () => {
         return generateToken(6); // Generate a 6-digit code
       },
       sendVerificationRequest: async ({ identifier: email, url, token }) => {
-        console.log("🔍 Email sending debug:", {
-          hasResend: !!resend,
-          hasApiKey: !!process.env.RESEND_API_KEY,
-          emailFrom: process.env.EMAIL_FROM,
-          emailTo: email,
-          token: token
-        });
-
-        if (!resend) {
-          console.error("❌ Resend not configured - missing API key");
-          return;
-        }
-        
+        // Try Gmail SMTP first
         try {
-          console.log("📧 Attempting to send email via Resend...");
-          const result = await resend.emails.send({
-            from: 'onboarding@resend.dev',
+          const transport = nodemailer.createTransport({
+            host: process.env.EMAIL_SERVER_HOST,
+            port: Number(process.env.EMAIL_SERVER_PORT),
+            auth: {
+              user: process.env.EMAIL_SERVER_USER,
+              pass: process.env.EMAIL_SERVER_PASSWORD,
+            },
+            secure: true,
+          });
+          await transport.sendMail({
+            from: process.env.EMAIL_FROM,
             to: email,
             subject: 'Sign in to Garden Logbook',
             html: html(token, url)
           });
-          console.log("✅ Email sent successfully:", result);
-        } catch (error) {
-          console.error("❌ SEND_VERIFICATION_EMAIL_ERROR", error);
-          
-          // Fallback for development: log the magic link
-          console.log("🔗 DEVELOPMENT FALLBACK - Magic Link:", url);
-          console.log("🔢 DEVELOPMENT FALLBACK - Code:", token);
-          console.log("📧 DEVELOPMENT FALLBACK - Email:", email);
+          return;
+        } catch (smtpError) {
+          console.error("SMTP SEND ERROR, falling back to Resend (if configured):", smtpError);
+        }
+        // Fallback: Resend (if configured)
+        if (resend) {
+          try {
+            await resend.emails.send({
+              from: 'onboarding@resend.dev',
+              to: email,
+              subject: 'Sign in to Garden Logbook',
+              html: html(token, url)
+            });
+          } catch (resendError) {
+            console.error("Resend SEND ERROR:", resendError);
+          }
         }
       },
     }),
