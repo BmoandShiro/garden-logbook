@@ -132,80 +132,80 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
           return (
             <Collapsible key={device.id} open={expandedCharts[device.id]} onOpenChange={() => toggleChart(device.id)}>
               <Card className="bg-[#23272b] border border-[#23282c] text-white">
-                <CardHeader>
+              <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="sm:mr-4">
-                      <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
-                      <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
-                    </div>
+                    <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
+                    <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
+                  </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                      {device.linkedEntity && (
+                    {device.linkedEntity && (
                         <Badge variant="outline" className="text-emerald-300 border-emerald-300 justify-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {typeof device.linkedEntity === 'object' && device.linkedEntity !== null && 'name' in device.linkedEntity 
-                            ? (device.linkedEntity as any).name 
-                            : 'Linked'}
-                        </Badge>
-                      )}
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {typeof device.linkedEntity === 'object' && device.linkedEntity !== null && 'name' in device.linkedEntity 
+                          ? (device.linkedEntity as any).name 
+                          : 'Linked'}
+                      </Badge>
+                    )}
                       <Button variant="dark-outline" onClick={(e) => { e.stopPropagation(); setModalData(data?.currentState); }}>
-                        <Info className="h-4 w-4 mr-1" /> View Details
-                      </Button>
+                      <Info className="h-4 w-4 mr-1" /> View Details
+                    </Button>
                       <CollapsibleTrigger asChild>
                         <Button variant="dark-outline">
                           <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${expandedCharts[device.id] ? 'rotate-180' : ''}`} />
                           View History
                         </Button>
                       </CollapsibleTrigger>
-                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Status and Health Indicators */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                      {parsed.online !== false ? (
-                        <Wifi className="h-5 w-5 text-emerald-400" />
-                      ) : (
-                        <WifiOff className="h-5 w-5 text-red-500" />
-                      )}
-                      <span className="font-semibold text-emerald-300">
-                        {parsed.online !== false ? 'Online' : 'Offline'}
-                      </span>
-                    </div>
-                    
-                    {/* Battery Level */}
-                    {parsed.battery !== undefined && (
-                      <div className="flex items-center space-x-2">
-                        <Battery className={`h-4 w-4 ${getBatteryColor(parsed.battery)}`} />
-                        <span className={`text-sm font-medium ${getBatteryColor(parsed.battery)}`}>
-                          {parsed.battery}%
-                        </span>
-                      </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Status and Health Indicators */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    {parsed.online !== false ? (
+                      <Wifi className="h-5 w-5 text-emerald-400" />
+                    ) : (
+                      <WifiOff className="h-5 w-5 text-red-500" />
                     )}
+                    <span className="font-semibold text-emerald-300">
+                      {parsed.online !== false ? 'Online' : 'Offline'}
+                    </span>
                   </div>
-
-                  {/* Last Reading Time */}
-                  {device.lastStateAt && (
-                    <div className="flex items-center space-x-2 mb-4 text-gray-400 text-sm">
-                      <Clock className="h-4 w-4" />
-                      <span>Last reading: {new Date(device.lastStateAt).toLocaleString()}</span>
+                  
+                  {/* Battery Level */}
+                  {parsed.battery !== undefined && (
+                    <div className="flex items-center space-x-2">
+                      <Battery className={`h-4 w-4 ${getBatteryColor(parsed.battery)}`} />
+                      <span className={`text-sm font-medium ${getBatteryColor(parsed.battery)}`}>
+                        {parsed.battery}%
+                      </span>
                     </div>
                   )}
+                </div>
 
-                  {/* Sensor Readings */}
+                {/* Last Reading Time */}
+                {device.lastStateAt && (
+                  <div className="flex items-center space-x-2 mb-4 text-gray-400 text-sm">
+                    <Clock className="h-4 w-4" />
+                    <span>Last reading: {new Date(device.lastStateAt).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Sensor Readings */}
                   <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-4">
-                    <div className="flex flex-col items-center">
-                      <span className="text-gray-400 text-xs">Temperature</span>
-                      <span className="text-2xl font-bold text-emerald-300">
-                        {parsed.temperature !== undefined ? `${parsed.temperature}°F` : '--'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-gray-400 text-xs">Humidity</span>
-                      <span className="text-2xl font-bold text-emerald-300">
-                        {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
-                      </span>
-                    </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-400 text-xs">Temperature</span>
+                    <span className="text-2xl font-bold text-emerald-300">
+                      {parsed.temperature !== undefined ? `${parsed.temperature}°F` : '--'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-400 text-xs">Humidity</span>
+                    <span className="text-2xl font-bold text-emerald-300">
+                      {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
+                    </span>
+                  </div>
 
                     {/* 24h High/Low */}
                     <div className="text-center text-xs text-gray-400">
@@ -216,22 +216,22 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                       <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                     </div>
-                  </div>
+                </div>
 
-                  {/* Device Status */}
-                  <div className="mt-4 pt-4 border-t border-[#23282c]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm">Device Status:</span>
+                {/* Device Status */}
+                <div className="mt-4 pt-4 border-t border-[#23282c]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Device Status:</span>
                       <Badge variant={device.isActive ? "success" : "destructive"} className="text-xs">
-                        {device.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
+                      {device.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
-                </CardContent>
+                </div>
+              </CardContent>
                 <CollapsibleContent>
                   <SensorChart deviceId={device.id} />
                 </CollapsibleContent>
-              </Card>
+            </Card>
             </Collapsible>
           );
         })

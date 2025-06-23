@@ -208,11 +208,11 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
               >
                 <option value="" disabled>Select a sensor...</option>
                 <SelectContent className="bg-[#1a1b1e] border-[#2f3136] text-emerald-100">
-                  {unlinkedDevices.map((device) => (
+                {unlinkedDevices.map((device) => (
                     <SelectItem key={device.id} value={device.id}>
                       {device.name} ({device.model})
                     </SelectItem>
-                  ))}
+                ))}
                 </SelectContent>
               </Select>
             </div>

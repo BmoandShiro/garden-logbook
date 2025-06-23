@@ -250,7 +250,7 @@ export default function ZoneSensorData({
                 </Button>
             </div>
             <div className="space-y-4">
-              {devices.map((device) => {
+                {devices.map((device) => {
                 const data = sensorData[device.deviceId];
                 let parsed: { temperature?: number; humidity?: number; online?: boolean; battery?: number; } = {};
                 if (data?.currentState) {
@@ -261,8 +261,8 @@ export default function ZoneSensorData({
                     if (cap.instance === 'battery') parsed.battery = cap.state?.value;
                   }
                 }
-                
-                return (
+
+                  return (
                   <div key={device.id} className="p-3 border border-[#23282c] rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -304,11 +304,11 @@ export default function ZoneSensorData({
                         <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                         <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                       </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
         </div>
       )}
     </div>

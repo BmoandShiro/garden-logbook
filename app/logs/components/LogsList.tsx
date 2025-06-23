@@ -188,15 +188,15 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                         </p>
                       )}
                       {log.notes && (String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT') ? (
-                        <div>
-                          {renderCondensedWeatherAlert(log.notes)}
-                          {/* Show since last log message if present in data */}
-                          {merged.sinceLastPrecipDiff && (
-                            <div className="text-blue-700 font-semibold text-sm mt-1">
-                              {merged.sinceLastPrecipDiff}
-                            </div>
-                          )}
-                        </div>
+                          <div>
+                            {renderCondensedWeatherAlert(log.notes)}
+                            {/* Show since last log message if present in data */}
+                            {merged.sinceLastPrecipDiff && (
+                              <div className="text-blue-700 font-semibold text-sm mt-1">
+                                {merged.sinceLastPrecipDiff}
+                              </div>
+                            )}
+                          </div>
                       ) : String(log.type) === 'SENSOR_ALERT' ? (
                         <div className="mt-2 text-sm">
                           <span
@@ -212,9 +212,9 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                               : `${merged.type}: ${merged.sensorHumidity}%`}
                           </span>
                         </div>
-                      ) : (
-                        <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
-                      )}
+                        ) : (
+                          <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
+                        )}
                       <div className="mt-2 flex flex-wrap gap-2">
                         {log.type !== 'ENVIRONMENTAL' && log.temperature !== null && log.temperature !== undefined && (
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-dark-bg-primary text-dark-text-secondary">
