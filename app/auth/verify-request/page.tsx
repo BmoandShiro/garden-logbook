@@ -4,14 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
 function VerifyRequestContent() {
   const searchParams = useSearchParams();
-  const email = searchParams.get('email');
+  const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Try to get email from query param first
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    } else if (typeof window !== 'undefined') {
+      // Fallback to sessionStorage
+      const storedEmail = sessionStorage.getItem('pendingSignInEmail') || '';
+      setEmail(storedEmail);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,17 +33,23 @@ function VerifyRequestContent() {
       return;
     }
 
-    const res = await signIn('email', {
-      email,
-      token,
-      redirect: false,
-      callbackUrl: '/',
-    });
+    try {
+      const res = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        body: new URLSearchParams({
+          email,
+          token,
+        }),
+      });
 
-    if (res?.error) {
-      setError("The code you entered is incorrect. Please try again.");
-    } else if (res?.url) {
-      window.location.href = res.url;
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = data.redirect || '/';
+      } else {
+        setError(data.error || "The code you entered is incorrect. Please try again.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
     }
   };
 
@@ -42,11 +59,21 @@ function VerifyRequestContent() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-emerald-100">Check your email</CardTitle>
           <CardDescription className="text-dark-text-secondary">
-            We sent a 6-digit code to {email}.
+            We sent a 6-digit code to {email || 'your email'}.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!email && (
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+              />
+            )}
             <Input
               id="token"
               type="text"

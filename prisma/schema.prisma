@@ -569,6 +569,16 @@ model GoveeReading {
   @@index([timestamp])
 }
 
+model EmailCodeVerification {
+  id        String   @id @default(cuid())
+  email     String
+  code      String   // hashed 6-digit code
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([email])
+}
+
 enum Role {
   ADMIN
   USER
