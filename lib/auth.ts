@@ -1,8 +1,39 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+import DiscordProvider from "next-auth/providers/discord";
 import EmailProvider from "next-auth/providers/email";
 import { db } from "./db";
+import { Resend } from 'resend';
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+function generateToken(length: number) {
+  const characters = '0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
+function html(token: string, url: string) {
+  return `
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+      <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <h2 style="color: #333;">Sign in to Garden Logbook</h2>
+        <p>Click the button below to sign in instantly.</p>
+        <a href="${url}" target="_blank" style="background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Sign In</a>
+        <p style="margin-top: 20px;">Alternatively, you can use the following code:</p>
+        <p style="font-size: 24px; font-weight: bold; color: #4CAF50; letter-spacing: 2px;">${token}</p>
+        <p>This code will expire in 24 hours.</p>
+        <hr/>
+        <p style="font-size: 0.8em; color: #777;">If you did not request this email, you can safely ignore it.</p>
+      </div>
+    </body>
+  `;
+}
 
 // Extend next-auth types
 declare module "next-auth" {
@@ -41,16 +72,51 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    }),
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+    }),
     EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
       from: process.env.EMAIL_FROM,
+      generateVerificationToken: async () => {
+        return generateToken(6); // Generate a 6-digit code
+      },
+      sendVerificationRequest: async ({ identifier: email, url, token }) => {
+        console.log("🔍 Email sending debug:", {
+          hasResend: !!resend,
+          hasApiKey: !!process.env.RESEND_API_KEY,
+          emailFrom: process.env.EMAIL_FROM,
+          emailTo: email,
+          token: token
+        });
+
+        if (!resend) {
+          console.error("❌ Resend not configured - missing API key");
+          return;
+        }
+        
+        try {
+          console.log("📧 Attempting to send email via Resend...");
+          const result = await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: email,
+            subject: 'Sign in to Garden Logbook',
+            html: html(token, url)
+          });
+          console.log("✅ Email sent successfully:", result);
+        } catch (error) {
+          console.error("❌ SEND_VERIFICATION_EMAIL_ERROR", error);
+          
+          // Fallback for development: log the magic link
+          console.log("🔗 DEVELOPMENT FALLBACK - Magic Link:", url);
+          console.log("🔢 DEVELOPMENT FALLBACK - Code:", token);
+          console.log("📧 DEVELOPMENT FALLBACK - Email:", email);
+        }
+      },
     }),
   ],
   callbacks: {
@@ -157,5 +223,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
+    verifyRequest: '/auth/verify-request',
   },
 }; 
