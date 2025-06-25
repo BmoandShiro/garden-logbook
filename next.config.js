@@ -2,7 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['lh3.googleusercontent.com'], // Allow Google profile images
+    domains: [
+      'lh3.googleusercontent.com', // Google
+      'avatars.githubusercontent.com', // GitHub
+      'cdn.discordapp.com', // Discord
+    ],
   },
   output: 'standalone',
   typescript: {

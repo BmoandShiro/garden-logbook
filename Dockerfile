@@ -13,6 +13,8 @@ ENV ESLINT_SKIP_VALIDATION true
 # Copy Prisma client to a known location
 RUN cp -r node_modules/.prisma ./prisma-client
 # Build the application
+ARG GOVEE_API_KEY_ENCRYPTION_KEY
+ENV GOVEE_API_KEY_ENCRYPTION_KEY=$GOVEE_API_KEY_ENCRYPTION_KEY
 RUN npm run build
 
 # Production stage

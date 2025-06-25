@@ -39,6 +39,8 @@ model User {
   calendarNotes     CalendarNote[]
   notifications     Notification[]
   weatherNotificationPeriod String? @default("current")
+  goveeDevices      GoveeDevice[]
+  encryptedGoveeApiKey String?
 }
 
 model Account {
@@ -420,22 +422,29 @@ model RoomTemplate {
 }
 
 model Zone {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  type        String?
-  dimensions  String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  roomId      String
-  creatorId   String
-  logs        Log[]
-  logEntries  LogEntry[]
-  plants      Plant[]
-  createdBy   User        @relation(fields: [creatorId], references: [id])
-  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(cuid())
+  name                    String
+  description             String?
+  type                    String?
+  dimensions              String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  creatorId               String
+  roomId                  String
+  gardenId                String?
+  weatherAlertSource      WeatherAlertSource @default(WEATHER_API)
+  sensorAlertThresholds   Json?
+  usePlantSpecificAlerts  Boolean   @default(false)
+
+  // Relations
+  room          Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  logs          Log[]
+  logEntries    LogEntry[]
+  plants        Plant[]
+  createdBy     User          @relation(fields: [creatorId], references: [id])
+  equipment     Equipment[]
+  goveeDevices  GoveeDevice[]
   calendarNotes CalendarNote[]
-  equipment   Equipment[]
 }
 
 model Seed {
@@ -515,6 +524,61 @@ model WeatherCheck {
   data         Json?
 }
 
+model GoveeDevice {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceId     String
+  name         String
+  type         String
+  isActive     Boolean  @default(false)
+  lastState    Json?
+  lastStateAt  DateTime?
+  linkedEntity Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Enhanced fields for better organization
+  model        String?  // Device model (e.g., "H5179")
+  capabilities Json?    // Device capabilities from Govee API
+  batteryLevel Int?     // Battery percentage if applicable
+  isOnline     Boolean  @default(true)
+  
+  // Relations
+  user         User     @relation(fields: [userId], references: [id])
+  zone         Zone?    @relation(fields: [zoneId], references: [id])
+  zoneId       String?
+  readings     GoveeReading[]
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+}
+
+model GoveeReading {
+  id          String   @id @default(cuid())
+  deviceId    String
+  timestamp   DateTime @default(now())
+  temperature Float?   // Temperature in Celsius
+  humidity    Float?   // Humidity percentage
+  battery     Int?     // Battery level if applicable
+  rawData     Json?    // Raw data from Govee API
+  source      String   @default("API") // API, MQTT, etc.
+  
+  device      GoveeDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  
+  @@index([deviceId, timestamp])
+  @@index([timestamp])
+}
+
+model EmailCodeVerification {
+  id        String   @id @default(cuid())
+  email     String
+  code      String   // hashed 6-digit code
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([email])
+}
+
 enum Role {
   ADMIN
   USER
@@ -591,6 +655,8 @@ enum LogType {
   FLUSHING
   GENERAL
   WEATHER_ALERT
+  SENSOR_ALERT
+  NOTE
 }
 
 enum LSTIntensity {
@@ -692,4 +758,10 @@ enum TrainingMethod {
   SUPER_CROP
   LOLLIPOP
   OTHER
+}
+
+enum WeatherAlertSource {
+  WEATHER_API
+  SENSORS
+  BOTH
 }

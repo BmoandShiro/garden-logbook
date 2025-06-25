@@ -49,14 +49,7 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
   ]);
   
   // Maintenance tasks
-  const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([
-    { 
-      title: '', 
-      description: '', 
-      frequency: 'weekly',
-      nextDueDate: new Date().toISOString().split('T')[0]
-    }
-  ]);
+  const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([]);
 
   const addEquipment = () => {
     setEquipment([...equipment, { name: '', description: '' }]);
@@ -94,6 +87,10 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
     const newTasks = [...maintenanceTasks];
     newTasks[index] = { ...newTasks[index], [field]: value };
     setMaintenanceTasks(newTasks);
+  };
+
+  const removeMaintenanceTask = (index: number) => {
+    setMaintenanceTasks(maintenanceTasks.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -331,7 +328,15 @@ export default function CreateRoomButton({ gardenId }: CreateRoomButtonProps) {
                         </button>
                       </div>
                       {maintenanceTasks.map((task, index) => (
-                        <div key={index} className="space-y-4 p-4 bg-dark-bg-secondary rounded-lg">
+                        <div key={index} className="space-y-4 p-4 bg-dark-bg-secondary rounded-lg relative">
+                          <button
+                            type="button"
+                            onClick={() => removeMaintenanceTask(index)}
+                            className="absolute top-2 right-2 text-red-400 hover:text-red-600 font-bold text-lg"
+                            title="Remove Task"
+                          >
+                            ×
+                          </button>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm text-dark-text-secondary">Title</label>
