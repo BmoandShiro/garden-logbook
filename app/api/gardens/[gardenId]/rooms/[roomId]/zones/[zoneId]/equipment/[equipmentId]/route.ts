@@ -23,7 +23,7 @@ const updateEquipmentSchema = z.object({
 
 export async function GET(
   request: Request,
-  { params }: { params: { gardenId: string; roomId: string; zoneId: string; equipmentId: string } }
+  context: { params: Promise<{ gardenId: string; roomId: string; zoneId: string; equipmentId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,6 +31,9 @@ export async function GET(
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Await params as required by Next.js
+    const params = await context.params;
 
     // Check if user has access to this garden
     const garden = await prisma.garden.findFirst({
@@ -74,7 +77,10 @@ export async function GET(
             email: true,
             image: true
           }
-        }
+        },
+        zone: { select: { name: true } },
+        room: { select: { name: true } },
+        garden: { select: { name: true } },
       }
     });
 

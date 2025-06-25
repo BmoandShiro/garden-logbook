@@ -166,6 +166,7 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
             <Card
               key={item.id}
               className="relative p-4 cursor-pointer border-0 bg-gradient-to-br from-yellow-900 to-yellow-950 hover:from-yellow-800 hover:to-yellow-900 transition-all"
+              onClick={() => router.push(`/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/equipment/${item.id}`)}
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
@@ -269,9 +270,8 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
           name: editModalEquipment.name,
           equipmentType: editModalEquipment.equipmentType,
           description: editModalEquipment.description || '',
-          notes: '',
           installationDate: undefined,
-          maintenanceTasks: editModalEquipment.maintenanceTasks?.map((task) => ({
+          maintenanceTasks: editModalEquipment.maintenanceTasks?.map((task: any) => ({
             title: task.title,
             actionType: (task as any).actionType || '',
             frequency: task.frequency,

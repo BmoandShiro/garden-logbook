@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const updateTaskSchema = z.object({
   completed: z.boolean(),
-  lastCompletedDate: z.string().optional(),
+  lastCompletedDate: z.string().optional(), // ISO string
   notes: z.string().optional(),
 });
 
@@ -51,7 +51,7 @@ export async function PUT(
     // Fetch the task to get frequency and createdAt
     const originalTask = await prisma.maintenanceTask.findUnique({
       where: { id: params.taskId },
-      select: { frequency: true, createdAt: true, equipmentId: true, equipment: { select: { name: true, zoneId: true, roomId: true, gardenId: true } } }
+      select: { frequency: true, createdAt: true, equipmentId: true, title: true }
     });
     if (!originalTask) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
@@ -94,27 +94,22 @@ export async function PUT(
       }
     });
 
-    // Fetch the equipment to get zone, room, and garden IDs
-    const equipment = await prisma.equipment.findUnique({
-      where: { id: params.equipmentId },
-      select: { name: true, zoneId: true, roomId: true, gardenId: true }
-    });
-    if (!equipment) {
-      return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
-    }
-
-    // If marking as completed, create a log entry using the same method as weather/sensor alerts
+    // If marking as completed, create a log entry
     if (body.completed) {
+      const equipment = await prisma.equipment.findUnique({
+        where: { id: params.equipmentId },
+        select: { name: true, zoneId: true, roomId: true, gardenId: true }
+      });
       await prisma.log.create({
         data: {
           type: 'MAINTENANCE_TASK',
-          notes: body.notes || `Maintenance task "${task.title}" completed for equipment "${equipment.name}"`,
-          logDate: baseDate,
-          userId: session.user.id,
+          notes: body.notes || `Maintenance task "${task.title}" completed for equipment "${equipment?.name}"`,
           equipmentId: params.equipmentId,
-          gardenId: equipment.gardenId,
-          roomId: equipment.roomId,
-          zoneId: equipment.zoneId,
+          zoneId: equipment?.zoneId,
+          roomId: equipment?.roomId,
+          gardenId: equipment?.gardenId,
+          userId: session.user.id,
+          logDate: baseDate,
           stage: null,
           data: {}
         }
@@ -203,13 +198,10 @@ function calculateNextDueDate(lastCompletedDate: Date, frequency: string): Date 
     case 'Monthly':
       nextDate.setMonth(nextDate.getMonth() + 1);
       break;
-    case 'Every 3 Months':
+    case 'Quarterly':
       nextDate.setMonth(nextDate.getMonth() + 3);
       break;
-    case 'Every 6 Months':
-      nextDate.setMonth(nextDate.getMonth() + 6);
-      break;
-    case 'Annually':
+    case 'Yearly':
       nextDate.setFullYear(nextDate.getFullYear() + 1);
       break;
     default:
