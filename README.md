@@ -1,10 +1,22 @@
 # Garden Logbook 🌱
 
-A web application for tracking and managing garden activities.
+A comprehensive, self-hosted web application for tracking and managing garden activities, plant health, environmental monitoring, and maintenance tasks.
 
----
+## 🌟 Key Features
 
-## Quick Start: Which Section Should I Use?
+- **🔐 Secure Authentication**: Multiple sign-in options (Email magic links with 6-digit codes, Google OAuth, GitHub OAuth, Discord OAuth)
+- **🌱 Plant Management**: Track plants across multiple gardens and rooms with detailed growth monitoring
+- **🌦️ Environmental Monitoring**: Real-time weather tracking and alerts with Govee sensor integration
+- **📅 Activity Logging**: Comprehensive calendar view with custom log templates and activity tracking
+- **⚠️ Smart Alerts**: Weather-based notifications for frost, heat, drought, and other conditions
+- **🏗️ Garden Organization**: Multi-garden and room management with equipment tracking
+- **🔧 Maintenance Tracking**: Equipment maintenance, cleaning SOPs, and task management
+- **📱 Mobile-Friendly**: Fully responsive design for use in the garden
+- **🚀 Self-Hosted**: Complete data privacy with Docker, Kubernetes, or traditional hosting support
+
+## 🚀 Quick Start
+
+Choose your deployment method:
 
 | Use Case                | Section to Read         |
 |------------------------|------------------------|
@@ -892,31 +904,96 @@ Remember:
 
 ## Authentication Setup
 
-Garden Logbook supports two authentication modes:
+Garden Logbook supports multiple authentication methods for secure access:
 
-### 1. Google/Discord OAuth (Recommended for Tailscale/private use)
+### 1. Email Authentication (Magic Links + 6-Digit Codes)
 
-- **Step 1:** Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and create or edit an OAuth 2.0 Client ID.
-- **Step 2:** Add your Tailscale/live domain as an authorized redirect URI:
-  ```
-  https://your-tailscale-domain.ts.net/api/auth/callback/google
-  ```
-- **Step 3:** Copy your client ID and secret into your `.env` file (see `.env.example`).
-- **Step 4:** Set `NEXTAUTH_URL` in your `.env` to your Tailscale/live domain (e.g., `https://your-tailscale-domain.ts.net`).
-- **Step 5:** Restart your server after any `.env` changes.
+**Features:**
+- Magic link authentication via email
+- 6-digit code entry for easy mobile access
+- Secure token-based verification
+- 24-hour expiration for security
 
-**Security:**
-- Keep your `.env` file private and add it to `.gitignore`.
-- Only you and users on your Tailscale network will be able to use Google sign-in.
+**Setup:**
+1. Configure your SMTP settings in `.env` (see `.env.example`):
+   ```
+   EMAIL_SERVER_HOST=smtp.gmail.com
+   EMAIL_SERVER_PORT=465
+   EMAIL_SERVER_USER=your-email@gmail.com
+   EMAIL_SERVER_PASSWORD=your-app-password
+   EMAIL_FROM=your-email@gmail.com
+   ```
 
-### 2. Magic Link (Email) Sign-In (Works for all self-hosters)
+2. For Gmail users:
+   - Enable 2-factor authentication
+   - Generate an app password
+   - Use the app password in `EMAIL_SERVER_PASSWORD`
 
-- **Step 1:** Configure your SMTP/email settings in `.env` (see `.env.example`).
-- **Step 2:** Users can sign in with a magic link sent to their email address.
-- **Step 3:** No Google Cloud setup required for this mode.
+3. Users can sign in by:
+   - Clicking the magic link in their email, OR
+   - Entering the 6-digit code shown in the email
 
-**Note:**
-- If you want to distribute this app for others to self-host, provide them with `.env.example` and these instructions. They can use magic link sign-in out of the box, or set up their own OAuth credentials for Google/Discord if desired.
+### 2. OAuth Providers (Google, GitHub, Discord)
+
+**Google OAuth Setup:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create or edit an OAuth 2.0 Client ID
+3. Add your domain as an authorized redirect URI:
+   ```
+   https://your-domain.com/api/auth/callback/google
+   ```
+4. Copy your client ID and secret to `.env`
+
+**GitHub OAuth Setup:**
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Create a new OAuth App
+3. Set the callback URL to:
+   ```
+   https://your-domain.com/api/auth/callback/github
+   ```
+4. Copy your client ID and secret to `.env`
+
+**Discord OAuth Setup:**
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a new application
+3. Add OAuth2 redirect URL:
+   ```
+   https://your-domain.com/api/auth/callback/discord
+   ```
+4. Copy your client ID and secret to `.env`
+
+### 3. Environment Variables
+
+Add these to your `.env` file:
+
+```bash
+# NextAuth Configuration
+NEXTAUTH_URL=https://your-domain.com
+NEXTAUTH_SECRET=your-secret-key-here
+
+# Email Provider (for magic links and codes)
+EMAIL_SERVER_HOST=smtp.gmail.com
+EMAIL_SERVER_PORT=465
+EMAIL_SERVER_USER=your-email@gmail.com
+EMAIL_SERVER_PASSWORD=your-app-password
+EMAIL_FROM=your-email@gmail.com
+
+# OAuth Providers (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-client-secret
+```
+
+### Security Notes
+
+- Keep your `.env` file private and add it to `.gitignore`
+- Use strong, unique secrets for `NEXTAUTH_SECRET`
+- For production, use environment-specific OAuth credentials
+- Email authentication works out of the box for self-hosters
+- OAuth providers require domain-specific setup
 
 ---
 
