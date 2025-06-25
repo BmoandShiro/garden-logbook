@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import PlantList from './components/PlantList';
 import CreatePlantButton from './components/CreatePlantButton';
 import CreateEquipmentButton from './components/CreateEquipmentButton';
+import EquipmentList from './components/EquipmentList';
 import ZoneSensorData from './components/ZoneSensorData';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 // @ts-expect-error: no types for zipcode-to-timezone
@@ -48,6 +49,26 @@ export default async function ZonePage({ params }: PageProps) {
       plants: {
         include: {
           user: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      },
+      equipment: {
+        include: {
+          maintenanceTasks: {
+            orderBy: {
+              nextDueDate: 'asc'
+            }
+          },
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
         },
         orderBy: {
           createdAt: 'desc'
@@ -136,10 +157,14 @@ export default async function ZonePage({ params }: PageProps) {
 
           <div className="p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
             <h2 className="text-xl font-semibold mb-2 text-emerald-100">Zone Statistics</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-emerald-300/70">Total Plants</p>
                 <p className="text-2xl font-semibold text-emerald-100">{zone.plants.length}</p>
+              </div>
+              <div>
+                <p className="text-sm text-emerald-300/70">Equipment</p>
+                <p className="text-2xl font-semibold text-emerald-100">{zone.equipment.length}</p>
               </div>
               <div>
                 <p className="text-sm text-emerald-300/70">Linked Sensors</p>
@@ -163,6 +188,13 @@ export default async function ZonePage({ params }: PageProps) {
             weatherAlertSource={zone.weatherAlertSource}
             sensorAlertThresholds={zone.sensorAlertThresholds}
             usePlantSpecificAlerts={zone.usePlantSpecificAlerts}
+          />
+          
+          <EquipmentList 
+            zoneId={zoneId}
+            roomId={roomId}
+            gardenId={gardenId}
+            equipment={zone.equipment}
           />
         </div>
       </div>

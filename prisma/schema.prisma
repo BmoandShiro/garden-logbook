@@ -360,6 +360,7 @@ model GardenMember {
 model Equipment {
   id          String   @id @default(cuid())
   name        String
+  equipmentType String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
