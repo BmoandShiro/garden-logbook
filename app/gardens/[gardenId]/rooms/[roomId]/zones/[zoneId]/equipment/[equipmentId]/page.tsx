@@ -88,11 +88,28 @@ export default function EquipmentPage({ params }: { params: Promise<{ gardenId: 
 
   const handleComplete = async (taskId: string) => {
     setCompleting(true);
-    await fetch(`/api/gardens/${unwrappedParams.gardenId}/rooms/${unwrappedParams.roomId}/zones/${unwrappedParams.zoneId}/equipment/${unwrappedParams.equipmentId}/maintenance/${taskId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed: true, lastCompletedDate: completeDate.toISOString(), notes: completeNotes })
-    });
+    
+    // First, get the task details to pass to the log creation
+    const task = equipment?.maintenanceTasks.find((t: any) => t.id === taskId);
+    
+    if (task) {
+      // Call the new working maintenance logs endpoint
+      await fetch('/api/maintenance-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskTitle: task.title,
+          equipmentName: equipment?.name || '',
+          equipmentId: unwrappedParams.equipmentId,
+          gardenId: unwrappedParams.gardenId,
+          roomId: unwrappedParams.roomId,
+          zoneId: unwrappedParams.zoneId,
+          notes: completeNotes,
+          completedDate: completeDate.toISOString()
+        })
+      });
+    }
+    
     setCompleting(false);
     setCompleteTaskId(null);
     setCompleteNotes('');

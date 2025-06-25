@@ -103,22 +103,30 @@ export async function PUT(
       return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
-    // If marking as completed, create a log entry using the same method as weather/sensor alerts
+    // If marking as completed, create a log entry using the new dedicated endpoint
     if (body.completed) {
-      await prisma.log.create({
-        data: {
-          type: 'MAINTENANCE_TASK',
-          notes: body.notes || `Maintenance task "${task.title}" completed for equipment "${equipment.name}"`,
-          logDate: baseDate,
-          userId: session.user.id,
+      // Call the dedicated maintenance log creation endpoint
+      const logResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/maintenance-logs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': request.headers.get('cookie') || ''
+        },
+        body: JSON.stringify({
+          taskTitle: task.title,
+          equipmentName: equipment.name,
           equipmentId: params.equipmentId,
           gardenId: equipment.gardenId,
           roomId: equipment.roomId,
           zoneId: equipment.zoneId,
-          stage: null,
-          data: {}
-        }
+          notes: body.notes,
+          completedDate: baseDate.toISOString()
+        })
       });
+
+      if (!logResponse.ok) {
+        console.error('[MAINTENANCE_TASK] Failed to create log:', await logResponse.text());
+      }
     }
 
     return NextResponse.json(task);

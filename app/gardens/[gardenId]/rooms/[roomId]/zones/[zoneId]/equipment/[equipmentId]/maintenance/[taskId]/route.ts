@@ -100,20 +100,39 @@ export async function PUT(
         where: { id: params.equipmentId },
         select: { name: true, zoneId: true, roomId: true, gardenId: true }
       });
-      await prisma.log.create({
-        data: {
-          type: 'MAINTENANCE_TASK',
-          notes: body.notes || `Maintenance task "${task.title}" completed for equipment "${equipment?.name}"`,
-          equipmentId: params.equipmentId,
-          zoneId: equipment?.zoneId,
-          roomId: equipment?.roomId,
-          gardenId: equipment?.gardenId,
-          userId: session.user.id,
-          logDate: baseDate,
-          stage: null,
-          data: {}
-        }
+      console.log('[MAINTENANCE_TASK] Attempting to create log:', {
+        notes: body.notes,
+        equipmentId: params.equipmentId,
+        zoneId: equipment?.zoneId,
+        roomId: equipment?.roomId,
+        gardenId: equipment?.gardenId,
+        userId: session.user.id,
+        logDate: baseDate
       });
+      // Explicitly construct the log data object
+      const logData = {
+        type: 'MAINTENANCE_TASK',
+        notes: body.notes || `Maintenance task "${task.title}" completed for equipment "${equipment?.name}"`,
+        equipmentId: params.equipmentId,
+        zoneId: equipment?.zoneId,
+        roomId: equipment?.roomId,
+        gardenId: equipment?.gardenId,
+        userId: session.user.id,
+        logDate: baseDate,
+        stage: null,
+        data: {}
+      };
+      console.log('[MAINTENANCE_TASK] Log data to be created:', logData);
+      
+      // Deep clone to prevent any accidental mutation
+      const safeLogData = JSON.parse(JSON.stringify(logData));
+      console.log('[MAINTENANCE_TASK] Safe log data (deep cloned):', safeLogData);
+      console.log('[MAINTENANCE_TASK] Safe log data keys:', Object.keys(safeLogData));
+      
+      const createdLog = await prisma.log.create({
+        data: safeLogData
+      });
+      console.log('[MAINTENANCE_TASK] Log created successfully:', createdLog.id);
     }
 
     return NextResponse.json(task);
