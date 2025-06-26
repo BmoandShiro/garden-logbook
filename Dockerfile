@@ -26,7 +26,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV HUSKY=0
 
 # Install cron and curl
-RUN apk add --no-cache dcron curl
+RUN apk add --no-cache dcron curl bash
 
 # Copy necessary files from builder
 COPY --from=builder /app/next.config.js ./

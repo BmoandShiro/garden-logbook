@@ -13,8 +13,8 @@ fi
 echo "Stopping and removing all Docker containers..."
 sudo docker compose down
 
-echo "Rebuilding Docker images..."
-sudo docker compose build
+echo "Rebuilding Docker images (no cache)..."
+sudo docker compose build --no-cache
 
 echo "Starting Docker containers in detached mode..."
 sudo docker compose up -d
