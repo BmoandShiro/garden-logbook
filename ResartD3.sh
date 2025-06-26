@@ -22,6 +22,11 @@ sudo docker compose up -d
 echo "Running Prisma migrations in the app container..."
 sudo docker compose exec app npx prisma migrate deploy
 
+# Make test script executable and test cron endpoints
+echo "Testing cron endpoints..."
+chmod +x scripts/test-cron.sh
+./scripts/test-cron.sh
+
 # Optional: Restart Tailscale Serve on port 3000
 if command -v tailscale &> /dev/null; then
   if ! tailscale serve status | grep -q "http://localhost:3000"; then
@@ -32,4 +37,11 @@ if command -v tailscale &> /dev/null; then
   fi
 fi
 
-echo "Dockerized Garden Logbook restarted!" 
+echo "Dockerized Garden Logbook restarted!"
+echo ""
+echo "Cron jobs are now running:"
+echo "  - Weather alerts: Every 4 hours (0, 4, 8, 12, 16, 20 UTC)"
+echo "  - Maintenance notifications: Daily at 9 AM UTC"
+echo "  - Sensor data: Every 15 minutes"
+echo ""
+echo "Check cron logs with: sudo docker exec -it garden-logbook-app cat /var/log/cron.log" 
