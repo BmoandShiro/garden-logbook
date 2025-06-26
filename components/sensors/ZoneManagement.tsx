@@ -185,10 +185,11 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="zone-select" className="text-emerald-300">Select Zone</Label>
-              <Select
+              <select
+                id="zone-select"
                 value={selectedZone}
-                onValueChange={setSelectedZone}
-                className="bg-[#23272b] border-[#23282c] text-emerald-100"
+                onChange={e => setSelectedZone(e.target.value)}
+                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm"
               >
                 <option value="" disabled>Select a zone...</option>
                 {zones.map((zone) => (
@@ -196,25 +197,24 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                     {zone.name}
                   </option>
                 ))}
-              </Select>
+              </select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="device-select" className="text-emerald-300">Select Sensor</Label>
-              <Select
+              <select
+                id="device-select"
                 value={selectedDevice}
-                onValueChange={setSelectedDevice}
-                className="bg-[#23272b] border-[#23282c] text-emerald-100"
+                onChange={e => setSelectedDevice(e.target.value)}
+                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm"
               >
                 <option value="" disabled>Select a sensor...</option>
-                <SelectContent className="bg-[#1a1b1e] border-[#2f3136] text-emerald-100">
                 {unlinkedDevices.map((device) => (
-                    <SelectItem key={device.id} value={device.id}>
-                      {device.name} ({device.model})
-                    </SelectItem>
+                  <option key={device.id} value={device.id}>
+                    {device.name} ({device.type})
+                  </option>
                 ))}
-                </SelectContent>
-              </Select>
+              </select>
             </div>
           </div>
           
@@ -292,7 +292,6 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                             </div>
                             <div>
                               <p className="font-medium text-emerald-100">{device.name}</p>
-                              <p className="text-sm text-emerald-300/70">{device.type}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

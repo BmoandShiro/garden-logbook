@@ -273,13 +273,14 @@ export async function processWeatherAlerts() {
 
       // Process alerts based on sensitivities
       if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
-        // await maybeSendOrUpdateAlert(
-        //   plantWithGarden,
-        //   plantWithGarden.garden,
-        //   'heat',
-        //   weather,
-        //   Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5))
-        // );
+        await maybeSendOrUpdateAlert(
+          plantWithGarden,
+          plantWithGarden.garden,
+          'heat',
+          weather,
+          Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5)),
+          'WEATHER_API'
+        );
       }
 
       // Debug log for plant and garden
