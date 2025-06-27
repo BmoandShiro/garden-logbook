@@ -143,6 +143,7 @@ function getGardenTimezone(garden: { timezone?: string | null; zipcode?: string 
 }
 
 export async function processWeatherAlerts() {
+  console.log('[DEBUG] processWeatherAlerts called at', new Date().toISOString());
   console.log('[WEATHER_ALERTS] Starting weather alert processing...');
   
   const plants = await prisma.plant.findMany({
@@ -272,16 +273,16 @@ export async function processWeatherAlerts() {
       }
 
       // Process alerts based on sensitivities
-      if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
-        await maybeSendOrUpdateAlert(
-          plantWithGarden,
-          plantWithGarden.garden,
-          'heat',
-          weather,
-          Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5)),
-          'WEATHER_API'
-        );
-      }
+      // if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
+      //   await maybeSendOrUpdateAlert(
+      //     plantWithGarden,
+      //     plantWithGarden.garden,
+      //     'heat',
+      //     weather,
+      //     Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5)),
+      //     'WEATHER_API'
+      //   );
+      // }
 
       // Debug log for plant and garden
       console.log('[PLANT DEBUG]', {
@@ -655,9 +656,8 @@ export async function processWeatherAlerts() {
         let message = `Current weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plantWithGarden.name} in ${roomName}, ${zoneName}:
 \n`;
         for (const type of allAlertTypes) {
-          message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
           if (currentAlerts[type]) {
-            message += ' ';
+            message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}: `;
             if (type === 'heat') message += `${currentAlerts[type].weather.temperature}°F`;
             else if (type === 'wind') message += `${currentAlerts[type].weather.windSpeed} mph`;
             else if (type === 'heavyRain') message += `${formatPrecipitation(currentAlerts[type].weather.precipitation, getHeavyRainUnit(sensitivitiesTyped))} precipitation`;
@@ -666,8 +666,6 @@ export async function processWeatherAlerts() {
             else if (type === 'drought') message += `${currentAlerts[type].weather.daysWithoutRain} days`;
             else message += `${currentAlerts[type].severity}`;
             message += '\n';
-          } else {
-            message += ' None\n';
           }
         }
         message += '\nPlease take necessary precautions to protect your plant.';
@@ -698,7 +696,7 @@ export async function processWeatherAlerts() {
           }
         }
 
-        // Create a log entry for the plant
+        // Create a single log entry for the plant (with all triggered categories)
         const weatherInfo = {
           temperature: `${weather.temperature}°F`,
           humidity: `${weather.humidity}%`,
@@ -706,7 +704,7 @@ export async function processWeatherAlerts() {
           precipitation: formatPrecipitation(weather.precipitation, getHeavyRainUnit(sensitivitiesTyped)),
           conditions: weather.conditions
         };
-        const createdLog = await prisma.log.create({
+        await prisma.log.create({
           data: {
             plantId: plantWithGarden.id,
             userId: plantWithGarden.userId,
@@ -748,7 +746,7 @@ export async function processWeatherAlerts() {
                   type: 'WEATHER_ALERT',
                   title: `⚠️ Current Weather Alerts for ${plantWithGarden.name}`,
                   message: message,
-                  link: `/logs/${createdLog.id}`,
+                  link: `/logs/`, // logId is not available here, but can be linked later if needed
                   meta: {
                     plantId: plantWithGarden.id,
                     plantName: plantWithGarden.name,
@@ -761,7 +759,6 @@ export async function processWeatherAlerts() {
                     alertTypes: currentAlertTypes,
                     currentAlerts,
                     date: new Date().toISOString().slice(0, 10),
-                    logId: createdLog.id,
                     timezone: getGardenTimezone(garden),
                   } as NotificationMeta
                 }

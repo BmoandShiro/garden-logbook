@@ -109,7 +109,6 @@ const sensorAlertColors: Record<string, string> = {
 };
 
 function renderCondensedWeatherAlert(message: string) {
-  // Always show all alert types, even if value is 'None'
   const allTypes = ['Heat', 'Frost', 'Drought', 'Wind', 'Flood', 'HeavyRain'];
   const sectionRegex = /• (Heat|Frost|Drought|Wind|Flood|HeavyRain):\s*([^\n]*)/g;
   const found: Record<string, string> = {};
@@ -119,12 +118,11 @@ function renderCondensedWeatherAlert(message: string) {
     const value = match[2].trim();
     found[key] = value;
   }
-  const badges = allTypes.map((key) => {
-    const value = found[key] !== undefined ? found[key] : 'None';
-    return (
-      <span key={key} className={`inline-block mr-3 font-semibold ${weatherAlertColors[key]}`}>• {key}: {value}</span>
-    );
-  });
+  const badges = allTypes
+    .filter((key) => found[key] && found[key] !== 'None')
+    .map((key) => (
+      <span key={key} className={`inline-block mr-3 font-semibold ${weatherAlertColors[key]}`}>• {key}: {found[key]}</span>
+    ));
   return <div className="flex flex-wrap items-center mt-2 text-sm">{badges}</div>;
 }
 
