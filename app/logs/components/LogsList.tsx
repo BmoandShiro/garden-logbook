@@ -6,7 +6,7 @@ import DeleteLogButton from './DeleteLogButton';
 import { TemperatureUnit, VolumeUnit, LengthUnit, UnitLabels, convertTemperature, convertVolume, convertLength, formatMeasurement } from '@/lib/units';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import Link from 'next/link';
-import renderForecastedMessage from '@/components/MonthlyCalendar';
+import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
 import { formatLogDate } from './CreateLogModal';
 import LogDateField from '../../logs/[id]/LogDateField';
 
@@ -109,20 +109,23 @@ const sensorAlertColors: Record<string, string> = {
 };
 
 function renderCondensedWeatherAlert(message: string) {
-  // Extract each section and value from the message
-  const sectionRegex = /• (Heat|Frost|Drought|Wind|Flood|HeavyRain):\s*([\s\S]*?)(?=\n• |$)/g;
-  const badges: React.ReactNode[] = [];
+  // Always show all alert types, even if value is 'None'
+  const allTypes = ['Heat', 'Frost', 'Drought', 'Wind', 'Flood', 'HeavyRain'];
+  const sectionRegex = /• (Heat|Frost|Drought|Wind|Flood|HeavyRain):\s*([^\n]*)/g;
+  const found: Record<string, string> = {};
   let match;
   while ((match = sectionRegex.exec(message)) !== null) {
     const key = match[1];
-    const value = match[2].split('\n')[0].trim();
-    if (value && value !== 'None') {
-      badges.push(
-        <span key={key} className={`inline-block mr-3 font-semibold ${weatherAlertColors[key]}`}>{key}: {value}</span>
-      );
-    }
+    const value = match[2].trim();
+    found[key] = value;
   }
-  return badges.length > 0 ? <div className="flex flex-wrap items-center mt-2 text-sm">{badges}</div> : null;
+  const badges = allTypes.map((key) => {
+    const value = found[key] !== undefined ? found[key] : 'None';
+    return (
+      <span key={key} className={`inline-block mr-3 font-semibold ${weatherAlertColors[key]}`}>• {key}: {value}</span>
+    );
+  });
+  return <div className="flex flex-wrap items-center mt-2 text-sm">{badges}</div>;
 }
 
 function extractSinceLastLogMsg(notes: string | null | undefined): string | null {

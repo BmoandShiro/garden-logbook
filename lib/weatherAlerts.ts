@@ -130,16 +130,16 @@ function getHeavyRainUnit(sensitivities: Prisma.JsonValue): string {
 }
 
 // Helper to get the timezone for a garden, falling back to zipcode
-function getGardenTimezone(garden: { timezone?: string | null; zipcode?: string | null }): string | null {
+function getGardenTimezone(garden: { timezone?: string | null; zipcode?: string | null }): string {
   if (garden.timezone) return garden.timezone;
   if (garden.zipcode) {
     try {
-      return zipcodeToTimezone.lookup(garden.zipcode) || null;
+      return zipcodeToTimezone.lookup(garden.zipcode) || 'America/New_York';
     } catch {
-      return null;
+      return 'America/New_York';
     }
   }
-  return null;
+  return 'America/New_York';
 }
 
 export async function processWeatherAlerts() {
@@ -752,7 +752,7 @@ export async function processWeatherAlerts() {
                   meta: {
                     plantId: plantWithGarden.id,
                     plantName: plantWithGarden.name,
-                    gardenId: plantWithGarden.gardenId,
+                    gardenId: garden.id,
                     gardenName: garden.name,
                     roomId: plantWithGarden.roomId,
                     roomName,
@@ -983,7 +983,37 @@ async function maybeSendOrUpdateAlert(
   if (!garden) return;
 
   const userIds = await getAllGardenUserIds(garden.id, plant.userId);
-  const logMessage = `${sourceType === 'SENSOR' ? 'Sensor' : 'Weather'} alert for ${plant.name}: ${type}`;
+  // Build a detailed message similar to grouped alerts
+  let message = `${sourceType === 'SENSOR' ? 'Sensor' : 'Weather'} alert for ${plant.name} in ${garden.name}`;
+  let details = '';
+  if (sourceType === 'SENSOR') {
+    details += `\n\n• Type: ${type}`;
+    if (type.includes('Temperature') && typeof weather.temperature === 'number') {
+      details += `\n• Temperature: ${weather.temperature}°F`;
+    }
+    if (type.includes('Humidity') && typeof weather.humidity === 'number') {
+      details += `\n• Humidity: ${weather.humidity}%`;
+    }
+  } else {
+    details += `\n\n• Type: ${type}`;
+    if (type === 'heat' && typeof weather.temperature === 'number') {
+      details += `\n• Heat: ${weather.temperature}°F`;
+    } else if (type === 'frost' && typeof weather.temperature === 'number') {
+      details += `\n• Frost: ${weather.temperature}°F`;
+    } else if (type === 'wind' && typeof weather.windSpeed === 'number') {
+      details += `\n• Wind: ${weather.windSpeed} mph`;
+    } else if (type === 'heavyRain' && typeof weather.precipitation === 'number') {
+      details += `\n• HeavyRain: ${weather.precipitation} precipitation`;
+    } else if (type === 'drought' && typeof weather.daysWithoutRain === 'number') {
+      details += `\n• Drought: ${weather.daysWithoutRain} days`;
+    } else if (type === 'flood' && typeof weather.precipitation === 'number') {
+      details += `\n• Flood: ${weather.precipitation} precipitation`;
+    } else {
+      details += `\n• Value: ${severity}`;
+    }
+  }
+  message += details + '\n\nPlease check your plant and environment.';
+
   const logType = sourceType === 'SENSOR' ? LogType.SENSOR_ALERT : LogType.WEATHER_ALERT;
   const notificationType = sourceType === 'SENSOR' ? 'SENSOR_ALERT' : 'WEATHER_ALERT';
 
@@ -995,7 +1025,7 @@ async function maybeSendOrUpdateAlert(
       roomId: plant.roomId,
       zoneId: plant.zoneId,
       type: logType,
-      notes: logMessage,
+      notes: message,
       logDate: new Date(),
       stage: plant.stage || Stage.VEGETATIVE,
       data: {
@@ -1049,7 +1079,7 @@ async function maybeSendOrUpdateAlert(
             userId,
           type: notificationType,
           title: `⚠️ Current ${sourceType === 'SENSOR' ? 'Sensor' : 'Weather'} Alerts for ${plant.name}`,
-          message: logMessage,
+          message: message,
             link: `/logs/${createdLog.id}`,
             meta: {
               plantId: plant.id,
@@ -1068,10 +1098,11 @@ async function maybeSendOrUpdateAlert(
             }),
             date: new Date().toISOString(),
               logId: createdLog.id,
-            } as NotificationMeta
-          }
-        })
-      ));
+            timezone: getGardenTimezone(garden),
+          } as NotificationMeta
+        }
+      })
+    ));
     }
   }
 
