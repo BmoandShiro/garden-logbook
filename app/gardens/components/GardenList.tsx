@@ -270,7 +270,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                 </DialogHeader>
                 <div className="mt-4 flex flex-col gap-4">
                   <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                    className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100 px-4 py-2 rounded-md font-medium"
                     onClick={() => {
                       setEditFormData({
                         name: garden.name,
@@ -285,7 +285,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     Edit Garden
                   </button>
                   <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                    className="bg-emerald-900 hover:bg-emerald-800 text-emerald-100 px-4 py-2 rounded-md font-medium"
                     onClick={() => setOpenManageMembersGardenId(garden.id)}
                   >
                     Manage Garden Members
@@ -404,7 +404,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-name"
                       value={editFormData.name}
                       onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                       required
                     />
                   </div>
@@ -416,7 +416,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-description"
                       value={editFormData.description}
                       onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                       rows={3}
                     />
                   </div>
@@ -429,7 +429,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-imageUrl"
                       value={editFormData.imageUrl}
                       onChange={(e) => setEditFormData({ ...editFormData, imageUrl: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   </div>
                   <div>
@@ -448,7 +448,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       }}
                       maxLength={5}
                       pattern="\d{5}"
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                       placeholder="e.g. 90210"
                     />
                   </div>
@@ -458,7 +458,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-isPrivate"
                       checked={editFormData.isPrivate}
                       onChange={(e) => setEditFormData({ ...editFormData, isPrivate: e.target.checked })}
-                      className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-indigo-600 focus:ring-indigo-500"
+                      className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-emerald-600 focus:ring-emerald-500"
                     />
                     <label htmlFor="edit-isPrivate" className="ml-2 block text-sm text-dark-text-primary">
                       Make this garden private
@@ -469,14 +469,14 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     <button
                       type="button"
                       onClick={() => setOpenEditModalGardenId(null)}
-                      className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={editLoading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editLoading ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -543,14 +543,14 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       value={inviteEmail}
                       onChange={e => setInviteEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-blue-400"
+                      className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-emerald-400"
                       required
                       disabled={inviteLoading}
                     />
                     <div className="flex gap-2 mt-2">
                       <button
                         type="submit"
-                        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                        className="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
                         disabled={inviteLoading}
                       >
                         {inviteLoading ? 'Inviting...' : 'Send Invite'}
