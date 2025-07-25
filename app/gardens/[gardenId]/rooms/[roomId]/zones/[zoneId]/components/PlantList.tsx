@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Trash, Settings } from 'lucide-react';
+import { Trash, Settings, Copy } from 'lucide-react';
+import PlantModal from './PlantModal';
+import { PlantFormValues } from './PlantForm';
 
 interface Plant {
   id: string;
   name: string;
-  notes: string | null;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
   zoneId: string;
@@ -20,6 +22,15 @@ interface Plant {
   strainId: string | null;
   type: string | null;
   user: User;
+  strainName?: string;
+  species?: string;
+  variety?: string;
+  plantedDate?: string;
+  expectedHarvestDate?: string;
+  growingSeasonStart?: string;
+  growingSeasonEnd?: string;
+  onlyTriggerAlertsDuringSeason?: boolean;
+  sensitivities?: any;
 }
 
 interface PlantListProps {
@@ -37,6 +48,8 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
   const [editFormData, setEditFormData] = useState({ name: '', notes: '', type: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [duplicatingPlantId, setDuplicatingPlantId] = useState<string | null>(null);
+  const [editPlantData, setEditPlantData] = useState<Plant | null>(null);
 
   const handleDelete = async (plantId: string) => {
     try {
@@ -58,6 +71,28 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
     } finally {
       setDeletingPlantId(null);
       setConfirmDeletePlant(null);
+    }
+  };
+
+  const handleDuplicate = async (plantId: string) => {
+    try {
+      setDuplicatingPlantId(plantId);
+      const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${plantId}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to duplicate plant');
+      }
+
+      toast.success('Plant duplicated successfully');
+      router.refresh();
+    } catch (error) {
+      console.error('Error duplicating plant:', error);
+      toast.error(error instanceof Error ? error.message : 'Error duplicating plant');
+    } finally {
+      setDuplicatingPlantId(null);
     }
   };
 
@@ -100,15 +135,22 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                   title="Plant Settings"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setEditFormData({
-                      name: plant.name,
-                      notes: plant.notes || '',
-                      type: plant.type || '',
-                    });
+                    setEditPlantData(plant);
                     setOpenEditModalPlantId(plant.id);
                   }}
                 >
                   <Settings className="h-5 w-5" />
+                </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full p-2 text-emerald-300/70 hover:text-emerald-50 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  title="Duplicate Plant"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDuplicate(plant.id);
+                  }}
+                  disabled={duplicatingPlantId === plant.id}
+                >
+                  <Copy className="h-5 w-5" />
                 </button>
                 <Button
                   variant="ghost"
@@ -125,93 +167,64 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
               </div>
             </div>
             {/* Edit Modal for this plant */}
-            <Dialog open={openEditModalPlantId === plant.id} onOpenChange={(open) => setOpenEditModalPlantId(open ? plant.id : null)}>
-              <DialogContent onClick={e => e.stopPropagation()}>
-                <DialogHeader>
-                  <DialogTitle>Edit Plant</DialogTitle>
-                </DialogHeader>
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setEditLoading(true);
-                    setEditError(null);
-                    try {
-                      const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${plant.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(editFormData),
-                      });
-                      if (!response.ok) {
-                        const data = await response.json();
-                        throw new Error(data.error || 'Failed to update plant');
-                      }
-                      setOpenEditModalPlantId(null);
-                      router.refresh();
-                    } catch (error) {
-                      setEditError(error instanceof Error ? error.message : 'Failed to update plant');
-                    } finally {
-                      setEditLoading(false);
+            {editPlantData && openEditModalPlantId === plant.id && (
+              <PlantModal
+                open={openEditModalPlantId === plant.id}
+                setOpen={(open) => {
+                  if (!open) {
+                    setOpenEditModalPlantId(null);
+                    setEditPlantData(null);
+                  }
+                }}
+                title="Edit Plant"
+                initialValues={{
+                  name: editPlantData.name || '',
+                  strainName: editPlantData.strainName || '',
+                  species: editPlantData.species || '',
+                  variety: editPlantData.variety || '',
+                  plantedDate: editPlantData.plantedDate ? editPlantData.plantedDate.slice(0, 10) : '',
+                  expectedHarvestDate: editPlantData.expectedHarvestDate ? editPlantData.expectedHarvestDate.slice(0, 10) : '',
+                  notes: editPlantData.notes || '',
+                  growingSeasonStart: editPlantData.growingSeasonStart || '',
+                  growingSeasonEnd: editPlantData.growingSeasonEnd || '',
+                  onlyTriggerAlertsDuringSeason: editPlantData.onlyTriggerAlertsDuringSeason || false,
+                  sensitivities: editPlantData.sensitivities || {
+                    heat: { enabled: false, threshold: '', unit: 'F' },
+                    humidity: { enabled: false, min: '', max: '' },
+                    frost: { enabled: false, windows: [] },
+                    drought: { enabled: false, days: '' },
+                    wind: { enabled: false, threshold: '' },
+                    flood: { enabled: false },
+                    heavyRain: { enabled: false, threshold: '', unit: 'in' },
+                  },
+                }}
+                submitButtonLabel="Save Changes"
+                onSubmit={async (values: PlantFormValues) => {
+                  setEditLoading(true);
+                  setEditError(null);
+                  try {
+                    const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${plant.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(values),
+                    });
+                    if (!response.ok) {
+                      const data = await response.json();
+                      throw new Error(data.error || 'Failed to update plant');
                     }
-                  }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label htmlFor="edit-plant-name" className="block text-sm font-medium text-dark-text-primary">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-plant-name"
-                      value={editFormData.name}
-                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="edit-plant-notes" className="block text-sm font-medium text-dark-text-primary">
-                      Notes
-                    </label>
-                    <textarea
-                      id="edit-plant-notes"
-                      value={editFormData.notes}
-                      onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="edit-plant-type" className="block text-sm font-medium text-dark-text-primary">
-                      Type
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-plant-type"
-                      value={editFormData.type}
-                      onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                  </div>
-                  {editError && <div className="text-red-500 text-sm mt-1">{editError}</div>}
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setOpenEditModalPlantId(null)}
-                      className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={editLoading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {editLoading ? 'Saving...' : 'Save Changes'}
-                    </button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    setOpenEditModalPlantId(null);
+                    setEditPlantData(null);
+                    router.refresh();
+                  } catch (error) {
+                    setEditError(error instanceof Error ? error.message : 'Failed to update plant');
+                  } finally {
+                    setEditLoading(false);
+                  }
+                }}
+                isSubmitting={editLoading}
+                error={editError}
+              />
+            )}
           </Card>
         ))}
       </div>
