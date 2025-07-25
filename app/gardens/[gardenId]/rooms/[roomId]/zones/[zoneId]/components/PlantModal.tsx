@@ -1,6 +1,6 @@
 "use client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import PlantForm, { PlantFormValues } from './PlantForm';
+import PlantForm, { PlantFormValues } from '../plants/[plantId]/components/PlantForm';
 
 export default function PlantModal({
   open,

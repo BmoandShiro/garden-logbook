@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Calendar, Clock, User, AlertTriangle, CheckCircle, Wrench, Trash, Settings } from 'lucide-react';
+import { Calendar, Clock, User, AlertTriangle, CheckCircle, Wrench, Trash, Settings, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import EquipmentFormModal from './EquipmentFormModal';
@@ -49,6 +49,7 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
   const [confirmDeleteEquipment, setConfirmDeleteEquipment] = useState<Equipment | null>(null);
   const [editModalEquipment, setEditModalEquipment] = useState<Equipment | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [duplicatingEquipmentId, setDuplicatingEquipmentId] = useState<string | null>(null);
 
   const handleDelete = async (equipmentId: string) => {
     try {
@@ -70,6 +71,28 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
     } finally {
       setDeletingEquipmentId(null);
       setConfirmDeleteEquipment(null);
+    }
+  };
+
+  const handleDuplicate = async (equipmentId: string) => {
+    try {
+      setDuplicatingEquipmentId(equipmentId);
+      const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/equipment/${equipmentId}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to duplicate equipment');
+      }
+
+      toast.success('Equipment duplicated successfully');
+      router.refresh();
+    } catch (error) {
+      console.error('Error duplicating equipment:', error);
+      toast.error(error instanceof Error ? error.message : 'Error duplicating equipment');
+    } finally {
+      setDuplicatingEquipmentId(null);
     }
   };
 
@@ -214,6 +237,17 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
                     }}
                   >
                     <Settings className="h-5 w-5" />
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center rounded-full p-2 text-yellow-300/70 hover:text-yellow-50 hover:bg-yellow-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    title="Duplicate Equipment"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicate(item.id);
+                    }}
+                    disabled={duplicatingEquipmentId === item.id}
+                  >
+                    <Copy className="h-5 w-5" />
                   </button>
                   <Button
                     variant="ghost"

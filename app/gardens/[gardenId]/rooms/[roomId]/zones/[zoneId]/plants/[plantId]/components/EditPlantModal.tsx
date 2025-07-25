@@ -14,9 +14,21 @@ export default function EditPlantModal({ plant, gardenId, roomId, zoneId, plantI
     strainName: plant.strainName || '',
     species: plant.species || '',
     variety: plant.variety || '',
-    plantedDate: plant.plantedDate ? plant.plantedDate.slice(0, 10) : '',
-    expectedHarvestDate: plant.expectedHarvestDate ? plant.expectedHarvestDate.slice(0, 10) : '',
-    notes: plant.notes || '',
+    plantedDate: plant.startDate ? new Date(plant.startDate).toISOString().slice(0, 10) : '',
+    expectedHarvestDate: plant.harvestDate ? new Date(plant.harvestDate).toISOString().slice(0, 10) : '',
+    notes: plant.notes ?? undefined,
+    growingSeasonStart: plant.growingSeasonStart || '',
+    growingSeasonEnd: plant.growingSeasonEnd || '',
+    onlyTriggerAlertsDuringSeason: plant.onlyTriggerAlertsDuringSeason || false,
+    sensitivities: plant.sensitivities || {
+      heat: { enabled: false, threshold: '', unit: 'F' },
+      humidity: { enabled: false, min: '', max: '' },
+      frost: { enabled: false, windows: [] },
+      drought: { enabled: false, days: '' },
+      wind: { enabled: false, threshold: '' },
+      flood: { enabled: false },
+      heavyRain: { enabled: false, threshold: '', unit: 'in' },
+    },
   };
 
   const handleSubmit = async (values: any) => {

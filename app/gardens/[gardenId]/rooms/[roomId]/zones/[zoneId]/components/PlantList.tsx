@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { toast } from 'sonner';
 import { Trash, Settings, Copy } from 'lucide-react';
 import PlantModal from './PlantModal';
-import { PlantFormValues } from './PlantForm';
+import { PlantFormValues } from '../plants/[plantId]/components/PlantForm';
 
 interface Plant {
   id: string;
@@ -25,8 +25,8 @@ interface Plant {
   strainName?: string;
   species?: string;
   variety?: string;
-  plantedDate?: string;
-  expectedHarvestDate?: string;
+  startDate?: Date;
+  harvestDate?: Date;
   growingSeasonStart?: string;
   growingSeasonEnd?: string;
   onlyTriggerAlertsDuringSeason?: boolean;
@@ -166,68 +166,69 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                 </Button>
               </div>
             </div>
-            {/* Edit Modal for this plant */}
-            {editPlantData && openEditModalPlantId === plant.id && (
-              <PlantModal
-                open={openEditModalPlantId === plant.id}
-                setOpen={(open) => {
-                  if (!open) {
-                    setOpenEditModalPlantId(null);
-                    setEditPlantData(null);
-                  }
-                }}
-                title="Edit Plant"
-                initialValues={{
-                  name: editPlantData.name || '',
-                  strainName: editPlantData.strainName || '',
-                  species: editPlantData.species || '',
-                  variety: editPlantData.variety || '',
-                  plantedDate: editPlantData.plantedDate ? editPlantData.plantedDate.slice(0, 10) : '',
-                  expectedHarvestDate: editPlantData.expectedHarvestDate ? editPlantData.expectedHarvestDate.slice(0, 10) : '',
-                  notes: editPlantData.notes || '',
-                  growingSeasonStart: editPlantData.growingSeasonStart || '',
-                  growingSeasonEnd: editPlantData.growingSeasonEnd || '',
-                  onlyTriggerAlertsDuringSeason: editPlantData.onlyTriggerAlertsDuringSeason || false,
-                  sensitivities: editPlantData.sensitivities || {
-                    heat: { enabled: false, threshold: '', unit: 'F' },
-                    humidity: { enabled: false, min: '', max: '' },
-                    frost: { enabled: false, windows: [] },
-                    drought: { enabled: false, days: '' },
-                    wind: { enabled: false, threshold: '' },
-                    flood: { enabled: false },
-                    heavyRain: { enabled: false, threshold: '', unit: 'in' },
-                  },
-                }}
-                submitButtonLabel="Save Changes"
-                onSubmit={async (values: PlantFormValues) => {
-                  setEditLoading(true);
-                  setEditError(null);
-                  try {
-                    const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${plant.id}`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(values),
-                    });
-                    if (!response.ok) {
-                      const data = await response.json();
-                      throw new Error(data.error || 'Failed to update plant');
-                    }
-                    setOpenEditModalPlantId(null);
-                    setEditPlantData(null);
-                    router.refresh();
-                  } catch (error) {
-                    setEditError(error instanceof Error ? error.message : 'Failed to update plant');
-                  } finally {
-                    setEditLoading(false);
-                  }
-                }}
-                isSubmitting={editLoading}
-                error={editError}
-              />
-            )}
           </Card>
         ))}
       </div>
+      
+      {/* Edit Modal - moved outside of Card to prevent click event bubbling */}
+      {editPlantData && openEditModalPlantId && (
+        <PlantModal
+          open={openEditModalPlantId !== null}
+          setOpen={(open) => {
+            if (!open) {
+              setOpenEditModalPlantId(null);
+              setEditPlantData(null);
+            }
+          }}
+          title="Edit Plant"
+          initialValues={{
+            name: editPlantData.name || '',
+            strainName: editPlantData.strainName || '',
+            species: editPlantData.species || '',
+            variety: editPlantData.variety || '',
+            plantedDate: editPlantData.startDate ? new Date(editPlantData.startDate).toISOString().slice(0, 10) : '',
+            expectedHarvestDate: editPlantData.harvestDate ? new Date(editPlantData.harvestDate).toISOString().slice(0, 10) : '',
+            notes: editPlantData.notes ?? undefined,
+            growingSeasonStart: editPlantData.growingSeasonStart || '',
+            growingSeasonEnd: editPlantData.growingSeasonEnd || '',
+            onlyTriggerAlertsDuringSeason: editPlantData.onlyTriggerAlertsDuringSeason || false,
+            sensitivities: editPlantData.sensitivities || {
+              heat: { enabled: false, threshold: '', unit: 'F' },
+              humidity: { enabled: false, min: '', max: '' },
+              frost: { enabled: false, windows: [] },
+              drought: { enabled: false, days: '' },
+              wind: { enabled: false, threshold: '' },
+              flood: { enabled: false },
+              heavyRain: { enabled: false, threshold: '', unit: 'in' },
+            },
+          }}
+          submitButtonLabel="Save Changes"
+          onSubmit={async (values: PlantFormValues) => {
+            setEditLoading(true);
+            setEditError(null);
+            try {
+              const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${openEditModalPlantId!}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values),
+              });
+              if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to update plant');
+              }
+              setOpenEditModalPlantId(null);
+              setEditPlantData(null);
+              router.refresh();
+            } catch (error) {
+              setEditError(error instanceof Error ? error.message : 'Failed to update plant');
+            } finally {
+              setEditLoading(false);
+            }
+          }}
+          isSubmitting={editLoading}
+          error={editError}
+        />
+      )}
 
       <Dialog open={!!confirmDeletePlant} onOpenChange={() => setConfirmDeletePlant(null)}>
         <DialogContent>
@@ -249,7 +250,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
               variant="destructive"
               onClick={() => confirmDeletePlant && handleDelete(confirmDeletePlant.id)}
               disabled={deletingPlantId === confirmDeletePlant?.id}
-              className="bg-red-900 hover:bg-red-800 text-red-100"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               Delete
             </Button>
