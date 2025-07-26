@@ -44,7 +44,7 @@ export async function POST(
     // Check if user has access to the garden
     const garden = originalEquipment.zone.room.garden;
     const hasAccess = garden.createdBy.id === session.user.id || 
-                     garden.members.some((member: any) => member.userId === session.user.id);
+                     garden.members.some((member: any) => member.user.id === session.user.id);
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });

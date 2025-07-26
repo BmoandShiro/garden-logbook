@@ -121,7 +121,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                 <h3 className="text-lg font-semibold text-emerald-100">{plant.name}</h3>
                 <div className="space-y-1">
                   <p className="text-sm text-emerald-300/70">
-                    <span className="font-medium text-emerald-200">Species:</span> {plant.strainId || 'Unknown'}
+                    <span className="font-medium text-emerald-200">Species:</span> {plant.species || plant.strainName || 'Unknown'}
                     {plant.type && ` (${plant.type})`}
                   </p>
                   <p className="text-sm text-emerald-300/70">
@@ -188,7 +188,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
             variety: editPlantData.variety || '',
             plantedDate: editPlantData.startDate ? new Date(editPlantData.startDate).toISOString().slice(0, 10) : '',
             expectedHarvestDate: editPlantData.harvestDate ? new Date(editPlantData.harvestDate).toISOString().slice(0, 10) : '',
-            notes: editPlantData.notes ?? undefined,
+            notes: (editPlantData.notes as string | undefined) ?? undefined,
             growingSeasonStart: editPlantData.growingSeasonStart || '',
             growingSeasonEnd: editPlantData.growingSeasonEnd || '',
             onlyTriggerAlertsDuringSeason: editPlantData.onlyTriggerAlertsDuringSeason || false,

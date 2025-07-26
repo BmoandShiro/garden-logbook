@@ -20,9 +20,11 @@ export async function POST(
     const garden = await prisma.garden.findUnique({
       where: { id: gardenId },
       include: {
+        createdBy: true,
         members: {
-          where: { userId: session.user.id },
-          select: { userId: true, permissions: true }
+          include: {
+            user: true
+          }
         }
       }
     });
@@ -31,9 +33,12 @@ export async function POST(
       return NextResponse.json({ error: 'Garden not found' }, { status: 404 });
     }
 
-    const member = garden.members[0];
-    if (!member || !member.permissions.includes('EDIT')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check if user has access to the garden
+    const hasAccess = garden.createdBy.id === session.user.id || 
+                     garden.members.some((member: any) => member.user.id === session.user.id);
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Get the original plant

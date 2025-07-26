@@ -282,6 +282,7 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
               variant="outline"
               onClick={() => setConfirmDeleteEquipment(null)}
               disabled={deletingEquipmentId === confirmDeleteEquipment?.id}
+              className="border-emerald-800 hover:bg-emerald-900/10"
             >
               Cancel
             </Button>
@@ -289,6 +290,7 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
               variant="destructive"
               onClick={() => confirmDeleteEquipment && handleDelete(confirmDeleteEquipment.id)}
               disabled={deletingEquipmentId === confirmDeleteEquipment?.id}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               {deletingEquipmentId === confirmDeleteEquipment?.id ? 'Deleting...' : 'Delete'}
             </Button>
