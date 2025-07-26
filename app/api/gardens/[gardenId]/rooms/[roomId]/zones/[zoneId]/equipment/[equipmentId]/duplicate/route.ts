@@ -26,7 +26,11 @@ export async function POST(
               include: {
                 garden: {
                   include: {
-                    members: true,
+                    members: {
+                      include: {
+                        user: true
+                      }
+                    },
                     createdBy: true,
                   },
                 },
