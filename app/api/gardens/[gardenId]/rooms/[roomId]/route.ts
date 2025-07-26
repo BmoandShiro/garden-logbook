@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { createChangeLog, getEntityPath } from '@/lib/changeLogger';
 
 type GardenWithMembers = Prisma.GardenGetPayload<{
   include: {
@@ -102,6 +103,14 @@ export async function PATCH(
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
     }
+
+    // Track changes for logging
+    const changes = [];
+    if (room.name !== name) changes.push({ field: 'name', oldValue: room.name, newValue: name });
+    if (room.description !== (description ?? '')) changes.push({ field: 'description', oldValue: room.description, newValue: description ?? '' });
+    if (room.type !== (type ?? '')) changes.push({ field: 'type', oldValue: room.type, newValue: type ?? '' });
+    if (room.dimensions !== (dimensions ?? '')) changes.push({ field: 'dimensions', oldValue: room.dimensions, newValue: dimensions ?? '' });
+
     const updated = await prisma.room.update({
       where: { id: params.roomId },
       data: {
@@ -111,6 +120,29 @@ export async function PATCH(
         dimensions: dimensions ?? '',
       },
     });
+
+    // Create change log if there were changes
+    if (changes.length > 0) {
+      try {
+        const path = await getEntityPath('room', params.roomId);
+        await createChangeLog({
+          entityType: 'room',
+          entityId: params.roomId,
+          entityName: updated.name,
+          changes,
+          path,
+          changedBy: {
+            id: session.user.id,
+            name: session.user.name || 'Unknown User',
+            email: session.user.email || 'unknown@example.com',
+          },
+        });
+      } catch (error) {
+        console.error('Error creating change log:', error);
+        // Don't fail the update if logging fails
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error('[ROOM_PATCH]', error);

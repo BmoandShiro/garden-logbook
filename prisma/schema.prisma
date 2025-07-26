@@ -662,6 +662,7 @@ enum LogType {
   SENSOR_ALERT
   NOTE
   MAINTENANCE_TASK
+  CHANGE_LOG
 }
 
 enum LSTIntensity {

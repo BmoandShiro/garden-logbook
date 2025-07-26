@@ -188,7 +188,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
             variety: editPlantData.variety || '',
             plantedDate: editPlantData.startDate ? new Date(editPlantData.startDate).toISOString().slice(0, 10) : '',
             expectedHarvestDate: editPlantData.harvestDate ? new Date(editPlantData.harvestDate).toISOString().slice(0, 10) : '',
-            notes: (editPlantData.notes as string | undefined) ?? undefined,
+            notes: editPlantData.notes === null ? undefined : editPlantData.notes,
             growingSeasonStart: editPlantData.growingSeasonStart || '',
             growingSeasonEnd: editPlantData.growingSeasonEnd || '',
             onlyTriggerAlertsDuringSeason: editPlantData.onlyTriggerAlertsDuringSeason || false,
@@ -207,6 +207,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
             setEditLoading(true);
             setEditError(null);
             try {
+              console.log('Submitting plant update with values:', values);
               const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${openEditModalPlantId!}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },

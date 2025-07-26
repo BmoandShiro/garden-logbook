@@ -8,38 +8,33 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
 import LogDateField from '../app/logs/[id]/LogDateField';
 
-function getLogColor(type: string) {
-  switch (type) {
-    case "WATERING":
-      return "bg-blue-600";
-    case "ENVIRONMENTAL":
-      return "bg-cyan-600";
-    case "LST":
-      return "bg-lime-600";
-    case "HST":
-      return "bg-green-700";
-    case "HARVEST":
-      return "bg-green-600";
-    case "DRYING":
-      return "bg-yellow-600 text-black";
-    case "PEST STRESS DISEASE":
-      return "bg-red-600";
-    case "TRANSPLANT":
-      return "bg-indigo-600";
-    case "TRANSFER":
-      return "bg-indigo-500";
-    case "GERMINATION":
-      return "bg-emerald-600";
-    case "CLONING":
-      return "bg-purple-600";
-    case "TREATMENT":
-      return "bg-pink-600";
-    case "EQUIPMENT":
-      return "bg-amber-500 text-black";
-    default:
-      return "bg-dark-bg-primary text-dark-text-secondary";
-  }
-}
+const getLogColor = (type: string) => {
+  const colors: Record<string, string> = {
+    WATERING: 'bg-blue-500',
+    ENVIRONMENTAL: 'bg-green-500',
+    LST: 'bg-purple-500',
+    HST: 'bg-orange-500',
+    HARVEST: 'bg-yellow-500',
+    DRYING: 'bg-red-500',
+    PEST_STRESS_DISEASE: 'bg-red-600',
+    PEST_DISEASE: 'bg-red-600',
+    TRANSPLANT: 'bg-green-600',
+    TRANSFER: 'bg-blue-600',
+    GERMINATION: 'bg-green-400',
+    CLONING: 'bg-purple-400',
+    INSPECTION: 'bg-yellow-400',
+    TREATMENT: 'bg-red-400',
+    STRESS: 'bg-orange-400',
+    EQUIPMENT: 'bg-gray-500',
+    CUSTOM: 'bg-gray-400',
+    FLUSHING: 'bg-blue-400',
+    GENERAL: 'bg-gray-300',
+    WEATHER_ALERT: 'bg-red-500',
+    SENSOR_ALERT: 'bg-orange-500',
+    CHANGE_LOG: 'bg-emerald-500',
+  };
+  return colors[type] || 'bg-gray-400';
+};
 
 interface CalendarProps {
   month?: Date; // Defaults to current month if not provided

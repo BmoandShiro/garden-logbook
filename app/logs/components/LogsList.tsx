@@ -79,6 +79,7 @@ const getLogIcon = (type: string) => {
     GENERAL: '📝',
     WEATHER_ALERT: '⛈️',
     SENSOR_ALERT: '📶',
+    CHANGE_LOG: '✏️',
   };
   return icons[type] || '📝';
 };
@@ -213,6 +214,18 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                               : `${merged.type}: ${merged.sensorHumidity}%`}
                           </span>
                         </div>
+                        ) : String(log.type) === 'CHANGE_LOG' ? (
+                          <div className="mt-2 text-sm">
+                            <div className="text-dark-text-secondary mb-1">
+                              {merged.path || 'Unknown path'}
+                            </div>
+                            <div className="text-dark-text-primary">
+                              {merged.changeDetails || 'Changes made'}
+                            </div>
+                            <div className="text-emerald-400 text-xs mt-1">
+                              Changed by {merged.changedBy?.name || 'Unknown User'}
+                            </div>
+                          </div>
                         ) : (
                           <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
                         )}

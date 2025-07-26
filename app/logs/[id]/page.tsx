@@ -266,6 +266,113 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
         </Section>
       )}
 
+      {/* CHANGE_LOG-specific section */}
+      {log.type === 'CHANGE_LOG' && (
+        <Section title="Change Details">
+          <FieldRow label="Entity Type" value={merged.entityType} />
+          <FieldRow label="Entity Name" value={merged.entityName} />
+          <FieldRow label="Changed By" value={merged.changedBy?.name} />
+          <FieldRow label="Path" value={merged.path} />
+          
+          {merged.changes && Array.isArray(merged.changes) && (
+            <div className="mt-4">
+              <h3 className="text-md font-semibold mb-3 text-emerald-300">Changes Made:</h3>
+              <div className="space-y-3">
+                {merged.changes.map((change: any, index: number) => (
+                  <div key={index} className="bg-dark-bg-secondary rounded-lg p-4 border border-dark-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-emerald-200 capitalize">
+                        {change.field.replace(/([A-Z])/g, ' $1').trim()}
+                      </span>
+                      <span className="text-xs text-dark-text-secondary">Change #{index + 1}</span>
+                    </div>
+                    
+                    {/* Special handling for sensitivities object */}
+                    {change.field === 'sensitivities' && typeof change.oldValue === 'object' && typeof change.newValue === 'object' ? (
+                      <div className="space-y-3">
+                        {Object.keys({ ...(change.oldValue || {}), ...(change.newValue || {}) }).map((sensitivityKey) => {
+                          const oldSensitivity = change.oldValue?.[sensitivityKey];
+                          const newSensitivity = change.newValue?.[sensitivityKey];
+                          const hasChanged = JSON.stringify(oldSensitivity) !== JSON.stringify(newSensitivity);
+                          
+                          if (!hasChanged) return null;
+                          
+                          return (
+                            <div key={sensitivityKey} className="bg-dark-bg-primary rounded p-3 border border-dark-border">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-blue-300 capitalize">
+                                  {sensitivityKey.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                                <span className="text-xs text-dark-text-secondary">Sensitivity</span>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <span className="text-sm font-medium text-red-400">Old Value:</span>
+                                  <div className="mt-1 p-2 bg-red-900/20 border border-red-800 rounded text-sm">
+                                    {oldSensitivity ? (
+                                      <div className="space-y-1">
+                                        {Object.entries(oldSensitivity).map(([key, value]) => (
+                                          <div key={key} className="flex justify-between">
+                                            <span className="text-dark-text-secondary">{key}:</span>
+                                            <span className="text-red-200">{String(value)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="italic text-dark-text-secondary">empty</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium text-green-400">New Value:</span>
+                                  <div className="mt-1 p-2 bg-green-900/20 border border-green-800 rounded text-sm">
+                                    {newSensitivity ? (
+                                      <div className="space-y-1">
+                                        {Object.entries(newSensitivity).map(([key, value]) => (
+                                          <div key={key} className="flex justify-between">
+                                            <span className="text-dark-text-secondary">{key}:</span>
+                                            <span className="text-green-200">{String(value)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="italic text-dark-text-secondary">empty</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-sm font-medium text-red-400">Old Value:</span>
+                          <div className="mt-1 p-2 bg-red-900/20 border border-red-800 rounded text-sm">
+                            {typeof change.oldValue === 'object' && change.oldValue !== null 
+                              ? JSON.stringify(change.oldValue, null, 2)
+                              : change.oldValue || <span className="italic text-dark-text-secondary">empty</span>}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-green-400">New Value:</span>
+                          <div className="mt-1 p-2 bg-green-900/20 border border-green-800 rounded text-sm">
+                            {typeof change.newValue === 'object' && change.newValue !== null 
+                              ? JSON.stringify(change.newValue, null, 2)
+                              : change.newValue || <span className="italic text-dark-text-secondary">empty</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
+
       {/* Notes Section */}
       <Section title="Notes">
         {String(log.type) === 'WEATHER_ALERT' || String(log.type) === 'WEATHER ALERT' ? (
