@@ -39,7 +39,7 @@ export default function PlantLogsListWrapper({ logs: initialLogs }: PlantLogsLis
   const [logs, setLogs] = useState(initialLogs);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
+  const PAGE_SIZE_OPTIONS = [1, 2, 3, 5, 10, 25, 50];
 
   const handleLogDeleted = (deletedLogId: string) => {
     setLogs((prev) => prev.filter((log) => log.id !== deletedLogId));

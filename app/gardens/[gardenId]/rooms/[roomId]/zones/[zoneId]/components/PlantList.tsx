@@ -64,7 +64,10 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
       }
 
       toast.success('Plant deleted successfully');
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error deleting plant:', error);
       toast.error(error instanceof Error ? error.message : 'Error deleting plant');
@@ -87,7 +90,10 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
       }
 
       toast.success('Plant duplicated successfully');
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error duplicating plant:', error);
       toast.error(error instanceof Error ? error.message : 'Error duplicating plant');
@@ -122,7 +128,6 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                 <div className="space-y-1">
                   <p className="text-sm text-emerald-300/70">
                     <span className="font-medium text-emerald-200">Species:</span> {plant.species || plant.strainName || 'Unknown'}
-                    {plant.type && ` (${plant.type})`}
                   </p>
                   <p className="text-sm text-emerald-300/70">
                     Added by {plant.user.name || plant.user.email}
@@ -219,7 +224,10 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
               }
               setOpenEditModalPlantId(null);
               setEditPlantData(null);
-              router.refresh();
+              // Add longer delay to ensure server processes the change and logs are updated
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
             } catch (error) {
               setEditError(error instanceof Error ? error.message : 'Failed to update plant');
             } finally {

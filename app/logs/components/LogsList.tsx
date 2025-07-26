@@ -225,7 +225,7 @@ export default function LogsList({ logs, onLogDeleted }: LogsListProps) {
                             <div className="text-emerald-400 text-xs mt-1">
                               Changed by {merged.changedBy?.name || 'Unknown User'}
                             </div>
-                          </div>
+                        </div>
                         ) : (
                           <p className="mt-2 text-sm text-dark-text-primary">{log.notes}</p>
                         )}

@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createChangeLog, getEntityPath } from '@/lib/changeLogger';
 
 export async function DELETE(request: Request, context: { params: Promise<{ gardenId: string }> }) {
   const params = await context.params;
@@ -72,6 +73,24 @@ export async function PATCH(request: Request, context: { params: Promise<{ garde
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
     }
+
+    // Get the current garden to track changes
+    const currentGarden = await prisma.garden.findUnique({
+      where: { id: gardenId },
+    });
+
+    if (!currentGarden) {
+      return NextResponse.json({ error: 'Garden not found.' }, { status: 404 });
+    }
+
+    // Track changes for logging
+    const changes = [];
+    if (currentGarden.name !== name) changes.push({ field: 'name', oldValue: currentGarden.name, newValue: name });
+    if (currentGarden.description !== (description ?? '')) changes.push({ field: 'description', oldValue: currentGarden.description, newValue: description ?? '' });
+    if (currentGarden.imageUrl !== (imageUrl ?? '')) changes.push({ field: 'imageUrl', oldValue: currentGarden.imageUrl, newValue: imageUrl ?? '' });
+    if (currentGarden.isPrivate !== (typeof isPrivate === 'boolean' ? isPrivate : true)) changes.push({ field: 'isPrivate', oldValue: currentGarden.isPrivate, newValue: typeof isPrivate === 'boolean' ? isPrivate : true });
+    if (currentGarden.zipcode !== (zipcode ?? '')) changes.push({ field: 'zipcode', oldValue: currentGarden.zipcode, newValue: zipcode ?? '' });
+
     const updatedGarden = await prisma.garden.update({
       where: { id: gardenId },
       data: {
@@ -82,6 +101,29 @@ export async function PATCH(request: Request, context: { params: Promise<{ garde
         zipcode: zipcode ?? '',
       },
     });
+
+    // Create change log if there were changes
+    if (changes.length > 0) {
+      try {
+        const path = await getEntityPath('garden', gardenId);
+        await createChangeLog({
+          entityType: 'garden',
+          entityId: gardenId,
+          entityName: updatedGarden.name,
+          changes,
+          path,
+          changedBy: {
+            id: session.user.id,
+            name: session.user.name || 'Unknown User',
+            email: session.user.email || 'unknown@example.com',
+          },
+        });
+      } catch (error) {
+        console.error('Error creating change log:', error);
+        // Don't fail the update if logging fails
+      }
+    }
+
     return NextResponse.json(updatedGarden);
   } catch (error) {
     console.error('[GARDEN_PATCH]', error);

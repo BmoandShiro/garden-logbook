@@ -61,7 +61,10 @@ export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProp
         throw new Error('Failed to delete room');
       }
 
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
       toast.success('Room deleted successfully');
     } catch (error) {
       console.error('Error deleting room:', error);
@@ -176,7 +179,10 @@ export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProp
                       throw new Error(data.error || 'Failed to update room');
                     }
                     setOpenEditModalRoomId(null);
-                    router.refresh();
+                    // Add longer delay to ensure server processes the change and logs are updated
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 1000);
                   } catch (error) {
                     setEditError(error instanceof Error ? error.message : 'Failed to update room');
                   } finally {

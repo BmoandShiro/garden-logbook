@@ -64,7 +64,10 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
       }
 
       toast.success('Equipment deleted successfully');
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error deleting equipment:', error);
       toast.error(error instanceof Error ? error.message : 'Error deleting equipment');
@@ -87,7 +90,10 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
       }
 
       toast.success('Equipment duplicated successfully');
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error duplicating equipment:', error);
       toast.error(error instanceof Error ? error.message : 'Error duplicating equipment');
@@ -141,6 +147,9 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
           nextDueDate: task.nextDueDate.toISOString(),
         })) || [],
       };
+      
+      console.log('Submitting equipment update:', payload);
+      
       const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/equipment/${editModalEquipment.id}`,
         {
           method: 'PUT',
@@ -148,14 +157,21 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
           body: JSON.stringify(payload),
         }
       );
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update equipment');
       }
+      
+      toast.success('Equipment updated successfully');
       setEditModalEquipment(null);
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update equipment');
+      console.error('Error updating equipment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update equipment');
     } finally {
       setEditLoading(false);
     }
@@ -312,7 +328,7 @@ export default function EquipmentList({ zoneId, roomId, gardenId, equipment }: E
             actionType: (task as any).actionType || '',
             frequency: task.frequency,
             nextDueDate: task.nextDueDate ? new Date(task.nextDueDate) : new Date(),
-            notes: (task as any).notes || '',
+            notes: task.description || '', // Map description to notes for form
           })) || [],
         } : undefined}
         loading={editLoading}

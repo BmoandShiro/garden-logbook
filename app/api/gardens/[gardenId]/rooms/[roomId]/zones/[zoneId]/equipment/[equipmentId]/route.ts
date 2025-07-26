@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { createChangeLog, getEntityPath } from '@/lib/changeLogger';
 
 const updateEquipmentSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -142,6 +143,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
+    // Track changes for logging
+    const changes = [];
+    if (original.name !== body.name) changes.push({ field: 'name', oldValue: original.name, newValue: body.name });
+    if (original.equipmentType !== body.equipmentType) changes.push({ field: 'equipmentType', oldValue: original.equipmentType, newValue: body.equipmentType });
+    if (original.description !== (body.description ?? '')) changes.push({ field: 'description', oldValue: original.description, newValue: body.description ?? '' });
+    if (original.notes !== (body.notes ?? '')) changes.push({ field: 'notes', oldValue: original.notes, newValue: body.notes ?? '' });
+
     // Prepare maintenanceTasks nested update
     const submittedTasks = Array.isArray(body.maintenanceTasks) ? body.maintenanceTasks : [];
     const originalTasks = original.maintenanceTasks;
@@ -153,16 +161,14 @@ export async function PUT(
         title: task.title,
         frequency: task.frequency,
         nextDueDate: new Date(task.nextDueDate),
-        notes: task.notes,
-        description: task.description,
+        description: task.notes || task.description, // Use notes as description
       }
     }));
     const createTasks = submittedTasks.filter((t: any) => !t.id).map((task: any) => ({
       title: task.title,
       frequency: task.frequency,
       nextDueDate: new Date(task.nextDueDate),
-      notes: task.notes,
-      description: task.description,
+      description: task.notes || task.description, // Use notes as description
       completed: false,
       roomId: original.roomId,
       gardenId: original.gardenId,
@@ -199,6 +205,28 @@ export async function PUT(
         createdBy: { select: { id: true, name: true, email: true, image: true } }
       }
     });
+
+    // Create change log if there were changes
+    if (changes.length > 0) {
+      try {
+        const path = await getEntityPath('equipment', params.equipmentId);
+        await createChangeLog({
+          entityType: 'equipment',
+          entityId: params.equipmentId,
+          entityName: equipment.name,
+          changes,
+          path,
+          changedBy: {
+            id: session.user.id,
+            name: session.user.name || 'Unknown User',
+            email: session.user.email || 'unknown@example.com',
+          },
+        });
+      } catch (error) {
+        console.error('Error creating change log:', error);
+        // Don't fail the update if logging fails
+      }
+    }
 
     return NextResponse.json(equipment);
   } catch (error) {
@@ -248,6 +276,40 @@ export async function DELETE(
 
     if (!garden) {
       return NextResponse.json({ error: 'Garden not found or access denied' }, { status: 404 });
+    }
+
+    // Get the equipment before deleting it for change logging
+    const equipment = await prisma.equipment.findUnique({
+      where: { id: params.equipmentId },
+      include: {
+        garden: { select: { name: true } },
+        room: { select: { name: true } },
+        zone: { select: { name: true } },
+      }
+    });
+
+    if (!equipment) {
+      return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
+    }
+
+    // Create change log for deletion
+    try {
+      const path = await getEntityPath('equipment', params.equipmentId);
+      await createChangeLog({
+        entityType: 'equipment',
+        entityId: params.equipmentId,
+        entityName: equipment.name,
+        changes: [{ field: 'status', oldValue: 'active', newValue: 'deleted' }],
+        path,
+        changedBy: {
+          id: session.user.id,
+          name: session.user.name || 'Unknown User',
+          email: session.user.email || 'unknown@example.com',
+        },
+      });
+    } catch (error) {
+      console.error('Error creating deletion change log:', error);
+      // Don't fail the deletion if logging fails
     }
 
     // Delete equipment (this will cascade delete maintenance tasks)

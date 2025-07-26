@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
 export interface ChangeLogData {
-  entityType: 'plant' | 'zone' | 'room' | 'equipment';
+  entityType: 'plant' | 'zone' | 'room' | 'equipment' | 'garden';
   entityId: string;
   entityName: string;
   changes: Array<{
@@ -52,10 +52,10 @@ export async function createChangeLog(data: ChangeLogData) {
         case 'room':
           const room = await prisma.room.findUnique({
             where: { id: data.entityId },
-            select: { gardenId: true }
+            select: { gardenId: true, id: true }
           });
           gardenId = room?.gardenId || null;
-          roomId = room?.id || null;
+          roomId = room?.id || null; // Explicitly set roomId to ensure it's correct
           break;
         case 'equipment':
           const equipment = await prisma.equipment.findUnique({
@@ -65,6 +65,13 @@ export async function createChangeLog(data: ChangeLogData) {
           gardenId = equipment?.zone?.room?.gardenId || null;
           roomId = equipment?.zone?.roomId || null;
           zoneId = equipment?.zoneId || null;
+          break;
+        case 'garden':
+          const garden = await prisma.garden.findUnique({
+            where: { id: data.entityId },
+            select: { id: true }
+          });
+          gardenId = garden?.id || null;
           break;
       }
     } catch (error) {
@@ -170,6 +177,15 @@ export async function getEntityPath(entityType: string, entityId: string): Promi
         });
         if (equipment) {
           return `${equipment.zone.room.garden.name} → ${equipment.zone.room.name} → ${equipment.zone.name} → ${equipment.name}`;
+        }
+        break;
+
+      case 'garden':
+        const garden = await prisma.garden.findUnique({
+          where: { id: entityId },
+        });
+        if (garden) {
+          return `${garden.name}`;
         }
         break;
     }

@@ -48,7 +48,10 @@ export default function ZoneList({ zones, gardenId, roomId }: ZoneListProps) {
       }
 
       toast.success('Zone deleted successfully');
-      router.refresh();
+      // Add longer delay to ensure server processes the change and logs are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       toast.error('Error deleting zone');
       console.error(error);
@@ -139,7 +142,10 @@ export default function ZoneList({ zones, gardenId, roomId }: ZoneListProps) {
                       throw new Error(data.error || 'Failed to update zone');
                     }
                     setOpenEditModalZoneId(null);
-                    router.refresh();
+                    // Add longer delay to ensure server processes the change and logs are updated
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 1000);
                   } catch (error) {
                     setEditError(error instanceof Error ? error.message : 'Failed to update zone');
                   } finally {

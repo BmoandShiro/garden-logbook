@@ -107,7 +107,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
   const [plants, setPlants] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250, 500, 1000];
+  const PAGE_SIZE_OPTIONS = [1, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
 
   // On mount, initialize filters from query params if present
   useEffect(() => {

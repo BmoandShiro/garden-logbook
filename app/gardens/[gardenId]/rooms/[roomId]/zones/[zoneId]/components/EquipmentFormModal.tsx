@@ -66,13 +66,13 @@ const Frequencies = {
 
 const equipmentSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  equipmentType: z.enum(Object.values(EquipmentTypes) as [string, ...string[]]),
+  equipmentType: z.string(),
   installationDate: z.date().optional(),
   description: z.string().optional(),
   maintenanceTasks: z.array(z.object({
-    title: z.string().min(1, 'Task title is required'),
-    actionType: z.enum(Object.values(EquipmentActions) as [string, ...string[]]),
-    frequency: z.enum(Object.values(Frequencies) as [string, ...string[]]),
+    title: z.string(),
+    actionType: z.string(),
+    frequency: z.string(),
     nextDueDate: z.date(),
     notes: z.string().optional()
   })).optional()
@@ -117,9 +117,10 @@ export default function EquipmentFormModal({ open, onOpenChange, onSubmit, initi
 
   useEffect(() => {
     if (open && initialValues) {
+      console.log('Resetting form with initial values:', initialValues);
       form.reset({
         name: initialValues.name || '',
-        equipmentType: (initialValues.equipmentType as any) || Object.values(EquipmentTypes)[0],
+        equipmentType: initialValues.equipmentType || Object.values(EquipmentTypes)[0],
         installationDate: initialValues.installationDate ? new Date(initialValues.installationDate) : undefined,
         description: initialValues.description || '',
         maintenanceTasks: initialValues.maintenanceTasks || [],
@@ -128,9 +129,19 @@ export default function EquipmentFormModal({ open, onOpenChange, onSubmit, initi
         ...task,
         nextDueDate: task.nextDueDate ? new Date(task.nextDueDate) : new Date(),
       })) || []);
+    } else if (open) {
+      console.log('Resetting form with default values');
+      form.reset({
+        name: '',
+        equipmentType: Object.values(EquipmentTypes)[0],
+        installationDate: undefined,
+        description: '',
+        maintenanceTasks: [],
+      });
+      setMaintenanceTasks([]);
     }
     // eslint-disable-next-line
-  }, [open]);
+  }, [open, initialValues]);
 
   const handleAddTask = () => {
     setMaintenanceTasks([
@@ -152,13 +163,25 @@ export default function EquipmentFormModal({ open, onOpenChange, onSubmit, initi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(async (data) => {
-            await onSubmit({
-              ...data,
-              maintenanceTasks: maintenanceTasks.map(task => ({
-                ...task,
-                nextDueDate: task.nextDueDate,
-              })),
-            });
+            console.log('Form submitted!');
+            console.log('Form data:', data);
+            console.log('Maintenance tasks:', maintenanceTasks);
+            
+            // Validate maintenance tasks
+            const validTasks = maintenanceTasks.filter(task => task.title.trim() !== '');
+            
+            try {
+              await onSubmit({
+                ...data,
+                maintenanceTasks: validTasks.map(task => ({
+                  ...task,
+                  nextDueDate: task.nextDueDate,
+                  description: task.notes, // Map notes to description for API
+                })),
+              });
+            } catch (error) {
+              console.error('Error in form submission:', error);
+            }
           })} className="space-y-4">
             <FormField
               control={form.control}
@@ -252,6 +275,21 @@ export default function EquipmentFormModal({ open, onOpenChange, onSubmit, initi
               </div>
               {maintenanceTasks.map((task, index) => (
                 <div key={index} className="space-y-4 p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-dark-text-primary">Task {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const newTasks = maintenanceTasks.filter((_, i) => i !== index);
+                        setMaintenanceTasks(newTasks);
+                      }}
+                      className="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-1 h-6 w-6"
+                    >
+                      ×
+                    </Button>
+                  </div>
                   <Input
                     placeholder="Task name"
                     value={task.title}
@@ -305,7 +343,16 @@ export default function EquipmentFormModal({ open, onOpenChange, onSubmit, initi
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-dark-border hover:bg-dark-bg-secondary text-dark-text-primary">
                 Cancel
               </Button>
-              <Button type="submit" className="bg-yellow-600 hover:bg-yellow-500 text-white" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="bg-yellow-600 hover:bg-yellow-500 text-white" 
+                disabled={loading}
+                onClick={() => {
+                  console.log('Save button clicked!');
+                  console.log('Form is valid:', form.formState.isValid);
+                  console.log('Form errors:', form.formState.errors);
+                }}
+              >
                 {loading ? 'Saving...' : submitLabel}
               </Button>
             </div>

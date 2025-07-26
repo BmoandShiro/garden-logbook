@@ -386,7 +386,10 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       }
                       setOpenEditModalGardenId(null);
                       setOpenModalGardenId(null);
-                      router.refresh();
+                      // Add longer delay to ensure server processes the change and logs are updated
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 1000);
                     } catch (error) {
                       setEditError(error instanceof Error ? error.message : 'Failed to update garden');
                     } finally {
