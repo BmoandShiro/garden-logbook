@@ -580,6 +580,12 @@ interface CreateLogModalProps {
   onClose: () => void;
   userId: string;
   onSuccess?: () => void;
+  initialValues?: {
+    gardenId?: string;
+    roomId?: string;
+    zoneId?: string;
+    selectedPlants?: string[];
+  };
 }
 
 // Utility to robustly parse and display log dates in local time
@@ -590,7 +596,7 @@ export function formatLogDate(date: string | Date) {
   return d.toLocaleString();
 }
 
-export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: CreateLogModalProps) {
+export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, initialValues }: CreateLogModalProps) {
   const [formData, setFormData] = useState<FormData>({
     logType: LogType.EQUIPMENT,
     stage: Stage.VEGETATIVE,
@@ -602,7 +608,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     logTitle: '',
     notes: '',
     imageUrls: [],
-    selectedPlants: [], // This will be used for both regular plant selection and mother plants in cloning
+    selectedPlants: initialValues?.selectedPlants || [], // This will be used for both regular plant selection and mother plants in cloning
     temperatureUnit: TemperatureUnit.CELSIUS,
     fanSpeed: 'MEDIUM',
     ventilationType: 'CLOSED_LOOP',
@@ -666,9 +672,42 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     if (isOpen) {
       fetch('/api/gardens')
         .then(res => res.json())
-        .then(setGardens);
+        .then(setGardens)
+        .then(() => {
+          // If we have initial values, set them up
+          if (initialValues) {
+            if (initialValues.gardenId) {
+              setFormData(prev => ({
+                ...prev,
+                gardenId: initialValues.gardenId,
+                roomId: initialValues.roomId || '',
+                zoneId: initialValues.zoneId || '',
+                selectedPlants: initialValues.selectedPlants || []
+              }));
+              
+              // Fetch rooms for the initial garden
+              fetch(`/api/gardens/${initialValues.gardenId}/rooms`)
+                .then(res => res.json())
+                .then(setRooms);
+              
+              // If we have a room, fetch zones
+              if (initialValues.roomId) {
+                fetch(`/api/gardens/${initialValues.gardenId}/rooms/${initialValues.roomId}/zones`)
+                  .then(res => res.json())
+                  .then(setZones);
+              }
+              
+              // If we have a zone, fetch plants
+              if (initialValues.zoneId) {
+                fetch(`/api/gardens/${initialValues.gardenId}/rooms/${initialValues.roomId}/zones/${initialValues.zoneId}/plants`)
+                  .then(res => res.json())
+                  .then(setPlants);
+              }
+            }
+          }
+        });
     }
-  }, [isOpen]);
+  }, [isOpen, initialValues]);
 
   const handleGardenChange = (gardenId: string) => {
     setFormData({ ...formData, gardenId, roomId: '', zoneId: '', selectedPlants: [] });
@@ -699,25 +738,62 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess }: C
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/logs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          userId,
-          plants: formData.selectedPlants.map(plantId => ({ id: plantId }))
-        }),
-      });
+      // If no specific plants are selected and we have a zone, create logs for all plants in the zone
+      let plantsToLog = formData.selectedPlants;
+      
+      if (plantsToLog.length === 0 && formData.zoneId) {
+        // Get all plants in the zone
+        const zonePlantsResponse = await fetch(`/api/gardens/${formData.gardenId}/rooms/${formData.roomId}/zones/${formData.zoneId}/plants`);
+        if (zonePlantsResponse.ok) {
+          const zonePlants = await zonePlantsResponse.json();
+          plantsToLog = zonePlants.map((plant: any) => plant.id);
+        }
+      }
 
-      if (!response.ok) {
-        throw new Error('Failed to create log');
+      // If still no plants, create a zone-level log
+      if (plantsToLog.length === 0) {
+        const response = await fetch('/api/logs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            userId,
+            plants: [] // Zone-level log
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create log');
+        }
+      } else {
+        // Create logs for each selected plant
+        const logPromises = plantsToLog.map(plantId => 
+          fetch('/api/logs', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...formData,
+              userId,
+              plants: [{ id: plantId }]
+            }),
+          })
+        );
+
+        const responses = await Promise.all(logPromises);
+        const failedResponses = responses.filter(response => !response.ok);
+        
+        if (failedResponses.length > 0) {
+          throw new Error('Failed to create some logs');
+        }
       }
 
       toast({
         title: 'Success',
-        description: 'Log created successfully',
+        description: plantsToLog.length > 1 ? `Created logs for ${plantsToLog.length} plants` : 'Log created successfully',
       });
 
       onClose();
