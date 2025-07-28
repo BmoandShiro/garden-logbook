@@ -171,18 +171,18 @@ const LogGroup = ({ logs, onLogDeleted }: { logs: LogWithLocation[], onLogDelete
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center space-x-2 text-dark-text-primary hover:text-dark-text-secondary"
+              className="flex items-start space-x-2 text-dark-text-primary hover:text-dark-text-secondary"
             >
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4 mt-0.5" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 mt-0.5" />
               )}
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-medium text-left">
                   {headerText}
                 </span>
-                <span className="text-xs text-dark-text-secondary">
+                <span className="text-xs text-dark-text-secondary text-left">
                   {fullPath}
                 </span>
               </div>

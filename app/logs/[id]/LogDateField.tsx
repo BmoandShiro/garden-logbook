@@ -17,7 +17,7 @@ export default function LogDateField({ date, timezone }: { date: string, timezon
       <div className="text-sm text-dark-text-secondary">{utcString}</div>
       {gardenString && (
         <div className="text-sm text-dark-text-secondary">
-          <span className="text-emerald-300 block sm:inline">Garden local time:</span>
+          <span className="text-emerald-300 block sm:inline">Garden local time: </span>
           <span className="block sm:inline">{gardenString}</span>
         </div>
       )}
