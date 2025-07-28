@@ -778,7 +778,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             body: JSON.stringify({
               ...formData,
               userId,
-              plants: [{ id: plantId }]
+              selectedPlants: [plantId]
             }),
           })
         );

@@ -155,6 +155,15 @@ const LogGroup = ({ logs, onLogDeleted }: { logs: LogWithLocation[], onLogDelete
   const fullPath = getFullLocationString(firstLog);
   const logType = firstLog.type;
   
+  // Check if all logs in the group have the same plant
+  const allSamePlant = logs.every(log => log.plant?.name === firstLog.plant?.name);
+  const plantName = firstLog.plant?.name;
+  
+  // Create header text that includes plant info if all logs are for the same plant
+  const headerText = allSamePlant && plantName 
+    ? `${logType.replace(/_/g, ' ')} – ${zoneName} – ${plantName}`
+    : `${logType.replace(/_/g, ' ')} – ${zoneName}`;
+  
   return (
     <li className="border-b border-dark-border">
       <div className="p-4 hover:bg-dark-bg-hover transition-colors">
@@ -171,7 +180,7 @@ const LogGroup = ({ logs, onLogDeleted }: { logs: LogWithLocation[], onLogDelete
               )}
               <div className="flex flex-col">
                 <span className="text-sm font-medium">
-                  {logType.replace(/_/g, ' ')} – {zoneName}
+                  {headerText}
                 </span>
                 <span className="text-xs text-dark-text-secondary">
                   {fullPath}

@@ -563,6 +563,7 @@ model GoveeReading {
   timestamp   DateTime @default(now())
   temperature Float?   // Temperature in Celsius
   humidity    Float?   // Humidity percentage
+  vpd         Float?   // Vapor Pressure Deficit in kPa
   battery     Int?     // Battery level if applicable
   rawData     Json?    // Raw data from Govee API
   source      String   @default("API") // API, MQTT, etc.

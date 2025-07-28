@@ -9,9 +9,9 @@ const schema = z.object({
 
 export async function GET(
   request: Request,
-  { params }: { params: { deviceId: string } }
+  { params }: { params: Promise<{ deviceId: string }> }
 ) {
-  const { deviceId } = params;
+  const { deviceId } = await params;
   const { searchParams } = new URL(request.url);
 
   const validation = schema.safeParse(Object.fromEntries(searchParams));

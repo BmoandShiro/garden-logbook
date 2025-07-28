@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle2, RefreshCw, Info, Battery, Clock, MapPin, Wif
 import { Spinner } from '@/components/ui/spinner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SensorChart } from './SensorChart';
+import { calculateVPDFromFahrenheit, formatVPD, getVPDStatus } from '@/lib/vpdCalculator';
 
 interface GoveeDeviceListProps {
   devices: GoveeDevice[];
@@ -193,7 +194,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                 )}
 
                 {/* Sensor Readings */}
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                  <div className="grid grid-cols-3 gap-x-8 gap-y-4 mt-4">
                   <div className="flex flex-col items-center">
                     <span className="text-gray-400 text-xs">Temperature</span>
                     <span className="text-2xl font-bold text-emerald-300">
@@ -206,6 +207,15 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
                     </span>
                   </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-400 text-xs">VPD</span>
+                    <span className="text-2xl font-bold text-emerald-300">
+                      {parsed.temperature && parsed.humidity 
+                        ? formatVPD(calculateVPDFromFahrenheit(parsed.temperature, parsed.humidity))
+                        : '--'
+                      }
+                    </span>
+                  </div>
 
                     {/* 24h High/Low */}
                     <div className="text-center text-xs text-gray-400">
@@ -215,6 +225,10 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                      <div className="text-center text-xs text-gray-400">
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                       <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
+                    </div>
+                    <div className="text-center text-xs text-gray-400">
+                      <p>24h High: <span className="font-medium text-emerald-300">--</span></p>
+                      <p>24h Low: <span className="font-medium text-emerald-300">--</span></p>
                     </div>
                 </div>
 

@@ -8,6 +8,7 @@ import { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/DatePickerWithRange';
 import { GoveeReading } from '@prisma/client';
 import { Button } from '../ui/button';
+import { calculateVPD, formatVPD } from '@/lib/vpdCalculator';
 
 interface SensorChartProps {
   deviceId: string;
@@ -63,6 +64,9 @@ export function SensorChart({ deviceId }: SensorChartProps) {
   const formattedData = chartData?.map(reading => ({
     ...reading,
     timestamp: format(new Date(reading.timestamp), 'MM/dd HH:mm'),
+    vpd: reading.temperature && reading.humidity 
+      ? calculateVPD(reading.temperature, reading.humidity)
+      : undefined
   }));
 
   if (isLoading) return <div>Loading chart...</div>;
@@ -101,6 +105,19 @@ export function SensorChart({ deviceId }: SensorChartProps) {
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Line type="monotone" dataKey="humidity" stroke="#3b82f6" name="Humidity" dot={false} />
+           <Brush dataKey="timestamp" height={30} stroke="#888" fill="#1a1b1e" />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <h3 className="text-lg font-semibold text-emerald-100">VPD (kPa)</h3>
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart data={formattedData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+          <XAxis dataKey="timestamp" stroke="#888" minTickGap={80} />
+          <YAxis stroke="#888" domain={['dataMin - 0.1', 'dataMax + 0.1']} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Line type="monotone" dataKey="vpd" stroke="#10b981" name="VPD" dot={false} />
            <Brush dataKey="timestamp" height={30} stroke="#888" fill="#1a1b1e" />
         </LineChart>
       </ResponsiveContainer>

@@ -35,9 +35,10 @@ interface SensorDashboardProps {
   devices: DeviceWithZone[];
   zones: ZoneWithDevices[];
   readings: GoveeReading[];
+  totalReadingsCount: number;
 }
 
-export function SensorDashboard({ devices, zones, readings }: SensorDashboardProps) {
+export function SensorDashboard({ devices, zones, readings, totalReadingsCount }: SensorDashboardProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const readingsPerPage = 5;
 
@@ -61,7 +62,6 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
     const onlineSensors = devices.filter(d => d.isOnline ?? true).length;
     const linkedSensors = devices.filter(d => d.zoneId).length;
     const activeZones = zones.length;
-    const totalReadings = readings.length;
     const avgBattery = devices.filter(d => d.batteryLevel != null).length > 0
       ? Math.round(
           devices
@@ -130,7 +130,7 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                         <Activity className="h-4 w-4 text-emerald-400" />
                         </CardHeader>
                         <CardContent>
-                        <div className="text-2xl font-bold text-emerald-100">{totalReadings}</div>
+                        <div className="text-2xl font-bold text-emerald-100">{totalReadingsCount}</div>
                         <p className="text-xs text-emerald-300/70">
                             data points
                         </p>
