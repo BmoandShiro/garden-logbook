@@ -28,6 +28,7 @@ interface Zone {
   sensorAlertThresholds?: {
     temperature?: { min?: number; max?: number };
     humidity?: { min?: number; max?: number };
+    vpd?: { min?: number; max?: number };
   };
   usePlantSpecificAlerts?: boolean;
   goveeDevices?: Array<{

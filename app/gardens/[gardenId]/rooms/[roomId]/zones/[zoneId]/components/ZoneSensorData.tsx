@@ -18,9 +18,68 @@ import {
   Settings,
   AlertTriangle,
   RefreshCw,
-  Wind
+  Wind,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { calculateVPDFromFahrenheit, formatVPD, getVPDStatus } from "@/lib/vpdCalculator";
+
+// Custom number input component with emerald chevrons
+const CustomNumberInput = ({ 
+  placeholder, 
+  value, 
+  onChange, 
+  disabled = false,
+  step = "0.1"
+}: {
+  placeholder: string;
+  value: string | number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+  step?: string;
+}) => {
+  const handleIncrement = () => {
+    const currentValue = parseFloat(value.toString()) || 0;
+    const stepValue = parseFloat(step);
+    onChange(currentValue + stepValue);
+  };
+
+  const handleDecrement = () => {
+    const currentValue = parseFloat(value.toString()) || 0;
+    const stepValue = parseFloat(step);
+    onChange(currentValue - stepValue);
+  };
+
+  return (
+    <div className="relative group">
+      <input
+        type="number"
+        step={step}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none pr-8"
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleIncrement}
+          disabled={disabled}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2 disabled:opacity-50"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          onClick={handleDecrement}
+          disabled={disabled}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2 disabled:opacity-50"
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface GoveeDevice {
   id: string;
@@ -186,76 +245,70 @@ export default function ZoneSensorData({
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-emerald-300/70">
+                  <Label className="flex items-center gap-2 text-emerald-300/70 whitespace-nowrap">
                     <Thermometer className="h-4 w-4" />
                     Temperature (°C)
                   </Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
+                    <CustomNumberInput
                       placeholder="Min"
-                      disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
                       value={thresholds.temperature?.min ?? ''}
-                      onChange={(e) => handleThresholdChange('temperature', 'min', e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
+                      onChange={(value) => handleThresholdChange('temperature', 'min', value.toString())}
                       disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
+                      step="0.1"
+                    />
+                    <CustomNumberInput
+                      placeholder="Max"
                       value={thresholds.temperature?.max ?? ''}
-                      onChange={(e) => handleThresholdChange('temperature', 'max', e.target.value)}
+                      onChange={(value) => handleThresholdChange('temperature', 'max', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="0.1"
                     />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-emerald-300/70">
+                  <Label className="flex items-center gap-2 text-emerald-300/70 whitespace-nowrap">
                     <Droplets className="h-4 w-4" />
                     Humidity (%)
                   </Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
+                    <CustomNumberInput
                       placeholder="Min"
-                      disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
                       value={thresholds.humidity?.min ?? ''}
-                      onChange={(e) => handleThresholdChange('humidity', 'min', e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
+                      onChange={(value) => handleThresholdChange('humidity', 'min', value.toString())}
                       disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
+                      step="1"
+                    />
+                    <CustomNumberInput
+                      placeholder="Max"
                       value={thresholds.humidity?.max ?? ''}
-                      onChange={(e) => handleThresholdChange('humidity', 'max', e.target.value)}
+                      onChange={(value) => handleThresholdChange('humidity', 'max', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="1"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-emerald-300/70">
+                  <Label className="flex items-center gap-2 text-emerald-300/70 whitespace-nowrap">
                     <Wind className="h-4 w-4" />
                     VPD (kPa)
                   </Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
+                    <CustomNumberInput
                       placeholder="Min"
-                      disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
                       value={thresholds.vpd?.min ?? ''}
-                      onChange={(e) => handleThresholdChange('vpd', 'min', e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
+                      onChange={(value) => handleThresholdChange('vpd', 'min', value.toString())}
                       disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
+                      step="0.01"
+                    />
+                    <CustomNumberInput
+                      placeholder="Max"
                       value={thresholds.vpd?.max ?? ''}
-                      onChange={(e) => handleThresholdChange('vpd', 'max', e.target.value)}
+                      onChange={(value) => handleThresholdChange('vpd', 'max', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="0.01"
                     />
                   </div>
                 </div>

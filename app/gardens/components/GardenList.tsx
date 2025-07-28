@@ -66,7 +66,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
   const [showInviteFormGardenId, setShowInviteFormGardenId] = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    gardens.forEach(g => { initial[g.id] = true; });
+    gardens.forEach(g => { initial[g.id] = false; });
     return initial;
   });
   const [openManageMembersGardenId, setOpenManageMembersGardenId] = useState<string | null>(null);

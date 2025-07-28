@@ -3,6 +3,7 @@ import zipcodeToTimezone from 'zipcode-to-timezone';
 import { prisma } from '../lib/prisma';
 import { getWeatherDataForZip } from '../lib/weather';
 import { Stage, LogType, Prisma } from '@prisma/client';
+import { calculateVPDFromFahrenheit } from './vpdCalculator';
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 interface JsonObject {
@@ -31,6 +32,7 @@ interface PlantSensitivities {
   drought?: { enabled: boolean; threshold: number; days?: number };
   flood?: { enabled: boolean; threshold: number };
   heavyRain?: { enabled: boolean; threshold: number; unit?: string };
+  vpd?: { enabled: boolean; threshold: number };
   unit?: string;
   [key: string]: any;
 }
@@ -224,8 +226,13 @@ export async function processWeatherAlerts() {
           ? plantThresholds?.humidity
           : zoneThresholds?.humidity;
         
+        const vpdThresholds = usePlantSpecific
+          ? plantThresholds?.vpd
+          : zoneThresholds?.vpd;
+        
         console.log(`[ALERTS] Final temp thresholds for ${plant.name}:`, tempThresholds);
         console.log(`[ALERTS] Final humidity thresholds for ${plant.name}:`, humidityThresholds);
+        console.log(`[ALERTS] Final VPD thresholds for ${plant.name}:`, vpdThresholds);
 
         if (tempThresholds && sensorData.temperature != null) {
           const { temperature } = sensorData;
@@ -252,6 +259,20 @@ export async function processWeatherAlerts() {
           if (humidityThresholds.min != null && humidity < humidityThresholds.min) {
             console.log(`[ALERTS] TRIGGER: Low Humidity for ${plant.name}`);
             await maybeSendOrUpdateAlert(plant, plant.garden, 'Low Humidity (Sensor)', dummyWeather, sensorData.humidity, 'SENSOR', sensorData);
+          }
+        }
+
+        if (vpdThresholds && sensorData.temperature != null && sensorData.humidity != null) {
+          const vpd = calculateVPDFromFahrenheit(sensorData.temperature, sensorData.humidity);
+          console.log(`[ALERTS] Checking VPD ${vpd.toFixed(2)} kPa against thresholds (Min: ${vpdThresholds.min}, Max: ${vpdThresholds.max})`);
+          const dummyWeather = { temperature: sensorData.temperature, humidity: sensorData.humidity } as Weather;
+          if (vpdThresholds.max != null && vpd > vpdThresholds.max) {
+            console.log(`[ALERTS] TRIGGER: High VPD for ${plant.name}`);
+            await maybeSendOrUpdateAlert(plant, plant.garden, 'High VPD (Sensor)', dummyWeather, vpd, 'SENSOR', sensorData);
+          }
+          if (vpdThresholds.min != null && vpd < vpdThresholds.min) {
+            console.log(`[ALERTS] TRIGGER: Low VPD for ${plant.name}`);
+            await maybeSendOrUpdateAlert(plant, plant.garden, 'Low VPD (Sensor)', dummyWeather, vpd, 'SENSOR', sensorData);
           }
         }
       }
