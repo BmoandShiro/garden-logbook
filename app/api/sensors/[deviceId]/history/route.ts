@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { calculateVPDFromFahrenheit } from '@/lib/vpdCalculator';
 
 const schema = z.object({
   startDate: z.string().optional(),
@@ -36,7 +37,18 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(readings);
+    // Calculate VPD for any readings that don't have it stored
+    const readingsWithVPD = readings.map((reading: any) => {
+      if (reading.vpd === null && reading.temperature !== null && reading.humidity !== null) {
+        return {
+          ...reading,
+          vpd: calculateVPDFromFahrenheit(reading.temperature, reading.humidity)
+        };
+      }
+      return reading;
+    });
+
+    return NextResponse.json(readingsWithVPD);
   } catch (error) {
     console.error(`Error fetching sensor history for device ${deviceId}:`, error);
     return NextResponse.json(

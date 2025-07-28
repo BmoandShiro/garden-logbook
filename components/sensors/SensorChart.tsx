@@ -61,12 +61,13 @@ export function SensorChart({ deviceId }: SensorChartProps) {
     enabled: !!deviceId,
   });
 
-  const formattedData = chartData?.map(reading => ({
+  const formattedData = chartData?.map((reading: any) => ({
     ...reading,
     timestamp: format(new Date(reading.timestamp), 'MM/dd HH:mm'),
-    vpd: reading.temperature && reading.humidity 
+    // Use stored VPD value if available, otherwise calculate it
+    vpd: reading.vpd !== null ? reading.vpd : (reading.temperature && reading.humidity 
       ? calculateVPD(reading.temperature, reading.humidity)
-      : undefined
+      : undefined)
   }));
 
   if (isLoading) return <div>Loading chart...</div>;
@@ -114,7 +115,12 @@ export function SensorChart({ deviceId }: SensorChartProps) {
         <LineChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#444" />
           <XAxis dataKey="timestamp" stroke="#888" minTickGap={80} />
-          <YAxis stroke="#888" domain={['dataMin - 0.1', 'dataMax + 0.1']} />
+          <YAxis 
+            stroke="#888" 
+            domain={[0, 4]} 
+            tickFormatter={(value) => value.toFixed(2)}
+            width={60}
+          />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Line type="monotone" dataKey="vpd" stroke="#10b981" name="VPD" dot={false} />

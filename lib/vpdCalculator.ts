@@ -21,18 +21,18 @@ export function calculateVPD(temperature: number, humidity: number): number {
     return NaN;
   }
 
-  // Convert temperature to Kelvin
-  const tempK = temperature + 273.15;
-  
   // Calculate saturation vapor pressure (SVP) using Magnus formula
-  // SVP = 6.112 * exp((17.67 * T) / (T + 243.5))
-  const svp = 6.112 * Math.exp((17.67 * temperature) / (temperature + 243.5));
+  // SVP = 6.112 * exp((17.67 * T) / (T + 243.5)) - result in hPa
+  const svp_hPa = 6.112 * Math.exp((17.67 * temperature) / (temperature + 243.5));
   
-  // Calculate actual vapor pressure (AVP)
-  const avp = (humidity / 100) * svp;
+  // Convert hPa to kPa
+  const svp_kPa = svp_hPa / 10;
   
-  // Calculate VPD (difference between SVP and AVP)
-  const vpd = svp - avp;
+  // Calculate actual vapor pressure (AVP) in kPa
+  const avp_kPa = (humidity / 100) * svp_kPa;
+  
+  // Calculate VPD (difference between SVP and AVP) in kPa
+  const vpd = svp_kPa - avp_kPa;
   
   return vpd;
 }

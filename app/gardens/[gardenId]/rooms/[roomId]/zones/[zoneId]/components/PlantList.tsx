@@ -209,31 +209,31 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
           }}
           submitButtonLabel="Save Changes"
           onSubmit={async (values: PlantFormValues) => {
-            setEditLoading(true);
-            setEditError(null);
-            try {
+                    setEditLoading(true);
+                    setEditError(null);
+                    try {
               console.log('Submitting plant update with values:', values);
               const response = await fetch(`/api/gardens/${gardenId}/rooms/${roomId}/zones/${zoneId}/plants/${openEditModalPlantId!}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(values),
-              });
-              if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Failed to update plant');
-              }
-              setOpenEditModalPlantId(null);
+                      });
+                      if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'Failed to update plant');
+                      }
+                      setOpenEditModalPlantId(null);
               setEditPlantData(null);
               // Add longer delay to ensure server processes the change and logs are updated
               setTimeout(() => {
                 window.location.reload();
               }, 1000);
-            } catch (error) {
-              setEditError(error instanceof Error ? error.message : 'Failed to update plant');
-            } finally {
-              setEditLoading(false);
-            }
-          }}
+                    } catch (error) {
+                      setEditError(error instanceof Error ? error.message : 'Failed to update plant');
+                    } finally {
+                      setEditLoading(false);
+                    }
+                  }}
           isSubmitting={editLoading}
           error={editError}
         />

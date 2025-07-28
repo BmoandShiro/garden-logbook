@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import LogsList from "@/app/logs/components/LogsList";
+import LogsList, { groupLogs } from "@/app/logs/components/LogsList";
 import { LogType } from "@/types/enums";
 
 interface LogWithLocation {
@@ -45,10 +45,15 @@ export default function PlantLogsListWrapper({ logs: initialLogs }: PlantLogsLis
     setLogs((prev) => prev.filter((log) => log.id !== deletedLogId));
   };
 
-  const totalPages = Math.max(1, Math.ceil(logs.length / pageSize));
+  // Group the logs first, then paginate the groups
+  const groupedLogs = groupLogs(logs);
+  const totalPages = groupedLogs.length ? Math.max(1, Math.ceil(groupedLogs.length / pageSize)) : 1;
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedLogs = logs.slice(startIndex, endIndex);
+  const paginatedGroups = groupedLogs.slice(startIndex, endIndex);
+  
+  // Flatten the paginated groups back to individual logs for LogsList
+  const paginatedLogs = paginatedGroups.flat();
 
   return (
     <div className="space-y-4">

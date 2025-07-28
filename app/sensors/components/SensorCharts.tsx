@@ -316,14 +316,14 @@ export default function SensorCharts({
         </Card>
 
         {/* VPD Stats */}
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wind className="h-5 w-5" />
               VPD
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+        </CardHeader>
+        <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Current</span>
@@ -364,7 +364,7 @@ export default function SensorCharts({
             </div>
           </CardContent>
         </Card>
-      </div>
+          </div>
 
       {/* Chart Placeholders */}
       <div className="grid grid-cols-1 gap-4">
@@ -374,8 +374,8 @@ export default function SensorCharts({
           </CardHeader>
           <CardContent>
             <SensorChart deviceId={device.id} />
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       </div>
 
       {/* Recent Readings Table */}

@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/crypto';
 import { randomUUID } from 'crypto';
-import { calculateVPD } from '@/lib/vpdCalculator';
+import { calculateVPD, calculateVPDFromFahrenheit } from '@/lib/vpdCalculator';
 
 export async function fetchAndStoreSensorData() {
   console.log('[SENSOR_DATA] Starting automated sensor data fetch...');
@@ -89,7 +89,8 @@ export async function fetchAndStoreSensorData() {
               // Calculate VPD if both temperature and humidity are available
               let vpd: number | null = null;
               if (temperature !== null && humidity !== null && temperature !== undefined && humidity !== undefined) {
-                vpd = calculateVPD(temperature, humidity);
+                // Temperature from Govee is in Fahrenheit, use the Fahrenheit VPD calculation
+                vpd = calculateVPDFromFahrenheit(temperature, humidity);
               }
 
               await prisma.goveeReading.create({
