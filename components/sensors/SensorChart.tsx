@@ -9,6 +9,7 @@ import { DatePickerWithRange } from '@/components/ui/DatePickerWithRange';
 import { GoveeReading } from '@prisma/client';
 import { Button } from '../ui/button';
 import { calculateVPD, formatVPD } from '@/lib/vpdCalculator';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 interface SensorChartProps {
   deviceId: string;
@@ -41,6 +42,67 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   }
 
   return null;
+};
+
+// Custom number input component with emerald arrows
+const CustomNumberInput = ({ 
+  placeholder, 
+  onChange, 
+  className = "" 
+}: { 
+  placeholder: string; 
+  onChange: (value: number) => void; 
+  className?: string;
+}) => {
+  const [value, setValue] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    if (newValue !== '') {
+      onChange(parseFloat(newValue));
+    }
+  };
+
+  const handleIncrement = () => {
+    const currentValue = parseFloat(value) || 0;
+    const newValue = currentValue + 1;
+    setValue(newValue.toString());
+    onChange(newValue);
+  };
+
+  const handleDecrement = () => {
+    const currentValue = parseFloat(value) || 0;
+    const newValue = currentValue - 1;
+    setValue(newValue.toString());
+    onChange(newValue);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="number"
+        placeholder={placeholder}
+        value={value}
+        onChange={handleChange}
+        className={`w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none ${className}`}
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center">
+        <button
+          onClick={handleIncrement}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          onClick={handleDecrement}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export function SensorChart({ deviceId }: SensorChartProps) {
@@ -144,24 +206,18 @@ export function SensorChart({ deviceId }: SensorChartProps) {
       <div className="flex items-start gap-2">
         <div className="w-32 flex-shrink-0 space-y-2">
           <div className="text-xs text-dark-text-secondary">Y-Axis Range</div>
-          <input
-            type="number"
+          <CustomNumberInput
             placeholder="Max"
-            className="w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none [&::-webkit-inner-spin-button]:bg-dark-bg-primary [&::-webkit-inner-spin-button]:text-dark-text-primary"
-            onChange={(e) => {
-              const max = parseFloat(e.target.value);
+            onChange={(value) => {
               const min = tempRange ? tempRange[0] : Math.min(...formattedData?.map((d: any) => d.temperature) || [0]);
-              setTempRange([min, max]);
+              setTempRange([min, value]);
             }}
           />
-          <input
-            type="number"
+          <CustomNumberInput
             placeholder="Min"
-            className="w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none [&::-webkit-inner-spin-button]:bg-dark-bg-primary [&::-webkit-inner-spin-button]:text-dark-text-primary"
-            onChange={(e) => {
-              const min = parseFloat(e.target.value);
+            onChange={(value) => {
               const max = tempRange ? tempRange[1] : Math.max(...formattedData?.map((d: any) => d.temperature) || [0]);
-              setTempRange([min, max]);
+              setTempRange([value, max]);
             }}
           />
           {tempRange && (
@@ -198,24 +254,18 @@ export function SensorChart({ deviceId }: SensorChartProps) {
       <div className="flex items-start gap-2">
         <div className="w-32 flex-shrink-0 space-y-2">
           <div className="text-xs text-dark-text-secondary">Y-Axis Range</div>
-          <input
-            type="number"
+          <CustomNumberInput
             placeholder="Max"
-            className="w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none [&::-webkit-inner-spin-button]:bg-dark-bg-primary [&::-webkit-inner-spin-button]:text-dark-text-primary"
-            onChange={(e) => {
-              const max = parseFloat(e.target.value);
+            onChange={(value) => {
               const min = humidityRange ? humidityRange[0] : Math.min(...formattedData?.map((d: any) => d.humidity) || [0]);
-              setHumidityRange([min, max]);
+              setHumidityRange([min, value]);
             }}
           />
-          <input
-            type="number"
+          <CustomNumberInput
             placeholder="Min"
-            className="w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none [&::-webkit-inner-spin-button]:bg-dark-bg-primary [&::-webkit-inner-spin-button]:text-dark-text-primary"
-            onChange={(e) => {
-              const minVal = parseFloat(e.target.value);
-              const maxVal = humidityRange ? humidityRange[1] : Math.max(...formattedData?.map((d: any) => d.humidity) || [0]);
-              setHumidityRange([minVal, maxVal]);
+            onChange={(value) => {
+              const max = humidityRange ? humidityRange[1] : Math.max(...formattedData?.map((d: any) => d.humidity) || [0]);
+              setHumidityRange([value, max]);
             }}
           />
           {humidityRange && (
@@ -252,24 +302,18 @@ export function SensorChart({ deviceId }: SensorChartProps) {
       <div className="flex items-start gap-2">
         <div className="w-32 flex-shrink-0 space-y-2">
           <div className="text-xs text-dark-text-secondary">Y-Axis Range</div>
-          <input
-            type="number"
+          <CustomNumberInput
             placeholder="Max"
-            className="w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none [&::-webkit-inner-spin-button]:bg-dark-bg-primary [&::-webkit-inner-spin-button]:text-dark-text-primary"
-            onChange={(e) => {
-              const max = parseFloat(e.target.value);
+            onChange={(value) => {
               const min = vpdRange ? vpdRange[0] : Math.min(...formattedData?.map((d: any) => d.vpd) || [0]);
-              setVpdRange([min, max]);
+              setVpdRange([min, value]);
             }}
           />
-          <input
-            type="number"
+          <CustomNumberInput
             placeholder="Min"
-            className="w-full px-2 py-1 text-xs bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none [&::-webkit-inner-spin-button]:bg-dark-bg-primary [&::-webkit-inner-spin-button]:text-dark-text-primary"
-            onChange={(e) => {
-              const minVal = parseFloat(e.target.value);
-              const maxVal = vpdRange ? vpdRange[1] : Math.max(...formattedData?.map((d: any) => d.vpd) || [0]);
-              setVpdRange([minVal, maxVal]);
+            onChange={(value) => {
+              const max = vpdRange ? vpdRange[1] : Math.max(...formattedData?.map((d: any) => d.vpd) || [0]);
+              setVpdRange([value, max]);
             }}
           />
           {vpdRange && (
