@@ -115,7 +115,7 @@ const shouldGroupLogs = (log1: LogWithLocation, log2: LogWithLocation): boolean 
 };
 
 // Function to group consecutive similar logs
-const groupLogs = (logs: LogWithLocation[]): (LogWithLocation | LogWithLocation[])[] => {
+export const groupLogs = (logs: LogWithLocation[]): (LogWithLocation | LogWithLocation[])[] => {
   if (logs.length === 0) return [];
   
   const groups: (LogWithLocation | LogWithLocation[])[] = [];

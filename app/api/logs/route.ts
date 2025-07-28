@@ -97,17 +97,38 @@ export async function GET(request: Request) {
     if (plantId) {
       where.plantId = plantId;
     }
+    
     // Keyword search (notes, plant name, garden name, room name, zone name)
     if (keyword) {
-      where.OR = [
-        { notes: { contains: keyword, mode: 'insensitive' } },
-        { plant: { name: { contains: keyword, mode: 'insensitive' } } },
-        { garden: { name: { contains: keyword, mode: 'insensitive' } } },
-        { room: { name: { contains: keyword, mode: 'insensitive' } } },
-        { zone: { name: { contains: keyword, mode: 'insensitive' } } },
-      ];
+      // If there's already an OR clause, we need to combine them
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          {
+            OR: [
+              { notes: { contains: keyword, mode: 'insensitive' } },
+              { plant: { name: { contains: keyword, mode: 'insensitive' } } },
+              { garden: { name: { contains: keyword, mode: 'insensitive' } } },
+              { room: { name: { contains: keyword, mode: 'insensitive' } } },
+              { zone: { name: { contains: keyword, mode: 'insensitive' } } },
+            ]
+          }
+        ];
+        delete where.OR;
+      } else {
+        where.OR = [
+          { notes: { contains: keyword, mode: 'insensitive' } },
+          { plant: { name: { contains: keyword, mode: 'insensitive' } } },
+          { garden: { name: { contains: keyword, mode: 'insensitive' } } },
+          { room: { name: { contains: keyword, mode: 'insensitive' } } },
+          { zone: { name: { contains: keyword, mode: 'insensitive' } } },
+        ];
+      }
     }
 
+    console.log('API Logs Query - Filters:', { type, startDate, endDate, location, gardenId, roomId, zoneId, plantId, keyword });
+    console.log('API Logs Query - Where clause:', JSON.stringify(where, null, 2));
+    
     const logs = await db.log.findMany({
       where,
       select: {
@@ -131,9 +152,11 @@ export async function GET(request: Request) {
       orderBy: {
         logDate: 'desc',
       },
-      take: 50,
+      take: 1000, // Increased limit to show more logs
     });
 
+    console.log('API Logs Query - Found logs:', logs.length);
+    
     // Add timezone to each log
     const logsWithTimezone = logs.map(log => {
       let timezone = log.garden?.timezone || null;
