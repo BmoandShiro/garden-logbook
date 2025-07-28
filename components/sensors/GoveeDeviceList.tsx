@@ -194,7 +194,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                 )}
 
                 {/* Sensor Readings */}
-                  <div className="grid grid-cols-3 gap-x-8 gap-y-4 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                   <div className="flex flex-col items-center">
                     <span className="text-gray-400 text-xs">Temperature</span>
                     <span className="text-2xl font-bold text-emerald-300">
@@ -216,8 +216,10 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       }
                     </span>
                   </div>
+                </div>
 
-                    {/* 24h High/Low */}
+                {/* 24h High/Low */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                     <div className="text-center text-xs text-gray-400">
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.tempHigh24h?.toFixed(1) ?? '--'}°F</span></p>
                       <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.tempLow24h?.toFixed(1) ?? '--'}°F</span></p>
