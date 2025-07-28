@@ -250,6 +250,13 @@ const LogItem = ({ log, onLogDeleted, isGrouped = false }: {
               </p>
             </div>
             
+            {/* Show plant name if available */}
+            {log.plant?.name && (
+              <p className="mt-1 text-sm text-emerald-300 font-medium">
+                🌱 {log.plant.name}
+              </p>
+            )}
+            
             {!isGrouped && (
               <p className="mt-1 text-sm text-dark-text-secondary">
                 {getFullLocationString(log)}

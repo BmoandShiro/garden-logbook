@@ -340,10 +340,10 @@ export default function ZoneSensorData({
                         <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                         <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                       </div>
-                      <div className="text-xs text-gray-400">
-                        <p>High: <span className="font-medium text-emerald-300/80">--</span></p>
-                        <p>Low: <span className="font-medium text-emerald-300/80">--</span></p>
-                      </div>
+                               <div className="text-xs text-gray-400">
+           <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.vpdHigh24h?.toFixed(2) ?? '--'}</span></p>
+           <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.vpdLow24h?.toFixed(2) ?? '--'}</span></p>
+         </div>
                     </div>
                   </div>
                   );

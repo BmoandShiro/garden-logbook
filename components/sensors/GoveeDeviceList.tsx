@@ -226,10 +226,10 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                       <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                     </div>
-                    <div className="text-center text-xs text-gray-400">
-                      <p>24h High: <span className="font-medium text-emerald-300">--</span></p>
-                      <p>24h Low: <span className="font-medium text-emerald-300">--</span></p>
-                    </div>
+                             <div className="text-center text-xs text-gray-400">
+           <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.vpdHigh24h?.toFixed(2) ?? '--'}</span></p>
+           <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.vpdLow24h?.toFixed(2) ?? '--'}</span></p>
+         </div>
                 </div>
 
                 {/* Device Status */}
