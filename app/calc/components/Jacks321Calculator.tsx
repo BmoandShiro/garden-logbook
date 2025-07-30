@@ -1,11 +1,18 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { HelpCircle, ChevronDown } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertTriangle, HelpCircle, Info, Thermometer, Droplets, Wind, Lightbulb, Zap, Leaf, Flower, Sprout, WashingMachine, ChevronDown } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import CreateLogModal from '@/app/logs/components/CreateLogModal';
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,26 +27,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LogType, VolumeUnit, Stage } from '@/types/enums';
 
 // Types and Enums
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
@@ -160,8 +154,8 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
   propagation: {
     name: 'Propagation',
     ec: 1.1,
-    ppm500: 775,
-    ppm700: 1085,
+    ppm500: 550,
+    ppm700: 770,
     nutrients: ['Clone formula'],
     co2Max: 1000,
     ratios: [] // Optional, low PPM
@@ -182,8 +176,8 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
   budset: {
     name: 'Bud Set',
     ec: 1.9,
-    ppm500: 1050,
-    ppm700: 1470,
+    ppm500: 950,
+    ppm700: 1330,
     nutrients: ['Bloom', 'Epsom'],
     co2Max: 1400,
     ratios: [
@@ -227,20 +221,20 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
 };
 
 const BASE_GRAMS_PER_GALLON = {
-  partA: 3.6,     // Jack's official recommendation for 5-12-26
-  partB: 2.4,     // Jack's official recommendation for Calcium Nitrate 15-0-0
-  epsom: 1.1,     // Jack's official recommendation for Epsom Salt
-  bloom: 5.68,
-  finish: 5.05,
+  partA: 3.79,    // Jack's official: 5-12-26 Part A
+  partB: 2.52,    // Jack's official: 15-0-0 Part B
+  epsom: 0.99,    // Jack's official: Epsom Salt
+  bloom: 5.68,    // Jack's official: 10-30-20 Bloom
+  finish: 5.41,   // Jack's official: 7-15-30 Finish
 };
 
-// PPM contribution per gram per gallon
+// PPM contribution per gram per gallon (total PPM values for meter reading)
 const PPM_CONTRIBUTION = {
-  partA: 13.2,    // Jack's official: 47.5 PPM / 3.6g = 13.2 PPM per gram
-  partB: 39.7,    // Jack's official: 95.3 PPM / 2.4g = 39.7 PPM per gram  
-  epsom: 23.0,    // Jack's official: 25.3 PPM / 1.1g = 23.0 PPM per gram
-  bloom: 26.4,
-  finish: 20.8,
+  partA: 26.4,    // Jack's Part A: ~100 total PPM / 3.79g = 26.4 PPM per gram
+  partB: 79.4,    // Jack's Part B: ~200 total PPM / 2.52g = 79.4 PPM per gram
+  epsom: 46.5,    // Epsom Salt: ~46 total PPM / 0.99g = 46.5 PPM per gram
+  bloom: 52.8,    // Jack's Bloom: ~300 total PPM / 5.68g = 52.8 PPM per gram
+  finish: 37.0,   // Jack's Finish: ~200 total PPM / 5.41g = 37.0 PPM per gram
 };
 
 // Root size options
@@ -467,6 +461,10 @@ export default function Jacks321Calculator() {
   // Add state for first water toggle
   const [isFirstWater, setIsFirstWater] = useState(false);
 
+  // Add state for watering log modal
+  const [isWateringLogModalOpen, setIsWateringLogModalOpen] = useState(false);
+  const { data: session } = useSession();
+
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
     <TooltipProvider>
@@ -554,7 +552,6 @@ export default function Jacks321Calculator() {
       };
     }
 
-    const stageData = STAGE_DATA[selectedStage];
     const volumeNum = parseFloat(volume);
     const sourcePPMNum = parseInt(sourceWaterPPM);
     const targetPPMNum = parseInt(targetPPM);
@@ -562,30 +559,75 @@ export default function Jacks321Calculator() {
     // Calculate nutrient PPM (target PPM already includes luxury uptake if enabled)
     const nutrientPPM = targetPPMNum - sourcePPMNum;
 
-    // Calculate weighted PPM total and shares
-    let weightedPPM = 0;
-    const ppmShares: PPMAllocation = {};
-
-    if (stageData.ratios && stageData.ratios.length > 0) {
-      weightedPPM = stageData.ratios.reduce((total, { nutrient, ratio }) => {
-        const ppmPerGram = getPPMPerGram(nutrient);
-        return total + (ratio * ppmPerGram);
-      }, 0);
-
-      stageData.ratios.forEach(({ nutrient, ratio }) => {
-        const ppmPerGram = getPPMPerGram(nutrient);
-        const share = (ratio * ppmPerGram) / weightedPPM;
-        const nutrientKey = getNutrientKey(nutrient);
-        if (nutrientKey) {
-          ppmShares[nutrientKey] = share;
+    // Full-strength reference values from Jack's official schedule
+    const FULL_STRENGTH_VALUES = {
+      vegetative: {
+        partA: 3.79,
+        partB: 2.52,
+        epsom: 0.99,
+        targetPPM500: 1200,
+        targetPPM700: 1680
+      },
+      flower: {
+        partA: 3.79,
+        partB: 2.52,
+        epsom: 0.99,
+        targetPPM500: 1200,
+        targetPPM700: 1680
+      },
+      propagation: {
+        partA: 3.79,
+        partB: 2.52,
+        epsom: 0, // Excluded at propagation stage
+        targetPPM500: 550,
+        targetPPM700: 770
+      },
+      budset: {
+        bloom: 5.68,
+        epsom: 0.99,
+        targetPPM500: 950,
+        targetPPM700: 1330
+      },
+      lateflower: {
+        finish: 5.41,
+        epsom: 0.99,
+        targetPPM500: 1050,
+        targetPPM700: 1470
         }
-      });
-    }
+    };
 
     const calc: NutrientCalculation = {
       totalPPM: 0,
       finalPPM: sourcePPMNum
     };
+
+    // Get the appropriate full-strength values for current stage
+    let stageValues;
+    switch (selectedStage) {
+      case 'propagation':
+        stageValues = FULL_STRENGTH_VALUES.propagation;
+        break;
+      case 'vegetative':
+        stageValues = FULL_STRENGTH_VALUES.vegetative;
+        break;
+      case 'flower':
+        stageValues = FULL_STRENGTH_VALUES.flower;
+        break;
+      case 'budset':
+        stageValues = FULL_STRENGTH_VALUES.budset;
+        break;
+      case 'lateflower':
+        stageValues = FULL_STRENGTH_VALUES.lateflower;
+        break;
+      default:
+        stageValues = FULL_STRENGTH_VALUES.vegetative;
+    }
+
+    // Get the correct target PPM based on scale
+    const fullStrengthPPM = isPPM700 ? stageValues.targetPPM700 : stageValues.targetPPM500;
+
+    // Calculate scaling factor based on target PPM
+    const scaleFactor = nutrientPPM / fullStrengthPPM;
 
     // Check for underfeeding
     const warnings = getSymptomWarnings(selectedSymptoms);
@@ -593,26 +635,63 @@ export default function Jacks321Calculator() {
       warning.message.includes('Possible General Underfeeding')
     );
 
-    Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
-      if (share && share > 0) {
-        const allocatedPPM = nutrientPPM * share;
-        const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
-        const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
-        
-        // Only apply symptom modifiers if not underfeeding
-        const modifier = isUnderfeeding ? 1 : 1 + (calculateModifiers()[nutrientKey as keyof SymptomModifier] || 0);
-        const adjustedGrams = baseGrams * modifier;
-        
-        const nutrientAmount: NutrientAmount = {
-          grams: adjustedGrams,
-          ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
+    // Calculate modifiers (only apply if not underfeeding)
+    const modifier = isUnderfeeding ? 1 : 1 + (calculateModifiers().partA || 0);
+
+    // Calculate grams for each nutrient based on scaling
+    if (selectedStage === 'propagation' || selectedStage === 'vegetative' || selectedStage === 'flower') {
+      // 3-2-1 ratio stages
+      const stageValues321 = stageValues as typeof FULL_STRENGTH_VALUES.vegetative;
+      const partAGrams = stageValues321.partA * scaleFactor * modifier * volumeNum;
+      const partBGrams = stageValues321.partB * scaleFactor * modifier * volumeNum;
+      const epsomGrams = stageValues321.epsom * scaleFactor * modifier * volumeNum;
+
+      calc.partA = {
+        grams: partAGrams,
+        ppmContribution: nutrientPPM * (3/6) // 3 parts out of 6 total parts
+      };
+      calc.partB = {
+        grams: partBGrams,
+        ppmContribution: nutrientPPM * (2/6) // 2 parts out of 6 total parts
+      };
+      if (epsomGrams > 0) {
+        calc.epsom = {
+          grams: epsomGrams,
+          ppmContribution: nutrientPPM * (1/6) // 1 part out of 6 total parts
         };
-
-        (calc as any)[nutrientKey] = nutrientAmount;
-        calc.totalPPM += nutrientAmount.ppmContribution;
       }
-    });
+    } else if (selectedStage === 'budset') {
+      // Bloom + Epsom stage
+      const stageValuesBloom = stageValues as typeof FULL_STRENGTH_VALUES.budset;
+      const bloomGrams = stageValuesBloom.bloom * scaleFactor * modifier * volumeNum;
+      const epsomGrams = stageValuesBloom.epsom * scaleFactor * modifier * volumeNum;
+        
+      calc.bloom = {
+        grams: bloomGrams,
+        ppmContribution: nutrientPPM * (6/7) // 6 parts out of 7 total parts
+      };
+      calc.epsom = {
+        grams: epsomGrams,
+        ppmContribution: nutrientPPM * (1/7) // 1 part out of 7 total parts
+      };
+    } else if (selectedStage === 'lateflower') {
+      // Finish + Epsom stage
+      const stageValuesFinish = stageValues as typeof FULL_STRENGTH_VALUES.lateflower;
+      const finishGrams = stageValuesFinish.finish * scaleFactor * modifier * volumeNum;
+      const epsomGrams = stageValuesFinish.epsom * scaleFactor * modifier * volumeNum;
 
+      calc.finish = {
+        grams: finishGrams,
+        ppmContribution: nutrientPPM * (6/7) // 6 parts out of 7 total parts
+      };
+      calc.epsom = {
+        grams: epsomGrams,
+        ppmContribution: nutrientPPM * (1/7) // 1 part out of 7 total parts
+      };
+    }
+
+    // Calculate total PPM (this will be the meter reading)
+    calc.totalPPM = nutrientPPM;
     calc.finalPPM = calc.totalPPM + sourcePPMNum;
     return calc;
   };
@@ -997,6 +1076,60 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
   useEffect(() => {
     checkLuxuryUptakeConditions();
   }, [lastFeedPPM, selectedStage, isPPM700, isFirstWater]);
+
+  // Function to get current calculator data for the modal
+  const getCurrentCalculatorData = () => ({
+    // Basic info
+    logType: LogType.WATERING,
+    stage: (() => {
+      // Map calculator stages to enum values
+      switch (selectedStage) {
+        case 'propagation': return Stage.PROPAGATION;
+        case 'vegetative': return Stage.VEGETATIVE;
+        case 'budset': return Stage.BUDSET;
+        case 'flower': return Stage.FLOWER;
+        case 'lateflower': return Stage.LATEFLOWER;
+        case 'flush': return Stage.FLUSH;
+        default: return Stage.VEGETATIVE;
+      }
+    })(),
+    logTitle: `Watering - ${STAGE_DATA[selectedStage].name} Stage`,
+    notes: `Nutrient mix: ${nutrientCalc ? 
+      Object.entries(nutrientCalc)
+        .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
+        .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
+        .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`,
+    
+    // Water & Feeding data
+    waterAmount: parseFloat(volume),
+    waterUnit: VolumeUnit.GALLONS,
+    nutrientWaterPh: parseFloat(feedPH),
+    sourceWaterPpm: parseInt(sourceWaterPPM),
+    nutrientWaterPpm: nutrientCalc?.finalPPM || 0,
+    ppmScale: isPPM700 ? 'PPM_700' as const : 'PPM_500' as const,
+    
+    // Jack's 321 data
+    jacks321Used: nutrientCalc ? 
+      Object.keys(nutrientCalc).filter(key => 
+        key !== 'totalPPM' && key !== 'finalPPM' && nutrientCalc[key as keyof NutrientCalculation]
+      ) as any : [],
+    jacks321Unit: 'GRAMS' as const,
+    partAAmount: nutrientCalc?.partA?.grams ? Number(nutrientCalc.partA.grams.toFixed(2)) : undefined,
+    partBAmount: nutrientCalc?.partB?.grams ? Number(nutrientCalc.partB.grams.toFixed(2)) : undefined,
+    epsomAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined,
+    bloomAmount: nutrientCalc?.bloom?.grams ? Number(nutrientCalc.bloom.grams.toFixed(2)) : undefined,
+    finishAmount: nutrientCalc?.finish?.grams ? Number(nutrientCalc.finish.grams.toFixed(2)) : undefined,
+    
+    // Jack's PPM values (calculated from grams)
+    partAPpm: nutrientCalc?.partA?.ppmContribution,
+    partBPpm: nutrientCalc?.partB?.ppmContribution,
+    epsomPpm: nutrientCalc?.epsom?.ppmContribution,
+    bloomPpm: nutrientCalc?.bloom?.ppmContribution,
+    finishPpm: nutrientCalc?.finish?.ppmContribution,
+    
+    // Location (empty for user to select)
+    selectedPlants: [], // Empty array means "all plants"
+  });
 
   return (
     <div className="space-y-6">
@@ -1733,6 +1866,32 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           aria-label="Toggle first water of new stage"
         />
       </div>
+
+      {/* Add Watering Log Button */}
+      {session?.user && nutrientCalc && nutrientCalc.totalPPM > 0 && (
+        <div className="mt-6 pt-4 border-t border-dark-border">
+          <Button
+            onClick={() => setIsWateringLogModalOpen(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Add Watering Log
+          </Button>
+        </div>
+      )}
+
+      {/* Watering Log Modal */}
+      {session?.user && (
+        <CreateLogModal
+          isOpen={isWateringLogModalOpen}
+          onClose={() => setIsWateringLogModalOpen(false)}
+          userId={session.user.id}
+          onSuccess={() => {
+            setIsWateringLogModalOpen(false);
+            // Optionally refresh or show success message
+          }}
+          initialValues={getCurrentCalculatorData()}
+        />
+      )}
     </div>
   );
 } 

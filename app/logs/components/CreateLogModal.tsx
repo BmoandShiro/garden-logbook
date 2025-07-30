@@ -31,6 +31,78 @@ import {
   StressDuration,
   ExpectedRecoveryTime
 } from '@/types/enums';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+
+// Custom number input component with emerald arrows
+const CustomNumberInput = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className = "" 
+}: { 
+  value: number | undefined;
+  onChange: (value: number) => void; 
+  placeholder: string; 
+  className?: string;
+}) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    console.log('CustomNumberInput change:', inputValue);
+    
+    // Allow empty input or valid numbers including 0
+    if (inputValue === '' || inputValue === '0') {
+      onChange(0);
+    } else {
+      const newValue = parseFloat(inputValue);
+      if (!isNaN(newValue)) {
+        onChange(newValue);
+      }
+    }
+  };
+
+  const handleIncrement = () => {
+    const currentValue = value || 0;
+    const newValue = currentValue + 0.1;
+    console.log('CustomNumberInput increment:', currentValue, '->', newValue);
+    onChange(newValue);
+  };
+
+  const handleDecrement = () => {
+    const currentValue = value || 0;
+    const newValue = Math.max(0, currentValue - 0.1);
+    console.log('CustomNumberInput decrement:', currentValue, '->', newValue);
+    onChange(newValue);
+  };
+
+  return (
+    <div className={`relative group ${className}`}>
+      <input
+        type="number"
+        step="0.1"
+        placeholder={placeholder}
+        value={value !== undefined && value !== null ? Number(value.toFixed(2)) : ''}
+        onChange={handleChange}
+        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={handleIncrement}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          type="button"
+          onClick={handleDecrement}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Types for form data
 type PpmScale = 'PPM_500' | 'PPM_700';
@@ -415,6 +487,15 @@ interface FormData {
   partCAmount?: number;
   boosterAmount?: number;
   finishAmount?: number;
+  // Additional Jack's fields
+  epsomAmount?: number;
+  bloomAmount?: number;
+  // Jack's PPM values
+  partAPpm?: number;
+  partBPpm?: number;
+  epsomPpm?: number;
+  bloomPpm?: number;
+  finishPpm?: number;
 
   // Custom Nutrients
   customNutrients?: CustomNutrient[];
@@ -585,6 +666,32 @@ interface CreateLogModalProps {
     roomId?: string;
     zoneId?: string;
     selectedPlants?: string[];
+    logType?: LogType;
+    stage?: Stage;
+    logTitle?: string;
+    notes?: string;
+    waterAmount?: number;
+    waterUnit?: VolumeUnit;
+    sourceWaterPh?: number;
+    nutrientWaterPh?: number;
+    sourceWaterPpm?: number;
+    nutrientWaterPpm?: number;
+    ppmScale?: PpmScale;
+    sourceWaterTemperature?: number;
+    nutrientWaterTemperature?: number;
+    jacks321Used?: Jacks321Product[];
+    jacks321Unit?: Jacks321Unit;
+    partAAmount?: number;
+    partBAmount?: number;
+    epsomAmount?: number;
+    bloomAmount?: number;
+    finishAmount?: number;
+    // Jack's PPM values
+    partAPpm?: number;
+    partBPpm?: number;
+    epsomPpm?: number;
+    bloomPpm?: number;
+    finishPpm?: number;
   };
 }
 
@@ -598,27 +705,27 @@ export function formatLogDate(date: string | Date) {
 
 export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, initialValues }: CreateLogModalProps) {
   const [formData, setFormData] = useState<FormData>({
-    logType: LogType.EQUIPMENT,
-    stage: Stage.VEGETATIVE,
+    logType: initialValues?.logType || LogType.EQUIPMENT,
+    stage: initialValues?.stage || Stage.VEGETATIVE,
     datetime: (() => {
       const d = new Date();
       d.setSeconds(0, 0); // Remove seconds/milliseconds for input compatibility
       return d.toISOString().slice(0, 16); // 'YYYY-MM-DDTHH:mm'
     })(),
-    logTitle: '',
-    notes: '',
+    logTitle: initialValues?.logTitle || '',
+    notes: initialValues?.notes || '',
     imageUrls: [],
     selectedPlants: initialValues?.selectedPlants || [], // This will be used for both regular plant selection and mother plants in cloning
     temperatureUnit: TemperatureUnit.CELSIUS,
     fanSpeed: 'MEDIUM',
     ventilationType: 'CLOSED_LOOP',
-    waterUnit: VolumeUnit.MILLILITERS,
+    waterUnit: initialValues?.waterUnit || VolumeUnit.MILLILITERS,
     waterTemperatureUnit: TemperatureUnit.CELSIUS,
     heightUnit: DistanceUnit.CENTIMETERS,
     widthUnit: DistanceUnit.CENTIMETERS,
     estimatedYieldUnit: WeightUnit.GRAMS,
-    jacks321Used: [],
-    jacks321Unit: 'GRAMS',
+    jacks321Used: initialValues?.jacks321Used || [],
+    jacks321Unit: initialValues?.jacks321Unit || 'GRAMS',
     pestTypes: [],
     pestCategories: [],
     diseaseTypes: [],
@@ -627,7 +734,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     treatmentProducts: [],
     trainingMethods: [],
     trimAmountUnit: WeightUnit.GRAMS,
-    ppmScale: 'PPM_500',
+    ppmScale: initialValues?.ppmScale || 'PPM_500',
     supportedPlants: [],
     trainingGoals: [],
     affectedAreas: [],
@@ -654,7 +761,26 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     treatmentAdditives: [],
     detectionMethods: [],
     sourceWaterTemperatureUnit: TemperatureUnit.CELSIUS,
-    nutrientWaterTemperatureUnit: TemperatureUnit.CELSIUS
+    nutrientWaterTemperatureUnit: TemperatureUnit.CELSIUS,
+    // Water & Feeding fields
+    waterAmount: initialValues?.waterAmount,
+    sourceWaterPh: initialValues?.sourceWaterPh,
+    nutrientWaterPh: initialValues?.nutrientWaterPh,
+    sourceWaterPpm: initialValues?.sourceWaterPpm,
+    nutrientWaterPpm: initialValues?.nutrientWaterPpm,
+    sourceWaterTemperature: initialValues?.sourceWaterTemperature,
+    nutrientWaterTemperature: initialValues?.nutrientWaterTemperature,
+    // Jack's 321 fields
+    partAAmount: initialValues?.partAAmount,
+    partBAmount: initialValues?.partBAmount,
+    epsomAmount: initialValues?.epsomAmount,
+    bloomAmount: initialValues?.bloomAmount,
+    finishAmount: initialValues?.finishAmount,
+    partAPpm: initialValues?.partAPpm,
+    partBPpm: initialValues?.partBPpm,
+    epsomPpm: initialValues?.epsomPpm,
+    bloomPpm: initialValues?.bloomPpm,
+    finishPpm: initialValues?.finishPpm,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -677,35 +803,44 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           // If we have initial values, set them up
           if (initialValues) {
             if (initialValues.gardenId) {
-              setFormData(prev => ({
-                ...prev,
-                gardenId: initialValues.gardenId,
-                roomId: initialValues.roomId || '',
-                zoneId: initialValues.zoneId || '',
-                selectedPlants: initialValues.selectedPlants || []
-              }));
-              
-              // Fetch rooms for the initial garden
-              fetch(`/api/gardens/${initialValues.gardenId}/rooms`)
-                .then(res => res.json())
-                .then(setRooms);
-              
-              // If we have a room, fetch zones
-              if (initialValues.roomId) {
-                fetch(`/api/gardens/${initialValues.gardenId}/rooms/${initialValues.roomId}/zones`)
-                  .then(res => res.json())
-                  .then(setZones);
-              }
-              
-              // If we have a zone, fetch plants
-              if (initialValues.zoneId) {
-                fetch(`/api/gardens/${initialValues.gardenId}/rooms/${initialValues.roomId}/zones/${initialValues.zoneId}/plants`)
-                  .then(res => res.json())
-                  .then(setPlants);
-              }
+              handleGardenChange(initialValues.gardenId);
             }
           }
         });
+    }
+  }, [isOpen, initialValues?.gardenId]);
+
+  // Update form data when initial values change (for calculator integration)
+  useEffect(() => {
+    if (isOpen && initialValues) {
+      setFormData(prevData => ({
+        ...prevData,
+        logType: initialValues.logType || prevData.logType,
+        stage: initialValues.stage || prevData.stage,
+        logTitle: initialValues.logTitle || prevData.logTitle,
+        notes: initialValues.notes || prevData.notes,
+        waterAmount: initialValues.waterAmount,
+        waterUnit: initialValues.waterUnit || prevData.waterUnit,
+        sourceWaterPh: initialValues.sourceWaterPh,
+        nutrientWaterPh: initialValues.nutrientWaterPh,
+        sourceWaterPpm: initialValues.sourceWaterPpm,
+        nutrientWaterPpm: initialValues.nutrientWaterPpm,
+        ppmScale: initialValues.ppmScale || prevData.ppmScale,
+        sourceWaterTemperature: initialValues.sourceWaterTemperature,
+        nutrientWaterTemperature: initialValues.nutrientWaterTemperature,
+        jacks321Used: initialValues.jacks321Used || prevData.jacks321Used,
+        jacks321Unit: initialValues.jacks321Unit || prevData.jacks321Unit,
+        partAAmount: initialValues.partAAmount,
+        partBAmount: initialValues.partBAmount,
+        epsomAmount: initialValues.epsomAmount,
+        bloomAmount: initialValues.bloomAmount,
+        finishAmount: initialValues.finishAmount,
+        partAPpm: initialValues.partAPpm,
+        partBPpm: initialValues?.partBPpm,
+        epsomPpm: initialValues.epsomPpm,
+        bloomPpm: initialValues.bloomPpm,
+        finishPpm: initialValues.finishPpm,
+      }));
     }
   }, [isOpen, initialValues]);
 
@@ -738,20 +873,25 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     setIsSubmitting(true);
 
     try {
+      console.log('Submitting form data:', formData);
+      
       // If no specific plants are selected and we have a zone, create logs for all plants in the zone
       let plantsToLog = formData.selectedPlants;
       
       if (plantsToLog.length === 0 && formData.zoneId) {
+        console.log('No plants selected, fetching zone plants...');
         // Get all plants in the zone
         const zonePlantsResponse = await fetch(`/api/gardens/${formData.gardenId}/rooms/${formData.roomId}/zones/${formData.zoneId}/plants`);
         if (zonePlantsResponse.ok) {
           const zonePlants = await zonePlantsResponse.json();
           plantsToLog = zonePlants.map((plant: any) => plant.id);
+          console.log('Found zone plants:', plantsToLog);
         }
       }
 
       // If still no plants, create a zone-level log
       if (plantsToLog.length === 0) {
+        console.log('Creating zone-level log...');
         const response = await fetch('/api/logs', {
           method: 'POST',
           headers: {
@@ -764,11 +904,16 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           }),
         });
 
+        console.log('Zone-level log response:', response.status, response.statusText);
+
         if (!response.ok) {
-          throw new Error('Failed to create log');
+          const errorText = await response.text();
+          console.error('Zone-level log error:', errorText);
+          throw new Error(`Failed to create log: ${errorText}`);
         }
       } else {
         // Create logs for each selected plant
+        console.log('Creating logs for plants:', plantsToLog);
         const logPromises = plantsToLog.map(plantId => 
           fetch('/api/logs', {
             method: 'POST',
@@ -787,10 +932,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         const failedResponses = responses.filter(response => !response.ok);
         
         if (failedResponses.length > 0) {
+          console.error('Failed responses:', failedResponses);
+          const errorTexts = await Promise.all(failedResponses.map(r => r.text()));
+          console.error('Error texts:', errorTexts);
           throw new Error('Failed to create some logs');
         }
       }
 
+      console.log('Log creation successful');
       toast({
         title: 'Success',
         description: plantsToLog.length > 1 ? `Created logs for ${plantsToLog.length} plants` : 'Log created successfully',
@@ -800,9 +949,10 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       onSuccess?.();
       router.refresh();
     } catch (error) {
+      console.error('Log creation error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create log',
+        description: error instanceof Error ? error.message : 'Failed to create log',
         variant: 'destructive',
       });
     } finally {
@@ -986,12 +1136,11 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       <div>
         <Label htmlFor="waterAmount">Water Amount</Label>
         <div className="flex gap-2">
-          <Input
-            type="number"
-            id="waterAmount"
-            value={formData.waterAmount || ''}
-            onChange={(e) => setFormData({ ...formData, waterAmount: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.waterAmount}
+            onChange={(value) => setFormData({ ...formData, waterAmount: value })}
+            placeholder="Enter amount"
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary"
           />
           <select
             value={formData.waterUnit}
@@ -1006,22 +1155,20 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       </div>
       <div>
         <Label htmlFor="sourceWaterPh">Source Water pH</Label>
-        <Input
-          type="number"
-          id="sourceWaterPh"
-          value={formData.sourceWaterPh || ''}
-          onChange={(e) => setFormData({ ...formData, sourceWaterPh: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.sourceWaterPh}
+          onChange={(value) => setFormData({ ...formData, sourceWaterPh: value })}
+          placeholder="Enter pH value"
+          className="bg-dark-bg-primary text-dark-text-primary"
         />
       </div>
       <div>
         <Label htmlFor="nutrientWaterPh">Nutrient Water pH</Label>
-        <Input
-          type="number"
-          id="nutrientWaterPh"
-          value={formData.nutrientWaterPh || ''}
-          onChange={(e) => setFormData({ ...formData, nutrientWaterPh: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.nutrientWaterPh}
+          onChange={(value) => setFormData({ ...formData, nutrientWaterPh: value })}
+          placeholder="Enter pH value"
+          className="bg-dark-bg-primary text-dark-text-primary"
         />
       </div>
       <div className="col-span-2">
@@ -1030,7 +1177,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="ppmScale"
           value={formData.ppmScale}
           onChange={(e) => setFormData({ ...formData, ppmScale: e.target.value as PpmScale })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
         >
           <option value="PPM_500">PPM 500 Scale (0.5 EC)</option>
           <option value="PPM_700">PPM 700 Scale (0.7 EC)</option>
@@ -1038,38 +1185,35 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       </div>
       <div>
         <Label htmlFor="sourceWaterPpm">Source Water PPM</Label>
-        <Input
-          type="number"
-          id="sourceWaterPpm"
-          value={formData.sourceWaterPpm || ''}
-          onChange={(e) => setFormData({ ...formData, sourceWaterPpm: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.sourceWaterPpm}
+          onChange={(value) => setFormData({ ...formData, sourceWaterPpm: value })}
+          placeholder="Enter PPM value"
+          className="bg-dark-bg-primary text-dark-text-primary"
         />
       </div>
       <div>
         <Label htmlFor="nutrientWaterPpm">Nutrient Water PPM</Label>
-        <Input
-          type="number"
-          id="nutrientWaterPpm"
-          value={formData.nutrientWaterPpm || ''}
-          onChange={(e) => setFormData({ ...formData, nutrientWaterPpm: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.nutrientWaterPpm}
+          onChange={(value) => setFormData({ ...formData, nutrientWaterPpm: value })}
+          placeholder="Enter PPM value"
+          className="bg-dark-bg-primary text-dark-text-primary"
         />
       </div>
       <div>
         <Label htmlFor="sourceWaterTemperature">Source Water Temperature</Label>
         <div className="flex gap-2">
-          <Input
-            type="number"
-            id="sourceWaterTemperature"
-            value={formData.sourceWaterTemperature || ''}
-            onChange={(e) => setFormData({ ...formData, sourceWaterTemperature: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.sourceWaterTemperature}
+            onChange={(value) => setFormData({ ...formData, sourceWaterTemperature: value })}
+            placeholder="Enter temperature"
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary"
           />
           <select
             value={formData.sourceWaterTemperatureUnit || TemperatureUnit.CELSIUS}
             onChange={(e) => setFormData({ ...formData, sourceWaterTemperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1080,17 +1224,16 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       <div>
         <Label htmlFor="nutrientWaterTemperature">Nutrient Water Temperature</Label>
         <div className="flex gap-2">
-          <Input
-            type="number"
-            id="nutrientWaterTemperature"
-            value={formData.nutrientWaterTemperature || ''}
-            onChange={(e) => setFormData({ ...formData, nutrientWaterTemperature: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.nutrientWaterTemperature}
+            onChange={(value) => setFormData({ ...formData, nutrientWaterTemperature: value })}
+            placeholder="Enter temperature"
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary"
           />
           <select
             value={formData.nutrientWaterTemperatureUnit || TemperatureUnit.CELSIUS}
             onChange={(e) => setFormData({ ...formData, nutrientWaterTemperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1120,74 +1263,82 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
       {formData.nutrientLine === NutrientLine.JACKS_321 && (
         <>
+          {/* Commented out PPM dropdown - forcing grams for Jack's 321
           <div>
             <Label htmlFor="jacks321Unit">Measurement Unit</Label>
             <select
               id="jacks321Unit"
               value={formData.jacks321Unit}
-              onChange={(e) => setFormData({ ...formData, jacks321Unit: e.target.value as Jacks321Unit })}
+              onChange={(e) => handleUnitChange(e.target.value as Jacks321Unit)}
               className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
             >
               <option value="GRAMS">Grams</option>
               <option value="PPM">PPM</option>
             </select>
           </div>
+          */}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="partAAmount">Part A (5-12-26) {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
-              <Input
-                type="number"
-                id="partAAmount"
-                value={formData.partAAmount || ''}
-                onChange={(e) => setFormData({ ...formData, partAAmount: parseFloat(e.target.value) })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              <Label htmlFor="partAAmount">Part A (5-12-26) (g)</Label>
+              <CustomNumberInput
+                value={formData.partAAmount}
+                onChange={(value) => setFormData({ ...formData, partAAmount: value })}
+                placeholder="Enter amount in grams"
+                className="bg-dark-bg-primary text-dark-text-primary"
               />
+              {formData.partAPpm && (
+                <p className="text-xs text-dark-text-secondary mt-1">PPM: {formData.partAPpm.toFixed(1)}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="partBAmount">Part B (Calcium Nitrate) {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
-              <Input
-                type="number"
-                id="partBAmount"
-                value={formData.partBAmount || ''}
-                onChange={(e) => setFormData({ ...formData, partBAmount: parseFloat(e.target.value) })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              <Label htmlFor="partBAmount">Part B (Calcium Nitrate) (g)</Label>
+              <CustomNumberInput
+                value={formData.partBAmount}
+                onChange={(value) => setFormData({ ...formData, partBAmount: value })}
+                placeholder="Enter amount in grams"
+                className="bg-dark-bg-primary text-dark-text-primary"
               />
+              {formData.partBPpm && (
+                <p className="text-xs text-dark-text-secondary mt-1">PPM: {formData.partBPpm.toFixed(1)}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="finishAmount">Finish (g)</Label>
+              <CustomNumberInput
+                value={formData.finishAmount}
+                onChange={(value) => setFormData({ ...formData, finishAmount: value })}
+                placeholder="Enter amount in grams"
+                className="bg-dark-bg-primary text-dark-text-primary"
+              />
+              {formData.finishPpm && (
+                <p className="text-xs text-dark-text-secondary mt-1">PPM: {formData.finishPpm.toFixed(1)}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="partCAmount">Part C (Epsom Salt) {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
-              <Input
-                type="number"
-                id="partCAmount"
-                value={formData.partCAmount || ''}
-                onChange={(e) => setFormData({ ...formData, partCAmount: parseFloat(e.target.value) })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              <Label htmlFor="epsomAmount">Epsom Salt (g)</Label>
+              <CustomNumberInput
+                value={formData.epsomAmount}
+                onChange={(value) => setFormData({ ...formData, epsomAmount: value })}
+                placeholder="Enter amount in grams"
+                className="bg-dark-bg-primary text-dark-text-primary"
               />
+              {formData.epsomPpm && (
+                <p className="text-xs text-dark-text-secondary mt-1">PPM: {formData.epsomPpm.toFixed(1)}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="boosterAmount">Bloom Booster {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
-              <Input
-                type="number"
-                id="boosterAmount"
-                value={formData.boosterAmount || ''}
-                onChange={(e) => setFormData({ ...formData, boosterAmount: parseFloat(e.target.value) })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
+              <Label htmlFor="bloomAmount">Bloom Booster (g)</Label>
+              <CustomNumberInput
+                value={formData.bloomAmount}
+                onChange={(value) => setFormData({ ...formData, bloomAmount: value })}
+                placeholder="Enter amount in grams"
+                className="bg-dark-bg-primary text-dark-text-primary"
               />
-            </div>
-            <div>
-              <Label htmlFor="finishAmount">Finish {formData.jacks321Unit === 'GRAMS' ? '(g)' : '(ppm)'}</Label>
-              <Input
-                type="number"
-                id="finishAmount"
-                value={formData.finishAmount || ''}
-                onChange={(e) => setFormData({ ...formData, finishAmount: parseFloat(e.target.value) })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-                placeholder={`Enter amount in ${formData.jacks321Unit.toLowerCase()}`}
-              />
+              {formData.bloomPpm && (
+                <p className="text-xs text-dark-text-secondary mt-1">PPM: {formData.bloomPpm.toFixed(1)}</p>
+              )}
             </div>
           </div>
         </>
@@ -2972,6 +3123,40 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     updated[index] = plantId;
     setSelectedPlantIds(updated);
     setFormData({ ...formData, selectedPlants: updated.filter(id => id) });
+  };
+
+  // Handle unit switching for Jack's 321
+  const handleUnitChange = (newUnit: Jacks321Unit) => {
+    if (newUnit === formData.jacks321Unit) return;
+    
+    // PPM to Grams conversion constants (total PPM values for meter reading)
+    const PPM_PER_GRAM = {
+      partA: 26.4,    // Jack's Part A: ~100 total PPM / 3.79g = 26.4 PPM per gram
+      partB: 79.4,    // Jack's Part B: ~200 total PPM / 2.52g = 79.4 PPM per gram
+      epsom: 46.5,    // Epsom Salt: ~46 total PPM / 0.99g = 46.5 PPM per gram
+      bloom: 52.8,    // Jack's Bloom: ~300 total PPM / 5.68g = 52.8 PPM per gram
+      finish: 37.0,   // Jack's Finish: ~200 total PPM / 5.41g = 37.0 PPM per gram
+    };
+    
+    const newFormData = { ...formData, jacks321Unit: newUnit };
+    
+    if (newUnit === 'GRAMS') {
+      // Convert PPM to Grams: grams = ppm / ppm_per_gram
+      if (formData.partAPpm) newFormData.partAAmount = formData.partAPpm / PPM_PER_GRAM.partA;
+      if (formData.partBPpm) newFormData.partBAmount = formData.partBPpm / PPM_PER_GRAM.partB;
+      if (formData.epsomPpm) newFormData.epsomAmount = formData.epsomPpm / PPM_PER_GRAM.epsom;
+      if (formData.bloomPpm) newFormData.bloomAmount = formData.bloomPpm / PPM_PER_GRAM.bloom;
+      if (formData.finishPpm) newFormData.finishAmount = formData.finishPpm / PPM_PER_GRAM.finish;
+    } else {
+      // Convert Grams to PPM: ppm = grams * ppm_per_gram
+      if (formData.partAAmount) newFormData.partAPpm = formData.partAAmount * PPM_PER_GRAM.partA;
+      if (formData.partBAmount) newFormData.partBPpm = formData.partBAmount * PPM_PER_GRAM.partB;
+      if (formData.epsomAmount) newFormData.epsomPpm = formData.epsomAmount * PPM_PER_GRAM.epsom;
+      if (formData.bloomAmount) newFormData.bloomPpm = formData.bloomAmount * PPM_PER_GRAM.bloom;
+      if (formData.finishAmount) newFormData.finishPpm = formData.finishAmount * PPM_PER_GRAM.finish;
+    }
+    
+    setFormData(newFormData);
   };
 
   return (

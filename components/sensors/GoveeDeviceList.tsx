@@ -216,9 +216,9 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       }
                     </span>
                   </div>
-                </div>
+                  </div>
 
-                {/* 24h High/Low */}
+                    {/* 24h High/Low */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                     <div className="text-center text-xs text-gray-400">
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.tempHigh24h?.toFixed(1) ?? '--'}°F</span></p>
