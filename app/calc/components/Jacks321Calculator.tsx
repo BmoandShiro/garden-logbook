@@ -227,18 +227,18 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
 };
 
 const BASE_GRAMS_PER_GALLON = {
-  partA: 3.78,
-  partB: 2.52,
-  epsom: 0.99,
+  partA: 3.6,     // Jack's official recommendation for 5-12-26
+  partB: 2.4,     // Jack's official recommendation for Calcium Nitrate 15-0-0
+  epsom: 1.1,     // Jack's official recommendation for Epsom Salt
   bloom: 5.68,
   finish: 5.05,
 };
 
 // PPM contribution per gram per gallon
 const PPM_CONTRIBUTION = {
-  partA: 13.2,
-  partB: 39.7,
-  epsom: 23.0,
+  partA: 13.2,    // Jack's official: 47.5 PPM / 3.6g = 13.2 PPM per gram
+  partB: 39.7,    // Jack's official: 95.3 PPM / 2.4g = 39.7 PPM per gram  
+  epsom: 23.0,    // Jack's official: 25.3 PPM / 1.1g = 23.0 PPM per gram
   bloom: 26.4,
   finish: 20.8,
 };
