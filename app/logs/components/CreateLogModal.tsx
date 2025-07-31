@@ -1118,7 +1118,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
   );
 
   const renderWateringFields = () => (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <Label htmlFor="waterSource">Water Source</Label>
         <select
@@ -1145,7 +1145,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           <select
             value={formData.waterUnit}
             onChange={(e) => setFormData({ ...formData, waterUnit: e.target.value as VolumeUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
           >
             {Object.values(VolumeUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1171,7 +1171,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           className="bg-dark-bg-primary text-dark-text-primary"
         />
       </div>
-      <div className="col-span-2">
+      <div className="col-span-1 sm:col-span-2">
         <Label htmlFor="ppmScale">PPM Scale</Label>
         <select
           id="ppmScale"
@@ -1213,7 +1213,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           <select
             value={formData.sourceWaterTemperatureUnit || TemperatureUnit.CELSIUS}
             onChange={(e) => setFormData({ ...formData, sourceWaterTemperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1233,7 +1233,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           <select
             value={formData.nutrientWaterTemperatureUnit || TemperatureUnit.CELSIUS}
             onChange={(e) => setFormData({ ...formData, nutrientWaterTemperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>

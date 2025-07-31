@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertTriangle, HelpCircle, Info, Thermometer, Droplets, Wind, Lightbulb, Zap, Leaf, Flower, Sprout, WashingMachine, ChevronDown } from 'lucide-react';
+import { AlertTriangle, HelpCircle, Info, Thermometer, Droplets, Wind, Lightbulb, Zap, Leaf, Flower, Sprout, WashingMachine, ChevronDown, ChevronUp, ChevronDown as ChevronDownIcon } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import CreateLogModal from '@/app/logs/components/CreateLogModal';
 import {
@@ -426,6 +426,89 @@ interface PPMAdjustment {
   finalTargetPPM: number;
   luxuryRatio?: number;
 }
+
+// Custom number input component with emerald arrows
+const CustomNumberInput = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className = "",
+  min,
+  max,
+  step,
+  id
+}: { 
+  value: number | undefined;
+  onChange: (value: number) => void; 
+  placeholder: string; 
+  className?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  id?: string;
+}) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    
+    // Allow empty input or valid numbers including 0
+    if (inputValue === '' || inputValue === '0') {
+      onChange(0);
+    } else {
+      const newValue = parseFloat(inputValue);
+      if (!isNaN(newValue)) {
+        onChange(newValue);
+      }
+    }
+  };
+
+  const handleIncrement = () => {
+    const currentValue = value || 0;
+    const stepValue = step || 1;
+    const maxValue = max || Infinity;
+    const newValue = Math.min(maxValue, currentValue + stepValue);
+    onChange(newValue);
+  };
+
+  const handleDecrement = () => {
+    const currentValue = value || 0;
+    const stepValue = step || 1;
+    const minValue = min || 0;
+    const newValue = Math.max(minValue, currentValue - stepValue);
+    onChange(newValue);
+  };
+
+  return (
+    <div className={`relative group ${className}`}>
+      <input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        placeholder={placeholder}
+        value={value !== undefined && value !== null && !isNaN(value) ? value : ''}
+        onChange={handleChange}
+        className="w-full px-3 py-2 text-sm bg-dark-bg-secondary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={handleIncrement}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          type="button"
+          onClick={handleDecrement}
+          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+        >
+          <ChevronDownIcon className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function Jacks321Calculator() {
   // Core state
@@ -1374,6 +1457,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             checked={isCO2Enriched}
             onCheckedChange={setIsCO2Enriched}
             aria-label="Toggle CO2 enriched environment"
+            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
           />
         </div>
 
@@ -1389,6 +1473,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             checked={isPPM700}
             onCheckedChange={setIsPPM700}
             aria-label="Toggle PPM scale"
+            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
           />
         </div>
 
@@ -1399,15 +1484,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               <Label htmlFor="volume">Solution Volume (gallons)</Label>
               <InfoTooltip content="Enter the total volume of nutrient solution you want to mix" />
             </div>
-            <Input
-              id="volume"
-              type="number"
-              min="0.1"
-              step="0.1"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
+            <CustomNumberInput
+              value={parseFloat(volume)}
+              onChange={(value) => setVolume(value.toString())}
               placeholder="Enter volume in gallons"
               className="bg-dark-bg-secondary border-dark-border"
+              min={0.1}
+              step={0.1}
+              id="volume"
             />
           </div>
 
@@ -1416,15 +1500,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               <Label htmlFor="sourceWaterPPM">Source Water PPM</Label>
               <InfoTooltip content="Enter the PPM of your source water before adding nutrients" />
             </div>
-            <Input
-              id="sourceWaterPPM"
-              type="number"
-              min="0"
-              step="1"
-              value={sourceWaterPPM}
-              onChange={(e) => setSourceWaterPPM(e.target.value)}
+            <CustomNumberInput
+              value={parseInt(sourceWaterPPM)}
+              onChange={(value) => setSourceWaterPPM(value.toString())}
               placeholder="Enter source water PPM"
               className="bg-dark-bg-secondary border-dark-border"
+              min={0}
+              step={1}
+              id="sourceWaterPPM"
             />
           </div>
         </div>
@@ -1435,15 +1518,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             <Label htmlFor="targetPPM">Target PPM (you can edit this)</Label>
             <InfoTooltip content="Default is set by growth stage, but you can adjust as needed" />
           </div>
-          <Input
-            id="targetPPM"
-            type="number"
-            min="0"
-            step="50"
-            value={targetPPM}
-            onChange={(e) => setTargetPPM(e.target.value)}
+          <CustomNumberInput
+            value={parseInt(targetPPM)}
+            onChange={(value) => setTargetPPM(value.toString())}
             placeholder="Enter target PPM"
             className="bg-dark-bg-secondary border-dark-border"
+            min={0}
+            step={50}
+            id="targetPPM"
           />
         </div>
 
@@ -1460,7 +1542,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       id="smallRoots"
                       checked={isSmallRoots}
                       onCheckedChange={(checked) => setIsSmallRoots(checked as boolean)}
-                      className="bg-dark-bg-secondary border-dark-border"
+                      className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                     />
                     <div className="grid gap-1.5 leading-none">
                       <Label htmlFor="smallRoots">
@@ -1484,24 +1566,26 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="lastFeedPPM">Last Feed PPM</Label>
-                    <Input
-                      id="lastFeedPPM"
-                      type="number"
-                      value={lastFeedPPM}
-                      onChange={(e) => setLastFeedPPM(e.target.value)}
+                    <CustomNumberInput
+                      value={parseInt(lastFeedPPM)}
+                      onChange={(value) => setLastFeedPPM(value.toString())}
                       placeholder="Enter last feed PPM"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      step={1}
+                      id="lastFeedPPM"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="runoffPPM">Runoff PPM</Label>
-                    <Input
-                      id="runoffPPM"
-                      type="number"
-                      value={runoffPPM}
-                      onChange={(e) => setRunoffPPM(e.target.value)}
+                    <CustomNumberInput
+                      value={parseInt(runoffPPM)}
+                      onChange={(value) => setRunoffPPM(value.toString())}
                       placeholder="Enter runoff PPM"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      step={1}
+                      id="runoffPPM"
                     />
                   </div>
                 </div>
@@ -1513,16 +1597,15 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <Label htmlFor="feedPH">Feed pH</Label>
                       <InfoTooltip content="Target pH range: 5.6-6.5. Outside this range can cause nutrient lockout." />
                     </div>
-                    <Input
-                      id="feedPH"
-                      type="number"
-                      value={feedPH}
-                      onChange={(e) => setFeedPH(e.target.value)}
+                    <CustomNumberInput
+                      value={parseFloat(feedPH)}
+                      onChange={(value) => setFeedPH(value.toString())}
                       placeholder="Enter feed pH"
-                      min="0"
-                      max="14"
-                      step="0.1"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      max={14}
+                      step={0.1}
+                      id="feedPH"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1530,16 +1613,15 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <Label htmlFor="runoffPH">Runoff pH</Label>
                       <InfoTooltip content="Compare with feed pH to detect root zone issues." />
                     </div>
-                    <Input
-                      id="runoffPH"
-                      type="number"
-                      value={runoffPH}
-                      onChange={(e) => setRunoffPH(e.target.value)}
+                    <CustomNumberInput
+                      value={runoffPH ? parseFloat(runoffPH) : undefined}
+                      onChange={(value) => setRunoffPH(value ? value.toString() : '')}
                       placeholder="Enter runoff pH (optional)"
-                      min="0"
-                      max="14"
-                      step="0.1"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      max={14}
+                      step={0.1}
+                      id="runoffPH"
                     />
                   </div>
                 </div>
@@ -1581,7 +1663,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                                 setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
                               }
                             }}
-                            className="bg-dark-bg-secondary border-dark-border"
+                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                           />
                           <Label>{symptom}</Label>
                         </div>
@@ -1600,7 +1682,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                                 setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
                               }
                             }}
-                            className="bg-dark-bg-secondary border-dark-border"
+                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                           />
                           <Label>{symptom}</Label>
                         </div>
@@ -1857,6 +1939,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               });
             }}
             aria-label="Toggle luxury uptake mode"
+            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
           />
         </div>
       )}
@@ -1896,6 +1979,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           checked={isFirstWater}
           onCheckedChange={setIsFirstWater}
           aria-label="Toggle first water of new stage"
+          className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
         />
       </div>
 
