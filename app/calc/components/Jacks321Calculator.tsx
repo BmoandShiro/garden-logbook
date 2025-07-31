@@ -636,15 +636,15 @@ export default function Jacks321Calculator() {
     );
 
     // Calculate modifiers (only apply if not underfeeding)
-    const modifier = isUnderfeeding ? 1 : 1 + (calculateModifiers().partA || 0);
+    const modifiers = calculateModifiers();
 
     // Calculate grams for each nutrient based on scaling
     if (selectedStage === 'propagation' || selectedStage === 'vegetative' || selectedStage === 'flower') {
       // 3-2-1 ratio stages
       const stageValues321 = stageValues as typeof FULL_STRENGTH_VALUES.vegetative;
-      const partAGrams = stageValues321.partA * scaleFactor * modifier * volumeNum;
-      const partBGrams = stageValues321.partB * scaleFactor * modifier * volumeNum;
-      const epsomGrams = stageValues321.epsom * scaleFactor * modifier * volumeNum;
+      const partAGrams = stageValues321.partA * scaleFactor * (1 + (modifiers.partA || 0)) * volumeNum;
+      const partBGrams = stageValues321.partB * scaleFactor * (1 + (modifiers.partB || 0)) * volumeNum;
+      const epsomGrams = stageValues321.epsom * scaleFactor * (1 + (modifiers.epsom || 0)) * volumeNum;
 
       // Real-world PPM-per-gram constants from Jack's official feed chart
       const PPM_PER_GRAM = {
@@ -653,11 +653,10 @@ export default function Jacks321Calculator() {
         epsom: 404.0    // 400 PPM / 0.99g = 404.0 PPM/g
       };
 
-      // Calculate PPM based on grams per gallon (concentration), not total grams
-      const gramsPerGallon = volumeNum > 0 ? 1 : 1; // Use 1 gallon as reference for PPM calculation
-      const partAGramsPerGallon = stageValues321.partA * scaleFactor * modifier;
-      const partBGramsPerGallon = stageValues321.partB * scaleFactor * modifier;
-      const epsomGramsPerGallon = stageValues321.epsom * scaleFactor * modifier;
+      // Calculate PPM from the adjusted grams per gallon
+      const partAGramsPerGallon = partAGrams / volumeNum;
+      const partBGramsPerGallon = partBGrams / volumeNum;
+      const epsomGramsPerGallon = epsomGrams / volumeNum;
 
       calc.partA = {
         grams: partAGrams,
@@ -676,8 +675,8 @@ export default function Jacks321Calculator() {
     } else if (selectedStage === 'budset') {
       // Bloom + Epsom stage
       const stageValuesBloom = stageValues as typeof FULL_STRENGTH_VALUES.budset;
-      const bloomGrams = stageValuesBloom.bloom * scaleFactor * modifier * volumeNum;
-      const epsomGrams = stageValuesBloom.epsom * scaleFactor * modifier * volumeNum;
+      const bloomGrams = stageValuesBloom.bloom * scaleFactor * (1 + (modifiers.bloom || 0)) * volumeNum;
+      const epsomGrams = stageValuesBloom.epsom * scaleFactor * (1 + (modifiers.epsom || 0)) * volumeNum;
         
       // PPM-per-gram constants for bloom stage
       const PPM_PER_GRAM_BLOOM = {
@@ -685,9 +684,9 @@ export default function Jacks321Calculator() {
         epsom: 404.0    // Same as above
       };
 
-      // Calculate PPM based on grams per gallon
-      const bloomGramsPerGallon = stageValuesBloom.bloom * scaleFactor * modifier;
-      const epsomGramsPerGallon = stageValuesBloom.epsom * scaleFactor * modifier;
+      // Calculate PPM from the adjusted grams per gallon
+      const bloomGramsPerGallon = bloomGrams / volumeNum;
+      const epsomGramsPerGallon = epsomGrams / volumeNum;
 
       calc.bloom = {
         grams: bloomGrams,
@@ -700,8 +699,8 @@ export default function Jacks321Calculator() {
     } else if (selectedStage === 'lateflower') {
       // Finish + Epsom stage
       const stageValuesFinish = stageValues as typeof FULL_STRENGTH_VALUES.lateflower;
-      const finishGrams = stageValuesFinish.finish * scaleFactor * modifier * volumeNum;
-      const epsomGrams = stageValuesFinish.epsom * scaleFactor * modifier * volumeNum;
+      const finishGrams = stageValuesFinish.finish * scaleFactor * (1 + (modifiers.finish || 0)) * volumeNum;
+      const epsomGrams = stageValuesFinish.epsom * scaleFactor * (1 + (modifiers.epsom || 0)) * volumeNum;
 
       // PPM-per-gram constants for finish stage
       const PPM_PER_GRAM_FINISH = {
@@ -709,9 +708,9 @@ export default function Jacks321Calculator() {
         epsom: 404.0    // Same as above
       };
 
-      // Calculate PPM based on grams per gallon
-      const finishGramsPerGallon = stageValuesFinish.finish * scaleFactor * modifier;
-      const epsomGramsPerGallon = stageValuesFinish.epsom * scaleFactor * modifier;
+      // Calculate PPM from the adjusted grams per gallon
+      const finishGramsPerGallon = finishGrams / volumeNum;
+      const epsomGramsPerGallon = epsomGrams / volumeNum;
 
       calc.finish = {
         grams: finishGrams,
