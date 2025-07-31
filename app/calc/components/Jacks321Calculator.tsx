@@ -646,18 +646,31 @@ export default function Jacks321Calculator() {
       const partBGrams = stageValues321.partB * scaleFactor * modifier * volumeNum;
       const epsomGrams = stageValues321.epsom * scaleFactor * modifier * volumeNum;
 
+      // Real-world PPM-per-gram constants from Jack's official feed chart
+      const PPM_PER_GRAM = {
+        partA: 79.2,    // 300 PPM / 3.79g = 79.2 PPM/g
+        partB: 198.4,   // 500 PPM / 2.52g = 198.4 PPM/g
+        epsom: 404.0    // 400 PPM / 0.99g = 404.0 PPM/g
+      };
+
+      // Calculate PPM based on grams per gallon (concentration), not total grams
+      const gramsPerGallon = volumeNum > 0 ? 1 : 1; // Use 1 gallon as reference for PPM calculation
+      const partAGramsPerGallon = stageValues321.partA * scaleFactor * modifier;
+      const partBGramsPerGallon = stageValues321.partB * scaleFactor * modifier;
+      const epsomGramsPerGallon = stageValues321.epsom * scaleFactor * modifier;
+
       calc.partA = {
         grams: partAGrams,
-        ppmContribution: nutrientPPM * (3/6) // 3 parts out of 6 total parts
+        ppmContribution: partAGramsPerGallon * PPM_PER_GRAM.partA
       };
       calc.partB = {
         grams: partBGrams,
-        ppmContribution: nutrientPPM * (2/6) // 2 parts out of 6 total parts
+        ppmContribution: partBGramsPerGallon * PPM_PER_GRAM.partB
       };
       if (epsomGrams > 0) {
         calc.epsom = {
           grams: epsomGrams,
-          ppmContribution: nutrientPPM * (1/6) // 1 part out of 6 total parts
+          ppmContribution: epsomGramsPerGallon * PPM_PER_GRAM.epsom
         };
       }
     } else if (selectedStage === 'budset') {
@@ -666,13 +679,23 @@ export default function Jacks321Calculator() {
       const bloomGrams = stageValuesBloom.bloom * scaleFactor * modifier * volumeNum;
       const epsomGrams = stageValuesBloom.epsom * scaleFactor * modifier * volumeNum;
         
+      // PPM-per-gram constants for bloom stage
+      const PPM_PER_GRAM_BLOOM = {
+        bloom: 52.8,    // Based on Jack's bloom formula
+        epsom: 404.0    // Same as above
+      };
+
+      // Calculate PPM based on grams per gallon
+      const bloomGramsPerGallon = stageValuesBloom.bloom * scaleFactor * modifier;
+      const epsomGramsPerGallon = stageValuesBloom.epsom * scaleFactor * modifier;
+
       calc.bloom = {
         grams: bloomGrams,
-        ppmContribution: nutrientPPM * (6/7) // 6 parts out of 7 total parts
+        ppmContribution: bloomGramsPerGallon * PPM_PER_GRAM_BLOOM.bloom
       };
       calc.epsom = {
         grams: epsomGrams,
-        ppmContribution: nutrientPPM * (1/7) // 1 part out of 7 total parts
+        ppmContribution: epsomGramsPerGallon * PPM_PER_GRAM_BLOOM.epsom
       };
     } else if (selectedStage === 'lateflower') {
       // Finish + Epsom stage
@@ -680,13 +703,23 @@ export default function Jacks321Calculator() {
       const finishGrams = stageValuesFinish.finish * scaleFactor * modifier * volumeNum;
       const epsomGrams = stageValuesFinish.epsom * scaleFactor * modifier * volumeNum;
 
+      // PPM-per-gram constants for finish stage
+      const PPM_PER_GRAM_FINISH = {
+        finish: 37.0,   // Based on Jack's finish formula
+        epsom: 404.0    // Same as above
+      };
+
+      // Calculate PPM based on grams per gallon
+      const finishGramsPerGallon = stageValuesFinish.finish * scaleFactor * modifier;
+      const epsomGramsPerGallon = stageValuesFinish.epsom * scaleFactor * modifier;
+
       calc.finish = {
         grams: finishGrams,
-        ppmContribution: nutrientPPM * (6/7) // 6 parts out of 7 total parts
+        ppmContribution: finishGramsPerGallon * PPM_PER_GRAM_FINISH.finish
       };
       calc.epsom = {
         grams: epsomGrams,
-        ppmContribution: nutrientPPM * (1/7) // 1 part out of 7 total parts
+        ppmContribution: epsomGramsPerGallon * PPM_PER_GRAM_FINISH.epsom
       };
     }
 
