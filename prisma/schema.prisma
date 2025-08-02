@@ -211,6 +211,15 @@ model Log {
   sourceWaterTemperatureUnit String?
   nutrientWaterTemperature Float?
   nutrientWaterTemperatureUnit String?
+  
+  // Tea Brewer fields
+  teaBrewSize          Float?
+  teaWaterTemp         Float?
+  teaGrowthStage       String?
+  teaEarthwormCastings String?
+  teaFishKelpExtract   String?
+  teaMolasses          String?
+  teaBrewDuration      String?
 
   // Relations
   garden       Garden?    @relation(fields: [gardenId], references: [id])

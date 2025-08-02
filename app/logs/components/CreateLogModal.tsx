@@ -573,8 +573,14 @@ interface FormData {
   nukemAmount?: number;
   oxiphosAmount?: number;
   seagreenAmount?: number;
-  teabrewerBatch?: string;
-  teabrewerVolume?: number;
+  // Tea Brewer fields
+  teaBrewSize?: number;
+  teaWaterTemp?: number;
+  teaGrowthStage?: string;
+  teaEarthwormCastings?: string;
+  teaFishKelpExtract?: string;
+  teaMolasses?: string;
+  teaBrewDuration?: string;
 
   // LST Fields
   bendingIntensity?: string | null;
@@ -692,6 +698,14 @@ interface CreateLogModalProps {
     epsomPpm?: number;
     bloomPpm?: number;
     finishPpm?: number;
+    // Tea Brewer fields
+    teaBrewSize?: number;
+    teaWaterTemp?: number;
+    teaGrowthStage?: string;
+    teaEarthwormCastings?: string;
+    teaFishKelpExtract?: string;
+    teaMolasses?: string;
+    teaBrewDuration?: string;
   };
 }
 
@@ -781,6 +795,13 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     epsomPpm: initialValues?.epsomPpm,
     bloomPpm: initialValues?.bloomPpm,
     finishPpm: initialValues?.finishPpm,
+    teaBrewSize: initialValues?.teaBrewSize,
+    teaWaterTemp: initialValues?.teaWaterTemp,
+    teaGrowthStage: initialValues?.teaGrowthStage,
+    teaEarthwormCastings: initialValues?.teaEarthwormCastings,
+    teaFishKelpExtract: initialValues?.teaFishKelpExtract,
+    teaMolasses: initialValues?.teaMolasses,
+    teaBrewDuration: initialValues?.teaBrewDuration,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -840,6 +861,13 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         epsomPpm: initialValues.epsomPpm,
         bloomPpm: initialValues.bloomPpm,
         finishPpm: initialValues.finishPpm,
+        teaBrewSize: initialValues?.teaBrewSize || prevData.teaBrewSize,
+        teaWaterTemp: initialValues?.teaWaterTemp || prevData.teaWaterTemp,
+        teaGrowthStage: initialValues?.teaGrowthStage || prevData.teaGrowthStage,
+        teaEarthwormCastings: initialValues?.teaEarthwormCastings || prevData.teaEarthwormCastings,
+        teaFishKelpExtract: initialValues?.teaFishKelpExtract || prevData.teaFishKelpExtract,
+        teaMolasses: initialValues?.teaMolasses || prevData.teaMolasses,
+        teaBrewDuration: initialValues?.teaBrewDuration || prevData.teaBrewDuration,
       }));
     }
   }, [isOpen, initialValues]);
@@ -1413,25 +1441,80 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           />
         </div>
         <div>
-          <Label htmlFor="teabrewerBatch">Teabrewer Batch</Label>
+          <Label htmlFor="teaBrewSize">Tea Brewer Size</Label>
           <Input
-            type="text"
-            id="teabrewerBatch"
-            value={formData.teabrewerBatch || ''}
-            onChange={(e) => setFormData({ ...formData, teabrewerBatch: e.target.value })}
+            type="number"
+            id="teaBrewSize"
+            value={formData.teaBrewSize || ''}
+            onChange={(e) => setFormData({ ...formData, teaBrewSize: parseFloat(e.target.value) || undefined })}
             className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-            placeholder="Batch identifier"
+            placeholder="ml"
           />
         </div>
         <div>
-          <Label htmlFor="teabrewerVolume">Teabrewer Volume</Label>
+          <Label htmlFor="teaWaterTemp">Tea Water Temperature</Label>
           <Input
             type="number"
-            id="teabrewerVolume"
-            value={formData.teabrewerVolume || ''}
-            onChange={(e) => setFormData({ ...formData, teabrewerVolume: parseFloat(e.target.value) })}
+            id="teaWaterTemp"
+            value={formData.teaWaterTemp || ''}
+            onChange={(e) => setFormData({ ...formData, teaWaterTemp: parseFloat(e.target.value) || undefined })}
             className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-            placeholder="ml"
+            placeholder="°C"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teaGrowthStage">Tea Growth Stage</Label>
+          <Input
+            type="text"
+            id="teaGrowthStage"
+            value={formData.teaGrowthStage || ''}
+            onChange={(e) => setFormData({ ...formData, teaGrowthStage: e.target.value })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="Enter growth stage"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teaEarthwormCastings">Tea Earthworm Castings</Label>
+          <Input
+            type="text"
+            id="teaEarthwormCastings"
+            value={formData.teaEarthwormCastings || ''}
+            onChange={(e) => setFormData({ ...formData, teaEarthwormCastings: e.target.value })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="Enter earthworm castings"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teaFishKelpExtract">Tea Fish Kelp Extract</Label>
+          <Input
+            type="text"
+            id="teaFishKelpExtract"
+            value={formData.teaFishKelpExtract || ''}
+            onChange={(e) => setFormData({ ...formData, teaFishKelpExtract: e.target.value })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="Enter fish kelp extract"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teaMolasses">Tea Molasses</Label>
+          <Input
+            type="text"
+            id="teaMolasses"
+            value={formData.teaMolasses || ''}
+            onChange={(e) => setFormData({ ...formData, teaMolasses: e.target.value })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="Enter molasses"
+          />
+        </div>
+        <div>
+          <Label htmlFor="teaBrewDuration">Tea Brew Duration</Label>
+          <Input
+            type="text"
+            id="teaBrewDuration"
+            value={formData.teaBrewDuration || ''}
+            onChange={(e) => setFormData({ ...formData, teaBrewDuration: e.target.value })}
+            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            placeholder="Enter brew duration"
           />
         </div>
       </div>

@@ -1319,6 +1319,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
         notes: `${baseData.notes} | Tea Brew: ${teaBrewSize}g ${teaGrowthStage} stage - ${calculateTotalAmount(teaRecipe.earthworm_castings, teaBrewSize)} castings, ${calculateTotalAmount(teaRecipe.fish_kelp_extract, teaBrewSize)} extract, ${calculateTotalAmount(teaRecipe.molasses, teaBrewSize)} molasses | Brew duration: ${brewDuration} at ${teaWaterTemp}°F`,
         waterAmount: teaBrewSize, // Use tea brew size instead of nutrient volume
         waterUnit: VolumeUnit.GALLONS,
+        // Tea Brewer fields
+        teaBrewSize: teaBrewSize,
+        teaWaterTemp: teaWaterTemp,
+        teaGrowthStage: teaGrowthStage,
+        teaEarthwormCastings: calculateTotalAmount(teaRecipe.earthworm_castings, teaBrewSize),
+        teaFishKelpExtract: calculateTotalAmount(teaRecipe.fish_kelp_extract, teaBrewSize),
+        teaMolasses: calculateTotalAmount(teaRecipe.molasses, teaBrewSize),
+        teaBrewDuration: brewDuration,
       };
     }
 
