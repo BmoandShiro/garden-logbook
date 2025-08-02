@@ -37,6 +37,7 @@ import { LogType, VolumeUnit, Stage } from '@/types/enums';
 
 // Types and Enums
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
+type TeaGrowthStage = 'Seedling' | 'Veg' | 'Flower';
 
 enum RootSize {
   SMALL = 'SMALL',
@@ -510,6 +511,61 @@ const CustomNumberInput = ({
   );
 };
 
+// Tea Brewer Calculator Data
+interface TeaRecipe {
+  earthworm_castings: string;
+  fish_kelp_extract: string;
+  molasses: string;
+}
+
+const TEA_RECIPES: Record<TeaGrowthStage, TeaRecipe> = {
+  Seedling: {
+    earthworm_castings: "0.5 cups",
+    fish_kelp_extract: "2–5 mL",
+    molasses: "0–1 tsp",
+  },
+  Veg: {
+    earthworm_castings: "1 cup",
+    fish_kelp_extract: "10–15 mL",
+    molasses: "1 tbsp",
+  },
+  Flower: {
+    earthworm_castings: "1 cup",
+    fish_kelp_extract: "5–10 mL",
+    molasses: "1 tbsp",
+  },
+};
+
+const getBrewDuration = (temperature: number): string => {
+  if (temperature < 65) return "36–48 hours";
+  if (temperature >= 65 && temperature <= 75) return "24–36 hours";
+  if (temperature > 75 && temperature <= 78) return "12–24 hours";
+  if (temperature > 80) return "12-15 hours max";
+  return "24–36 hours"; // Default for 78-80°F
+};
+
+const parseAmount = (amount: string): { value: number; unit: string } => {
+  const match = amount.match(/^([\d.–]+)\s*(.+)$/);
+  if (!match) return { value: 0, unit: '' };
+  
+  const value = parseFloat(match[1].replace('–', '.'));
+  const unit = match[2];
+  
+  return { value, unit };
+};
+
+const calculateTotalAmount = (amount: string, gallons: number): string => {
+  const { value, unit } = parseAmount(amount);
+  const total = value * gallons;
+  
+  if (unit === 'cups') return `${total} cups`;
+  if (unit === 'mL') return `${total} mL`;
+  if (unit === 'tbsp') return `${total} tbsp`;
+  if (unit === 'tsp') return `${total} tsp`;
+  
+  return `${total} ${unit}`;
+};
+
 export default function Jacks321Calculator() {
   // Core state
   const [selectedStage, setSelectedStage] = useState<GrowStage>('vegetative');
@@ -547,6 +603,12 @@ export default function Jacks321Calculator() {
   // Add state for watering log modal
   const [isWateringLogModalOpen, setIsWateringLogModalOpen] = useState(false);
   const { data: session } = useSession();
+
+  // Tea Brewer Calculator state
+  const [teaGrowthStage, setTeaGrowthStage] = useState<TeaGrowthStage>('Veg');
+  const [teaBrewSize, setTeaBrewSize] = useState<number>(5);
+  const [teaWaterTemp, setTeaWaterTemp] = useState<number>(72);
+  const [isTeaBrewerOpen, setIsTeaBrewerOpen] = useState(false);
 
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
@@ -1193,58 +1255,75 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
   }, [lastFeedPPM, selectedStage, isPPM700, isFirstWater]);
 
   // Function to get current calculator data for the modal
-  const getCurrentCalculatorData = () => ({
-    // Basic info
-    logType: LogType.WATERING,
-    stage: (() => {
-      // Map calculator stages to enum values
-      switch (selectedStage) {
-        case 'propagation': return Stage.PROPAGATION;
-        case 'vegetative': return Stage.VEGETATIVE;
-        case 'budset': return Stage.BUDSET;
-        case 'flower': return Stage.FLOWER;
-        case 'lateflower': return Stage.LATEFLOWER;
-        case 'flush': return Stage.FLUSH;
-        default: return Stage.VEGETATIVE;
-      }
-    })(),
-    logTitle: `Watering - ${STAGE_DATA[selectedStage].name} Stage`,
-    notes: `Nutrient mix: ${nutrientCalc ? 
-      Object.entries(nutrientCalc)
-        .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
-        .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
-        .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`,
-    
-    // Water & Feeding data
-    waterAmount: parseFloat(volume),
-    waterUnit: VolumeUnit.GALLONS,
-    nutrientWaterPh: parseFloat(feedPH),
-    sourceWaterPpm: parseInt(sourceWaterPPM),
-    nutrientWaterPpm: nutrientCalc?.finalPPM || 0,
-    ppmScale: isPPM700 ? 'PPM_700' as const : 'PPM_500' as const,
-    
-    // Jack's 321 data
-    jacks321Used: nutrientCalc ? 
-      Object.keys(nutrientCalc).filter(key => 
-        key !== 'totalPPM' && key !== 'finalPPM' && nutrientCalc[key as keyof NutrientCalculation]
-      ) as any : [],
-    jacks321Unit: 'GRAMS' as const,
-    partAAmount: nutrientCalc?.partA?.grams ? Number(nutrientCalc.partA.grams.toFixed(2)) : undefined,
-    partBAmount: nutrientCalc?.partB?.grams ? Number(nutrientCalc.partB.grams.toFixed(2)) : undefined,
-    epsomAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined,
-    bloomAmount: nutrientCalc?.bloom?.grams ? Number(nutrientCalc.bloom.grams.toFixed(2)) : undefined,
-    finishAmount: nutrientCalc?.finish?.grams ? Number(nutrientCalc.finish.grams.toFixed(2)) : undefined,
-    
-    // Jack's PPM values (calculated from grams)
-    partAPpm: nutrientCalc?.partA?.ppmContribution,
-    partBPpm: nutrientCalc?.partB?.ppmContribution,
-    epsomPpm: nutrientCalc?.epsom?.ppmContribution,
-    bloomPpm: nutrientCalc?.bloom?.ppmContribution,
-    finishPpm: nutrientCalc?.finish?.ppmContribution,
-    
-    // Location (empty for user to select)
-    selectedPlants: [], // Empty array means "all plants"
-  });
+  const getCurrentCalculatorData = () => {
+    const baseData = {
+      // Basic info
+      logType: LogType.WATERING,
+      stage: (() => {
+        // Map calculator stages to enum values
+        switch (selectedStage) {
+          case 'propagation': return Stage.PROPAGATION;
+          case 'vegetative': return Stage.VEGETATIVE;
+          case 'budset': return Stage.BUDSET;
+          case 'flower': return Stage.FLOWER;
+          case 'lateflower': return Stage.LATEFLOWER;
+          case 'flush': return Stage.FLUSH;
+          default: return Stage.VEGETATIVE;
+        }
+      })(),
+      logTitle: `Watering - ${STAGE_DATA[selectedStage].name} Stage`,
+      notes: `Nutrient mix: ${nutrientCalc ? 
+        Object.entries(nutrientCalc)
+          .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
+          .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
+          .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`,
+      
+      // Water & Feeding data
+      waterAmount: parseFloat(volume),
+      waterUnit: VolumeUnit.GALLONS,
+      nutrientWaterPh: parseFloat(feedPH),
+      sourceWaterPpm: parseInt(sourceWaterPPM),
+      nutrientWaterPpm: nutrientCalc?.finalPPM || 0,
+      ppmScale: isPPM700 ? 'PPM_700' as const : 'PPM_500' as const,
+      
+      // Jack's 321 data
+      jacks321Used: nutrientCalc ? 
+        Object.keys(nutrientCalc).filter(key => 
+          key !== 'totalPPM' && key !== 'finalPPM' && nutrientCalc[key as keyof NutrientCalculation]
+        ) as any : [],
+      jacks321Unit: 'GRAMS' as const,
+      partAAmount: nutrientCalc?.partA?.grams ? Number(nutrientCalc.partA.grams.toFixed(2)) : undefined,
+      partBAmount: nutrientCalc?.partB?.grams ? Number(nutrientCalc.partB.grams.toFixed(2)) : undefined,
+      epsomAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined,
+      bloomAmount: nutrientCalc?.bloom?.grams ? Number(nutrientCalc.bloom.grams.toFixed(2)) : undefined,
+      finishAmount: nutrientCalc?.finish?.grams ? Number(nutrientCalc.finish.grams.toFixed(2)) : undefined,
+      
+      // Jack's PPM values (calculated from grams)
+      partAPpm: nutrientCalc?.partA?.ppmContribution,
+      partBPpm: nutrientCalc?.partB?.ppmContribution,
+      epsomPpm: nutrientCalc?.epsom?.ppmContribution,
+      bloomPpm: nutrientCalc?.bloom?.ppmContribution,
+      finishPpm: nutrientCalc?.finish?.ppmContribution,
+      
+      // Location (empty for user to select)
+      selectedPlants: [], // Empty array means "all plants"
+    };
+
+    // Add tea brewing data if tea brewer is open
+    if (isTeaBrewerOpen) {
+      const teaRecipe = TEA_RECIPES[teaGrowthStage];
+      const brewDuration = getBrewDuration(teaWaterTemp);
+      
+      return {
+        ...baseData,
+        notes: `${baseData.notes} | Tea Brew: ${teaBrewSize}g ${teaGrowthStage} stage - ${calculateTotalAmount(teaRecipe.earthworm_castings, teaBrewSize)} castings, ${calculateTotalAmount(teaRecipe.fish_kelp_extract, teaBrewSize)} extract, ${calculateTotalAmount(teaRecipe.molasses, teaBrewSize)} molasses | Brew duration: ${brewDuration} at ${teaWaterTemp}°F`,
+        waterAmount: teaBrewSize, // Use tea brew size instead of nutrient volume
+        waterUnit: VolumeUnit.GALLONS,
+      };
+    }
+
+    return baseData;
+  };
 
   return (
     <div className="space-y-6">
@@ -1981,6 +2060,132 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           aria-label="Toggle first water of new stage"
           className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
         />
+      </div>
+
+      {/* Tea Brewer Calculator */}
+      <div className="mt-6 pt-4 border-t border-dark-border">
+        <Collapsible open={isTeaBrewerOpen} onOpenChange={setIsTeaBrewerOpen}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-between bg-dark-bg-primary border-dark-border hover:bg-dark-bg-secondary"
+            >
+              <div className="flex items-center space-x-2">
+                <Leaf className="h-4 w-4 text-emerald-400" />
+                <span>Tea Brewer Calculator</span>
+              </div>
+              {isTeaBrewerOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4 space-y-4">
+            <div className="p-4 rounded-lg bg-dark-bg-secondary border border-dark-border">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="teaGrowthStage">Growth Stage</Label>
+                      <InfoTooltip content="Select the current growth stage to determine appropriate ingredient ratios" />
+                    </div>
+                    <select
+                      id="teaGrowthStage"
+                      value={teaGrowthStage}
+                      onChange={(e) => setTeaGrowthStage(e.target.value as TeaGrowthStage)}
+                      className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none text-dark-text-primary"
+                    >
+                      <option value="Seedling">Seedling</option>
+                      <option value="Veg">Veg</option>
+                      <option value="Flower">Flower</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="teaBrewSize">Brew Size (gallons)</Label>
+                      <InfoTooltip content="Enter the total volume of tea you want to brew" />
+                    </div>
+                    <CustomNumberInput
+                      value={teaBrewSize}
+                      onChange={setTeaBrewSize}
+                      placeholder="Enter brew size"
+                      className="bg-dark-bg-primary border-dark-border"
+                      min={1}
+                      step={1}
+                      id="teaBrewSize"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="teaWaterTemp">Water Temperature (°F)</Label>
+                    <InfoTooltip content="Water temperature affects brew duration and microbial activity" />
+                  </div>
+                  <CustomNumberInput
+                    value={teaWaterTemp}
+                    onChange={setTeaWaterTemp}
+                    placeholder="Enter water temperature"
+                    className="bg-dark-bg-primary border-dark-border"
+                    min={50}
+                    max={90}
+                    step={1}
+                    id="teaWaterTemp"
+                  />
+                </div>
+
+                {/* Tea Brewing Results */}
+                <div className="p-4 rounded-lg bg-dark-bg-primary border border-dark-border">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">
+                        Recipe for {teaBrewSize} gallons during {teaGrowthStage} stage:
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Earthworm Castings:</span>
+                        <span className="text-emerald-400">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].earthworm_castings, teaBrewSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Fish & Kelp Extract:</span>
+                        <span className="text-emerald-400">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].fish_kelp_extract, teaBrewSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Molasses:</span>
+                        <span className="text-emerald-400">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].molasses, teaBrewSize)}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-dark-border">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Recommended Brew Duration:</span>
+                        <span className="text-emerald-400">{getBrewDuration(teaWaterTemp)}</span>
+                      </div>
+                      <p className="text-sm text-dark-text-secondary mt-2">
+                        With water at {teaWaterTemp}°F, brew for ~{getBrewDuration(teaWaterTemp)} with strong aeration.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brew Duration Guide */}
+                <div className="p-4 rounded-lg bg-yellow-900/20 border border-yellow-900/30">
+                  <h4 className="font-medium mb-2">Brew Duration Guide:</h4>
+                  <div className="space-y-1 text-sm">
+                    <div>• &lt;65°F → 36–48 hours</div>
+                    <div>• 65–75°F → 24–36 hours</div>
+                    <div>• 75-78°F → 12–24 hours</div>
+                    <div>• &gt;80°F → 12-15 hours max</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Add Watering Log Button */}
