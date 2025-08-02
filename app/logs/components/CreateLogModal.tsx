@@ -38,12 +38,18 @@ const CustomNumberInput = ({
   value, 
   onChange, 
   placeholder, 
-  className = "" 
+  className = "",
+  min,
+  max,
+  step
 }: { 
   value: number | undefined;
   onChange: (value: number) => void; 
   placeholder: string; 
   className?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -78,7 +84,9 @@ const CustomNumberInput = ({
     <div className={`relative group ${className}`}>
       <input
         type="number"
-        step="0.1"
+        step={step || "0.1"}
+        min={min}
+        max={max}
         placeholder={placeholder}
         value={value !== undefined && value !== null ? Number(value.toFixed(2)) : ''}
         onChange={handleChange}
@@ -1398,68 +1406,69 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="aspirinAmount">Uncoated Aspirin (81-325mg/gal)</Label>
-          <Input
-            type="number"
-            id="aspirinAmount"
-            value={formData.aspirinAmount || ''}
-            onChange={(e) => setFormData({ ...formData, aspirinAmount: parseFloat(e.target.value) })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.aspirinAmount}
+            onChange={(value) => setFormData({ ...formData, aspirinAmount: value })}
             placeholder="mg per gallon"
+            className="bg-dark-bg-primary border-dark-border"
+            min={0}
+            step={0.1}
           />
         </div>
         <div>
           <Label htmlFor="nukemAmount">Nukem Root Drench</Label>
-          <Input
-            type="number"
-            id="nukemAmount"
-            value={formData.nukemAmount || ''}
-            onChange={(e) => setFormData({ ...formData, nukemAmount: parseFloat(e.target.value) })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.nukemAmount}
+            onChange={(value) => setFormData({ ...formData, nukemAmount: value })}
             placeholder="ml"
+            className="bg-dark-bg-primary border-dark-border"
+            min={0}
+            step={0.1}
           />
         </div>
         <div>
           <Label htmlFor="oxiphosAmount">Oxiphos</Label>
-          <Input
-            type="number"
-            id="oxiphosAmount"
-            value={formData.oxiphosAmount || ''}
-            onChange={(e) => setFormData({ ...formData, oxiphosAmount: parseFloat(e.target.value) })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.oxiphosAmount}
+            onChange={(value) => setFormData({ ...formData, oxiphosAmount: value })}
             placeholder="ml"
+            className="bg-dark-bg-primary border-dark-border"
+            min={0}
+            step={0.1}
           />
         </div>
         <div>
           <Label htmlFor="seagreenAmount">SeaGreen</Label>
-          <Input
-            type="number"
-            id="seagreenAmount"
-            value={formData.seagreenAmount || ''}
-            onChange={(e) => setFormData({ ...formData, seagreenAmount: parseFloat(e.target.value) })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.seagreenAmount}
+            onChange={(value) => setFormData({ ...formData, seagreenAmount: value })}
             placeholder="ml"
+            className="bg-dark-bg-primary border-dark-border"
+            min={0}
+            step={0.1}
           />
         </div>
         <div>
-          <Label htmlFor="teaBrewSize">Tea Brewer Size</Label>
-          <Input
-            type="number"
-            id="teaBrewSize"
-            value={formData.teaBrewSize || ''}
-            onChange={(e) => setFormData({ ...formData, teaBrewSize: parseFloat(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-            placeholder="ml"
+          <Label htmlFor="teaBrewSize">Tea Brewer Size (gallons)</Label>
+          <CustomNumberInput
+            value={formData.teaBrewSize}
+            onChange={(value) => setFormData({ ...formData, teaBrewSize: value })}
+            placeholder="Enter brew size"
+            className="bg-dark-bg-primary border-dark-border"
+            min={1}
+            step={1}
           />
         </div>
         <div>
           <Label htmlFor="teaWaterTemp">Tea Water Temperature</Label>
-          <Input
-            type="number"
-            id="teaWaterTemp"
-            value={formData.teaWaterTemp || ''}
-            onChange={(e) => setFormData({ ...formData, teaWaterTemp: parseFloat(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
-            placeholder="°C"
+          <CustomNumberInput
+            value={formData.teaWaterTemp}
+            onChange={(value) => setFormData({ ...formData, teaWaterTemp: value })}
+            placeholder="Enter water temperature"
+            className="bg-dark-bg-primary border-dark-border"
+            min={50}
+            max={90}
+            step={1}
           />
         </div>
         <div>
