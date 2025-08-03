@@ -211,7 +211,7 @@ model Log {
   sourceWaterTemperatureUnit String?
   nutrientWaterTemperature Float?
   nutrientWaterTemperatureUnit String?
-  
+
   // Tea Brewer fields
   teaBrewSize          Float?
   teaWaterTemp         Float?
