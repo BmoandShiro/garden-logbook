@@ -668,25 +668,45 @@ export default function Jacks321Calculator() {
       basePPM = Math.min(stageData.co2Max, Math.floor(basePPM * CO2_PPM_MODIFIER));
     }
 
-    // Step 3: Check for underfeeding
+    // Only set target PPM if it's empty or if stage/CO2/luxury settings change
+    // Don't reset when symptoms change to preserve user's manual adjustments
+    if (!targetPPM || targetPPM === '') {
+      setTargetPPM(basePPM.toString());
+    }
+    
+    setPPMAdjustments({
+      baseTargetPPM: isPPM700 ? stageData.ppm700 : stageData.ppm500,
+      finalTargetPPM: basePPM,
+      underfeedingPPM: undefined, // Will be set by symptoms useEffect
+      luxuryScaledPPM: luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 ? 
+        Math.floor((isPPM700 ? stageData.ppm700 : stageData.ppm500) * luxuryUptakeMode.multiplier) : undefined
+    });
+  }, [selectedStage, isPPM700, isCO2Enriched, luxuryUptakeMode, targetPPM]);
+
+  // Separate useEffect for symptoms to handle underfeeding warnings without resetting target PPM
+  useEffect(() => {
     const warnings = getSymptomWarnings(selectedSymptoms);
     const isUnderfeeding = warnings.some(warning => 
       warning.message.includes('Possible General Underfeeding')
     );
 
     if (isUnderfeeding) {
-      basePPM += UNDERFEEDING_PPM_INCREASE;
+      const currentTargetPPM = parseInt(targetPPM) || 0;
+      const adjustedPPM = currentTargetPPM + UNDERFEEDING_PPM_INCREASE;
+      
+      // Update PPM adjustments with underfeeding info
+      setPPMAdjustments(prev => ({
+        ...prev,
+        underfeedingPPM: adjustedPPM
+      }));
+    } else {
+      // Clear underfeeding PPM if no underfeeding symptoms
+      setPPMAdjustments(prev => ({
+        ...prev,
+        underfeedingPPM: undefined
+      }));
     }
-
-    setTargetPPM(basePPM.toString());
-    setPPMAdjustments({
-      baseTargetPPM: isPPM700 ? stageData.ppm700 : stageData.ppm500,
-      finalTargetPPM: basePPM,
-      underfeedingPPM: isUnderfeeding ? basePPM : undefined,
-      luxuryScaledPPM: luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 ? 
-        Math.floor((isPPM700 ? stageData.ppm700 : stageData.ppm500) * luxuryUptakeMode.multiplier) : undefined
-    });
-  }, [selectedStage, isPPM700, isCO2Enriched, selectedSymptoms, luxuryUptakeMode]);
+  }, [selectedSymptoms, targetPPM]);
 
   // Update calculateNutrients to use the already-adjusted target PPM
   const calculateNutrients = (): NutrientCalculation => {
@@ -1272,11 +1292,30 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
         }
       })(),
       logTitle: `Watering - ${STAGE_DATA[selectedStage].name} Stage`,
-      notes: `Nutrient mix: ${nutrientCalc ? 
-        Object.entries(nutrientCalc)
-          .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
-          .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
-          .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`,
+      notes: (() => {
+        let notes = `Nutrient mix: ${nutrientCalc ? 
+          Object.entries(nutrientCalc)
+            .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
+            .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
+            .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`;
+        
+        if (selectedSymptoms.length > 0) {
+          const symptomsText = selectedSymptoms.map(symptom => {
+            const modifier = SYMPTOM_MODIFIERS[symptom];
+            const modifierText = Object.entries(modifier)
+              .filter(([key, value]) => key !== 'warning' && value !== 0)
+              .map(([key, value]) => {
+                const keyName = key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key === 'bloom' ? 'Bloom' : key === 'finish' ? 'Finish' : key;
+                return `${keyName} ${value > 0 ? '+' : ''}${(value * 100).toFixed(1)}%`;
+              })
+              .join(', ');
+            return `${symptom} (${modifierText})`;
+          }).join('; ');
+          notes += ` | Symptoms: ${symptomsText}`;
+        }
+        
+        return notes;
+      })(),
       
       // Water & Feeding data
       waterAmount: parseFloat(volume),
