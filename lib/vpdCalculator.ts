@@ -79,7 +79,7 @@ export function getVPDStatus(vpd: number, stage?: 'seedling' | 'vegetative' | 'f
     return {
       category: 'optimal',
       message: 'Optimal',
-      color: 'text-emerald-500'
+      color: 'text-garden-500'
     };
   } else if (vpd < min) {
     return {

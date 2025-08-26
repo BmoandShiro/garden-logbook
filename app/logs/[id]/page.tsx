@@ -197,9 +197,9 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
             <FieldRow label="Nutrient Line" value={merged.nutrientLine} />
             <FieldRow label="Jacks321 Used" value={Array.isArray(merged.jacks321Used) ? merged.jacks321Used.join(', ') : merged.jacks321Used} />
             <FieldRow label="Jacks321 Unit" value={merged.jacks321Unit} />
-            <FieldRow label="Part A Amount" value={merged.partAAmount} />
-            <FieldRow label="Part B Amount" value={merged.partBAmount} />
-            <FieldRow label="Part C Amount" value={merged.partCAmount} />
+            <FieldRow label="Part A Amount (5-12-26)" value={merged.partAAmount} />
+            <FieldRow label="Part B Amount (Calcium Nitrate 15-0-0)" value={merged.partBAmount} />
+            <FieldRow label="Part C Amount (Epsom Salts)" value={merged.partCAmount} />
             <FieldRow label="Booster Amount" value={merged.boosterAmount} />
             <FieldRow label="Finish Amount" value={merged.finishAmount} />
           </Section>

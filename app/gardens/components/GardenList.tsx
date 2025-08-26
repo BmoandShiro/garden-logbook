@@ -189,7 +189,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               </span>
               {/* Gear/settings button for garden */}
               <button
-                className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-garden-500"
                 title="Garden Settings"
                 onClick={() => setOpenModalGardenId(garden.id)}
               >
@@ -197,7 +197,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
               </button>
               {/* Kebab (3 vertical dots) button for edit modal */}
               <button
-                className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="inline-flex items-center justify-center rounded-full p-2 text-emerald-200 hover:text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-garden-500"
                 title="Edit Garden"
                 onClick={() => setOpenEditModalGardenId(garden.id)}
               >
@@ -407,7 +407,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-name"
                       value={editFormData.name}
                       onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
                       required
                     />
                   </div>
@@ -419,7 +419,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-description"
                       value={editFormData.description}
                       onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
                       rows={3}
                     />
                   </div>
@@ -432,7 +432,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-imageUrl"
                       value={editFormData.imageUrl}
                       onChange={(e) => setEditFormData({ ...editFormData, imageUrl: e.target.value })}
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
                     />
                   </div>
                   <div>
@@ -451,7 +451,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       }}
                       maxLength={5}
                       pattern="\d{5}"
-                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-md bg-dark-bg-primary border-dark-border text-dark-text-primary shadow-sm focus:border-garden-500 focus:ring-garden-500"
                       placeholder="e.g. 90210"
                     />
                   </div>
@@ -461,7 +461,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-isPrivate"
                       checked={editFormData.isPrivate}
                       onChange={(e) => setEditFormData({ ...editFormData, isPrivate: e.target.checked })}
-                      className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-emerald-600 focus:ring-garden-500"
                     />
                     <label htmlFor="edit-isPrivate" className="ml-2 block text-sm text-dark-text-primary">
                       Make this garden private
@@ -472,14 +472,14 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     <button
                       type="button"
                       onClick={() => setOpenEditModalGardenId(null)}
-                      className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                      className="px-4 py-2 text-sm font-medium text-dark-text-secondary bg-dark-bg-primary border border-dark-border rounded-md hover:bg-dark-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={editLoading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editLoading ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -546,7 +546,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       value={inviteEmail}
                       onChange={e => setInviteEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-emerald-400"
+                      className="rounded-md border border-dark-border px-3 py-2 bg-dark-bg-primary text-white focus:ring-2 focus:ring-garden-500"
                       required
                       disabled={inviteLoading}
                     />
@@ -596,7 +596,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                               </button>
                             )}
                             {user.id === (garden.createdBy.id || '') && (
-                              <span className="text-xs text-emerald-400 ml-2">Creator</span>
+                              <span className="text-xs text-garden-500 ml-2">Creator</span>
                             )}
                           </li>
                         );

@@ -88,7 +88,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
   };
 
   const getBatteryColor = (level: number) => {
-    if (level > 50) return 'text-emerald-400';
+    if (level > 50) return 'text-garden-500';
     if (level > 20) return 'text-yellow-400';
     return 'text-red-400';
   };
@@ -136,7 +136,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
               <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="sm:mr-4">
-                    <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
+                    <CardTitle className="text-garden-500 text-xl font-bold">{device.name}</CardTitle>
                     <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
                   </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -165,7 +165,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     {parsed.online !== false ? (
-                      <Wifi className="h-5 w-5 text-emerald-400" />
+                      <Wifi className="h-5 w-5 text-garden-500" />
                     ) : (
                       <WifiOff className="h-5 w-5 text-red-500" />
                     )}
@@ -256,7 +256,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
       {modalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="bg-[#23282c] p-6 rounded-lg shadow-lg max-w-lg w-full">
-            <h3 className="text-lg font-bold text-emerald-400 mb-2">Raw Sensor Data</h3>
+            <h3 className="text-lg font-bold text-garden-500 mb-2">Raw Sensor Data</h3>
             <pre className="bg-[#181c1f] text-gray-200 p-4 rounded overflow-x-auto max-h-96">
               {JSON.stringify(modalData, null, 2)}
             </pre>

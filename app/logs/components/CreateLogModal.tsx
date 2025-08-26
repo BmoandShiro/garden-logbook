@@ -90,25 +90,53 @@ const CustomNumberInput = ({
         placeholder={placeholder}
         value={value !== undefined && value !== null ? Number(value.toFixed(2)) : ''}
         onChange={handleChange}
-        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
       />
       <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={handleIncrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
         >
-          <ChevronUp className="w-3 h-3" />
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
         </button>
         <button
           type="button"
           onClick={handleDecrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
         >
-          <ChevronDown className="w-3 h-3" />
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
       </div>
     </div>
+  );
+};
+
+// Custom styled textarea component that matches CustomNumberInput styling
+const CustomTextarea = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className = "",
+  minHeight = "min-h-[100px]"
+}: { 
+  value: string | undefined;
+  onChange: (value: string) => void; 
+  placeholder: string; 
+  className?: string;
+  minHeight?: string;
+}) => {
+  return (
+    <textarea
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none text-dark-text-primary resize-none ${minHeight} ${className}`}
+    />
   );
 };
 
@@ -665,9 +693,9 @@ interface FormData {
 
   // Water Temperature
   sourceWaterTemperature?: number;
-  sourceWaterTemperatureUnit?: TemperatureUnit;
+  sourceWaterTemperatureUnit: TemperatureUnit;
   nutrientWaterTemperature?: number;
-  nutrientWaterTemperatureUnit?: TemperatureUnit;
+  nutrientWaterTemperatureUnit: TemperatureUnit;
 }
 
 interface CreateLogModalProps {
@@ -697,6 +725,7 @@ interface CreateLogModalProps {
     jacks321Unit?: Jacks321Unit;
     partAAmount?: number;
     partBAmount?: number;
+    partCAmount?: number;
     epsomAmount?: number;
     bloomAmount?: number;
     finishAmount?: number;
@@ -714,6 +743,7 @@ interface CreateLogModalProps {
     teaFishKelpExtract?: string;
     teaMolasses?: string;
     teaBrewDuration?: string;
+    nutrientLine?: NutrientLine;
   };
 }
 
@@ -757,6 +787,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     trainingMethods: [],
     trimAmountUnit: WeightUnit.GRAMS,
     ppmScale: initialValues?.ppmScale || 'PPM_500',
+    nutrientLine: initialValues?.nutrientLine || NutrientLine.JACKS_321,
     supportedPlants: [],
     trainingGoals: [],
     affectedAreas: [],
@@ -782,8 +813,8 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     treatmentPh: 7.0,
     treatmentAdditives: [],
     detectionMethods: [],
-    sourceWaterTemperatureUnit: TemperatureUnit.CELSIUS,
-    nutrientWaterTemperatureUnit: TemperatureUnit.CELSIUS,
+    sourceWaterTemperatureUnit: TemperatureUnit.FAHRENHEIT,
+    nutrientWaterTemperatureUnit: TemperatureUnit.FAHRENHEIT,
     // Water & Feeding fields
     waterAmount: initialValues?.waterAmount,
     sourceWaterPh: initialValues?.sourceWaterPh,
@@ -795,6 +826,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     // Jack's 321 fields
     partAAmount: initialValues?.partAAmount,
     partBAmount: initialValues?.partBAmount,
+    partCAmount: initialValues?.partCAmount,
     epsomAmount: initialValues?.epsomAmount,
     bloomAmount: initialValues?.bloomAmount,
     finishAmount: initialValues?.finishAmount,
@@ -861,6 +893,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         jacks321Unit: initialValues.jacks321Unit || prevData.jacks321Unit,
         partAAmount: initialValues.partAAmount,
         partBAmount: initialValues.partBAmount,
+        partCAmount: initialValues.partCAmount,
         epsomAmount: initialValues.epsomAmount,
         bloomAmount: initialValues.bloomAmount,
         finishAmount: initialValues.finishAmount,
@@ -1057,17 +1090,19 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       <div>
         <Label htmlFor="temperature">Temperature</Label>
         <div className="flex gap-2">
-          <Input
-            type="number"
-            id="temperature"
-            value={formData.temperature || ''}
-            onChange={(e) => setFormData({ ...formData, temperature: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.temperature}
+            onChange={(value) => setFormData({ ...formData, temperature: value })}
+            placeholder="Enter temperature"
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary"
+            min={-50}
+            max={150}
+            step={0.1}
           />
           <select
             value={formData.temperatureUnit}
             onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1077,52 +1112,62 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       </div>
       <div>
         <Label htmlFor="humidity">Humidity (%)</Label>
-        <Input
-          type="number"
-          id="humidity"
-          value={formData.humidity || ''}
-          onChange={(e) => setFormData({ ...formData, humidity: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.humidity}
+          onChange={(value) => setFormData({ ...formData, humidity: value })}
+          placeholder="Enter humidity"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={0}
+          max={100}
+          step={0.1}
         />
       </div>
       <div>
         <Label htmlFor="co2">CO2 (ppm)</Label>
-        <Input
-          type="number"
-          id="co2"
-          value={formData.co2 || ''}
-          onChange={(e) => setFormData({ ...formData, co2: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.co2}
+          onChange={(value) => setFormData({ ...formData, co2: value })}
+          placeholder="Enter CO2 level"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={0}
+          max={5000}
+          step={1}
         />
       </div>
       <div>
         <Label htmlFor="vpd">VPD (kPa)</Label>
-        <Input
-          type="number"
-          id="vpd"
-          value={formData.vpd || ''}
-          onChange={(e) => setFormData({ ...formData, vpd: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.vpd}
+          onChange={(value) => setFormData({ ...formData, vpd: value })}
+          placeholder="Enter VPD"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={0}
+          max={10}
+          step={0.01}
         />
       </div>
       <div>
         <Label htmlFor="dewPoint">Dew Point (°{formData.temperatureUnit === TemperatureUnit.CELSIUS ? 'C' : 'F'})</Label>
-        <Input
-          type="number"
-          id="dewPoint"
-          value={formData.dewPoint || ''}
-          onChange={(e) => setFormData({ ...formData, dewPoint: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.dewPoint}
+          onChange={(value) => setFormData({ ...formData, dewPoint: value })}
+          placeholder="Enter dew point"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={-50}
+          max={150}
+          step={0.1}
         />
       </div>
       <div>
         <Label htmlFor="averagePar">Average PAR (μmol/m²/s)</Label>
-        <Input
-          type="number"
-          id="averagePar"
-          value={formData.averagePar || ''}
-          onChange={(e) => setFormData({ ...formData, averagePar: parseFloat(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.averagePar}
+          onChange={(value) => setFormData({ ...formData, averagePar: value })}
+          placeholder="Enter average PAR"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={0}
+          max={2000}
+          step={1}
         />
       </div>
       <div>
@@ -1131,7 +1176,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="fanSpeed"
           value={formData.fanSpeed || ''}
           onChange={(e) => setFormData({ ...formData, fanSpeed: e.target.value as FanSpeed })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="LOW">Low</option>
           <option value="MEDIUM">Medium</option>
@@ -1144,7 +1189,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="ventilationType"
           value={formData.ventilationType || ''}
           onChange={(e) => setFormData({ ...formData, ventilationType: e.target.value as VentilationType })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="CLOSED_LOOP">Closed Loop Airflow</option>
           <option value="EXHAUST_INTAKE">Exhaust/Intake Air Exchange</option>
@@ -1161,7 +1206,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="waterSource"
           value={formData.waterSource || ''}
           onChange={(e) => setFormData({ ...formData, waterSource: e.target.value as WaterSource })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="">Select Source</option>
           {Object.values(WaterSource).map((source) => (
@@ -1181,7 +1226,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           <select
             value={formData.waterUnit}
             onChange={(e) => setFormData({ ...formData, waterUnit: e.target.value as VolumeUnit })}
-            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             {Object.values(VolumeUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1213,7 +1258,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="ppmScale"
           value={formData.ppmScale}
           onChange={(e) => setFormData({ ...formData, ppmScale: e.target.value as PpmScale })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="PPM_500">PPM 500 Scale (0.5 EC)</option>
           <option value="PPM_700">PPM 700 Scale (0.7 EC)</option>
@@ -1247,9 +1292,9 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             className="flex-1 bg-dark-bg-primary text-dark-text-primary"
           />
           <select
-            value={formData.sourceWaterTemperatureUnit || TemperatureUnit.CELSIUS}
+            value={formData.sourceWaterTemperatureUnit || TemperatureUnit.FAHRENHEIT}
             onChange={(e) => setFormData({ ...formData, sourceWaterTemperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1267,9 +1312,9 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             className="flex-1 bg-dark-bg-primary text-dark-text-primary"
           />
           <select
-            value={formData.nutrientWaterTemperatureUnit || TemperatureUnit.CELSIUS}
+            value={formData.nutrientWaterTemperatureUnit || TemperatureUnit.FAHRENHEIT}
             onChange={(e) => setFormData({ ...formData, nutrientWaterTemperatureUnit: e.target.value as TemperatureUnit })}
-            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+            className="w-20 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             {Object.values(TemperatureUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1288,7 +1333,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="nutrientLine"
           value={formData.nutrientLine || ''}
           onChange={(e) => setFormData({ ...formData, nutrientLine: e.target.value as NutrientLine })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="">Select Line</option>
           {Object.values(NutrientLine).map((line) => (
@@ -1383,17 +1428,17 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       {formData.nutrientLine === NutrientLine.CUSTOM && (
         <div>
           <Label>Custom Nutrients</Label>
-          <Textarea
+          <CustomTextarea
             value={JSON.stringify(formData.customNutrients || {}, null, 2)}
-            onChange={(e) => {
+            onChange={(value) => {
               try {
-                const parsed = JSON.parse(e.target.value);
+                const parsed = JSON.parse(value);
                 setFormData({ ...formData, customNutrients: parsed });
               } catch (error) {
                 // Handle invalid JSON
               }
             }}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border min-h-[100px]"
+            placeholder="Enter custom nutrients"
           />
         </div>
       )}
@@ -1473,57 +1518,47 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         </div>
         <div>
           <Label htmlFor="teaGrowthStage">Tea Growth Stage</Label>
-          <Input
-            type="text"
-            id="teaGrowthStage"
+          <CustomTextarea
             value={formData.teaGrowthStage || ''}
-            onChange={(e) => setFormData({ ...formData, teaGrowthStage: e.target.value })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            onChange={(value) => setFormData({ ...formData, teaGrowthStage: value })}
             placeholder="Enter growth stage"
+            minHeight="min-h-[2.5rem]"
           />
         </div>
         <div>
           <Label htmlFor="teaEarthwormCastings">Tea Earthworm Castings</Label>
-          <Input
-            type="text"
-            id="teaEarthwormCastings"
+          <CustomTextarea
             value={formData.teaEarthwormCastings || ''}
-            onChange={(e) => setFormData({ ...formData, teaEarthwormCastings: e.target.value })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            onChange={(value) => setFormData({ ...formData, teaEarthwormCastings: value })}
             placeholder="Enter earthworm castings"
+            minHeight="min-h-[2.5rem]"
           />
         </div>
         <div>
           <Label htmlFor="teaFishKelpExtract">Tea Fish Kelp Extract</Label>
-          <Input
-            type="text"
-            id="teaFishKelpExtract"
+          <CustomTextarea
             value={formData.teaFishKelpExtract || ''}
-            onChange={(e) => setFormData({ ...formData, teaFishKelpExtract: e.target.value })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            onChange={(value) => setFormData({ ...formData, teaFishKelpExtract: value })}
             placeholder="Enter fish kelp extract"
+            minHeight="min-h-[2.5rem]"
           />
         </div>
         <div>
           <Label htmlFor="teaMolasses">Tea Molasses</Label>
-          <Input
-            type="text"
-            id="teaMolasses"
+          <CustomTextarea
             value={formData.teaMolasses || ''}
-            onChange={(e) => setFormData({ ...formData, teaMolasses: e.target.value })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            onChange={(value) => setFormData({ ...formData, teaMolasses: value })}
             placeholder="Enter molasses"
+            minHeight="min-h-[2.5rem]"
           />
         </div>
         <div>
           <Label htmlFor="teaBrewDuration">Tea Brew Duration</Label>
-          <Input
-            type="text"
-            id="teaBrewDuration"
+          <CustomTextarea
             value={formData.teaBrewDuration || ''}
-            onChange={(e) => setFormData({ ...formData, teaBrewDuration: e.target.value })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            onChange={(value) => setFormData({ ...formData, teaBrewDuration: value })}
             placeholder="Enter brew duration"
+            minHeight="min-h-[2.5rem]"
           />
         </div>
       </div>
@@ -1535,17 +1570,18 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       <div>
         <Label htmlFor="height">Height</Label>
         <div className="flex gap-2">
-          <Input
-            type="number"
-            id="height"
-            value={formData.height || ''}
-            onChange={(e) => setFormData({ ...formData, height: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.height}
+            onChange={(value) => setFormData({ ...formData, height: value })}
+            placeholder="Enter height"
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary"
+            min={0}
+            step={0.1}
           />
           <select
             value={formData.heightUnit}
             onChange={(e) => setFormData({ ...formData, heightUnit: e.target.value as DistanceUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             {Object.values(DistanceUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1556,17 +1592,18 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       <div>
         <Label htmlFor="width">Width</Label>
         <div className="flex gap-2">
-          <Input
-            type="number"
-            id="width"
-            value={formData.width || ''}
-            onChange={(e) => setFormData({ ...formData, width: parseFloat(e.target.value) })}
-            className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.width}
+            onChange={(value) => setFormData({ ...formData, width: value })}
+            placeholder="Enter width"
+            className="flex-1 bg-dark-bg-primary text-dark-text-primary"
+            min={0}
+            step={0.1}
           />
           <select
             value={formData.widthUnit}
             onChange={(e) => setFormData({ ...formData, widthUnit: e.target.value as DistanceUnit })}
-            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+            className="w-32 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             {Object.values(DistanceUnit).map((unit) => (
               <option key={unit} value={unit}>{unit}</option>
@@ -1576,22 +1613,24 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
       </div>
       <div>
         <Label htmlFor="nodeCount">Node Count</Label>
-        <Input
-          type="number"
-          id="nodeCount"
-          value={formData.nodeCount || ''}
-          onChange={(e) => setFormData({ ...formData, nodeCount: parseInt(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.nodeCount}
+          onChange={(value) => setFormData({ ...formData, nodeCount: value })}
+          placeholder="Enter node count"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={0}
+          step={1}
         />
       </div>
       <div>
         <Label htmlFor="branchCount">Branch Count</Label>
-        <Input
-          type="number"
-          id="branchCount"
-          value={formData.branchCount || ''}
-          onChange={(e) => setFormData({ ...formData, branchCount: parseInt(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.branchCount}
+          onChange={(value) => setFormData({ ...formData, branchCount: value })}
+          placeholder="Enter branch count"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={0}
+          step={1}
         />
       </div>
     </div>
@@ -1601,14 +1640,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
     <div className="space-y-4">
       <div>
         <Label htmlFor="healthRating">Health Rating (1-10)</Label>
-        <Input
-          type="number"
-          id="healthRating"
-          min="1"
-          max="10"
-          value={formData.healthRating || ''}
-          onChange={(e) => setFormData({ ...formData, healthRating: parseInt(e.target.value) })}
-          className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+        <CustomNumberInput
+          value={formData.healthRating}
+          onChange={(value) => setFormData({ ...formData, healthRating: value })}
+          placeholder="Enter health rating"
+          className="bg-dark-bg-primary text-dark-text-primary"
+          min={1}
+          max={10}
+          step={1}
         />
       </div>
 
@@ -1618,7 +1657,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
           id="inspectionMethod"
           value={formData.inspectionMethod || ''}
           onChange={(e) => setFormData({ ...formData, inspectionMethod: e.target.value as InspectionMethod })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="">Select Method</option>
           <option value="NAKED_EYE">Naked Eye</option>
@@ -1849,7 +1888,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         <select
           value={formData.pestIdentificationStatus || ''}
           onChange={(e) => setFormData({ ...formData, pestIdentificationStatus: e.target.value as PestIdentificationStatus })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="">Select Status</option>
           <option value="SUSPECTED">Suspected</option>
@@ -1862,7 +1901,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         <select
           value={formData.pestConfidenceLevel || ''}
           onChange={(e) => setFormData({ ...formData, pestConfidenceLevel: parseInt(e.target.value) || undefined })}
-          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+          className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
         >
           <option value="">Select Level</option>
           {[1, 2, 3, 4, 5].map(level => (
@@ -1989,136 +2028,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="bendingIntensity"
             value={formData.bendingIntensity || ''}
             onChange={(e) => setFormData({ ...formData, bendingIntensity: e.target.value })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-          >
-            <option value="">Select Intensity</option>
-            <option value="LIGHT">Light</option>
-            <option value="MODERATE">Moderate</option>
-            <option value="INTENSE">Intense</option>
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="tieDownIntensity">Tie Down Intensity</Label>
-          <select
-            id="tieDownIntensity"
-            value={formData.tieDownIntensity || ''}
-            onChange={(e) => setFormData({ ...formData, tieDownIntensity: e.target.value })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-          >
-            <option value="">Select Intensity</option>
-            <option value="LIGHT">Light</option>
-            <option value="MODERATE">Moderate</option>
-            <option value="INTENSE">Intense</option>
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="canopyShape">Canopy Shape</Label>
-          <select
-            id="canopyShape"
-            value={formData.canopyShape || ''}
-            onChange={(e) => setFormData({ ...formData, canopyShape: e.target.value })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-          >
-            <option value="">Select Shape</option>
-            <option value="EVEN">Even</option>
-            <option value="SLOPED">Sloped</option>
-            <option value="SUPER_UNEVEN">Super Uneven</option>
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="leafTuckingIntensity">Leaf Tucking Intensity</Label>
-          <select
-            id="leafTuckingIntensity"
-            value={formData.leafTuckingIntensity || ''}
-            onChange={(e) => setFormData({ ...formData, leafTuckingIntensity: e.target.value })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-          >
-            <option value="">Select Intensity</option>
-            <option value="LIGHT">Light</option>
-            <option value="MODERATE">Moderate</option>
-            <option value="INTENSE">Intense</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <Label htmlFor="supportedPlants">Trunk Supports</Label>
-        <div className="space-y-2">
-          {supportedPlantIds.map((plantId, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <select
-                value={plantId}
-                onChange={e => {
-                  const updated = [...supportedPlantIds];
-                  updated[idx] = e.target.value;
-                  setSupportedPlantIds(updated);
-                }}
-                className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-              >
-                <option value="">Select plant that received trunk support</option>
-                {plants.map(plant => (
-                  <option key={plant.id} value={plant.id}>{plant.name}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setSupportedPlantIds(supportedPlantIds.filter((_, i) => i !== idx))}
-                className="text-red-500 hover:text-red-700 px-2 py-1 rounded focus:outline-none"
-                aria-label="Remove plant"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            onClick={() => setSupportedPlantIds([...supportedPlantIds, ''])}
-            className="w-full bg-garden-600 text-white hover:bg-garden-700 mt-2"
-          >
-            Add Another Plant
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderHSTFields = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="toppedNode">Topped at Node</Label>
-          <select
-            id="toppedNode"
-            value={formData.toppedNode || ''}
-            onChange={(e) => setFormData({ ...formData, toppedNode: parseInt(e.target.value) || undefined })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-          >
-            <option value="">Select Node</option>
-            {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
-              <option key={num} value={num}>{num}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="fimNode">FIM at Node</Label>
-          <select
-            id="fimNode"
-            value={formData.fimNode || ''}
-            onChange={(e) => setFormData({ ...formData, fimNode: parseInt(e.target.value) || undefined })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
-          >
-            <option value="">Select Node</option>
-            {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
-              <option key={num} value={num}>{num}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="defoliationIntensity">Defoliation Intensity</Label>
-          <select
-            id="defoliationIntensity"
-            value={formData.defoliationIntensity || ''}
-            onChange={(e) => setFormData({ ...formData, defoliationIntensity: e.target.value })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Intensity</option>
             <option value="LIGHT">Light</option>
@@ -2128,14 +2038,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         </div>
         <div>
           <Label htmlFor="defoliationPercentage">Portion of Plant Defoliated (%)</Label>
-          <Input
-            type="number"
-            id="defoliationPercentage"
-            min="1"
-            max="100"
-            value={formData.defoliationPercentage || ''}
-            onChange={(e) => setFormData({ ...formData, defoliationPercentage: parseInt(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.defoliationPercentage}
+            onChange={(value) => setFormData({ ...formData, defoliationPercentage: value })}
+            placeholder="Enter percentage"
+            className="bg-dark-bg-primary text-dark-text-primary"
+            min={1}
+            max={100}
+            step={1}
           />
         </div>
       </div>
@@ -2188,7 +2098,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="hangMethod"
             value={formData.hangMethod || ''}
             onChange={(e) => setFormData({ ...formData, hangMethod: e.target.value as HangMethod })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Method</option>
             <option value="ENTIRE_PLANT">Entire Plant</option>
@@ -2202,7 +2112,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="trichomeColor"
             value={formData.trichomeColor || ''}
             onChange={(e) => setFormData({ ...formData, trichomeColor: e.target.value as TrichomeColor })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Coloration</option>
             <option value="MOSTLY_CLEAR">Mostly Clear</option>
@@ -2238,7 +2148,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="trimMoisture"
             value={formData.trimMoisture || ''}
             onChange={(e) => setFormData({ ...formData, trimMoisture: e.target.value as TrimMoisture })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Moisture</option>
             <option value="WET">Wet</option>
@@ -2248,14 +2158,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         </div>
         <div>
           <Label htmlFor="nugMoisturePercent">Nug Moisture When Trimmed (%)</Label>
-          <Input
-            type="number"
-            id="nugMoisturePercent"
-            min="1"
-            max="100"
-            value={formData.nugMoisturePercent || ''}
-            onChange={(e) => setFormData({ ...formData, nugMoisturePercent: parseInt(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.nugMoisturePercent}
+            onChange={(value) => setFormData({ ...formData, nugMoisturePercent: value })}
+            placeholder="Enter moisture percentage"
+            className="bg-dark-bg-primary text-dark-text-primary"
+            min={1}
+            max={100}
+            step={1}
           />
         </div>
         <div>
@@ -2264,7 +2174,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="trimMethod"
             value={formData.trimMethod || ''}
             onChange={(e) => setFormData({ ...formData, trimMethod: e.target.value as TrimMethod })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Method</option>
             <option value="HAND">Hand</option>
@@ -2273,30 +2183,32 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
         </div>
         <div>
           <Label htmlFor="dryingRh">RH (%)</Label>
-          <Input
-            type="number"
-            id="dryingRh"
-            min="1"
-            max="100"
-            value={formData.dryingRh || ''}
-            onChange={(e) => setFormData({ ...formData, dryingRh: parseInt(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.dryingRh}
+            onChange={(value) => setFormData({ ...formData, dryingRh: value })}
+            placeholder="Enter RH percentage"
+            className="bg-dark-bg-primary text-dark-text-primary"
+            min={1}
+            max={100}
+            step={1}
           />
         </div>
         <div>
           <Label htmlFor="dryingTemp">Temperature</Label>
           <div className="flex gap-2">
-            <Input
-              type="number"
-              id="dryingTemp"
-              value={formData.dryingTemp || ''}
-              onChange={(e) => setFormData({ ...formData, dryingTemp: parseFloat(e.target.value) || undefined })}
-              className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            <CustomNumberInput
+              value={formData.dryingTemp}
+              onChange={(value) => setFormData({ ...formData, dryingTemp: value })}
+              placeholder="Enter temperature"
+              className="flex-1 bg-dark-bg-primary text-dark-text-primary"
+              min={-50}
+              max={150}
+              step={0.1}
             />
             <select
               value={formData.temperatureUnit}
               onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
-              className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+              className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               {Object.values(TemperatureUnit).map((unit) => (
                 <option key={unit} value={unit}>{unit}</option>
@@ -2310,7 +2222,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="estimatedDaysLeft"
             value={formData.estimatedDaysLeft || ''}
             onChange={(e) => setFormData({ ...formData, estimatedDaysLeft: parseInt(e.target.value) || undefined })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Days</option>
             {Array.from({ length: 16 }, (_, i) => i).map(num => (
@@ -2331,7 +2243,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="transplantFromSize"
             value={formData.transplantFromSize || ''}
             onChange={(e) => setFormData({ ...formData, transplantFromSize: e.target.value as ContainerSize })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Size</option>
             {[
@@ -2362,7 +2274,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="transplantToSize"
             value={formData.transplantToSize || ''}
             onChange={(e) => setFormData({ ...formData, transplantToSize: e.target.value as ContainerSize })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Size</option>
             {[
@@ -2395,7 +2307,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="soilMoisture"
             value={formData.soilMoisture || ''}
             onChange={(e) => setFormData({ ...formData, soilMoisture: e.target.value as SoilMoisture })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Moisture</option>
             <option value="DRY">Dry</option>
@@ -2484,7 +2396,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="germinationMethod"
             value={formData.germinationMethod || ''}
             onChange={(e) => setFormData({ ...formData, germinationMethod: e.target.value as GerminationMethod })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Method</option>
             <option value="PAPER_TOWEL">Paper Towel</option>
@@ -2503,7 +2415,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="germinationStatus"
             value={formData.germinationStatus || ''}
             onChange={(e) => setFormData({ ...formData, germinationStatus: e.target.value as GerminationStatus })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Status</option>
             <option value="NOT_STARTED">Not Started</option>
@@ -2517,31 +2429,33 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
         <div>
           <Label htmlFor="germinationRh">RH (%)</Label>
-          <Input
-            type="number"
-            id="germinationRh"
-            min="1"
-            max="100"
-            value={formData.germinationRh || ''}
-            onChange={(e) => setFormData({ ...formData, germinationRh: parseInt(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.germinationRh}
+            onChange={(value) => setFormData({ ...formData, germinationRh: value })}
+            placeholder="Enter RH percentage"
+            className="bg-dark-bg-primary text-dark-text-primary"
+            min={1}
+            max={100}
+            step={1}
           />
         </div>
 
         <div>
           <Label htmlFor="germinationTemp">Temperature</Label>
           <div className="flex gap-2">
-            <Input
-              type="number"
-              id="germinationTemp"
-              value={formData.germinationTemp || ''}
-              onChange={(e) => setFormData({ ...formData, germinationTemp: parseFloat(e.target.value) || undefined })}
-              className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            <CustomNumberInput
+              value={formData.germinationTemp}
+              onChange={(value) => setFormData({ ...formData, germinationTemp: value })}
+              placeholder="Enter temperature"
+              className="flex-1 bg-dark-bg-primary text-dark-text-primary"
+              min={-50}
+              max={150}
+              step={0.1}
             />
             <select
               value={formData.temperatureUnit}
               onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
-              className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+              className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               {Object.values(TemperatureUnit).map((unit) => (
                 <option key={unit} value={unit}>{unit}</option>
@@ -2556,7 +2470,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="daysToSprout"
             value={formData.daysToSprout || ''}
             onChange={(e) => setFormData({ ...formData, daysToSprout: parseInt(e.target.value) || undefined })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Days</option>
             {Array.from({ length: 22 }, (_, i) => i).map(num => (
@@ -2586,7 +2500,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
                   cloneZoneId: ''
                 });
               }}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Garden</option>
               {gardens.map((garden: any) => (
@@ -2607,7 +2521,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
                   cloneZoneId: ''
                 });
               }}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
               disabled={!formData.cloneGardenId}
             >
               <option value="">Select Room</option>
@@ -2623,7 +2537,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               id="cloneZone"
               value={formData.cloneZoneId || ''}
               onChange={(e) => setFormData({ ...formData, cloneZoneId: e.target.value })}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
               disabled={!formData.cloneRoomId}
             >
               <option value="">Select Zone</option>
@@ -2644,7 +2558,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               id="cloningMethod"
               value={formData.cloningMethod || ''}
               onChange={(e) => setFormData({ ...formData, cloningMethod: e.target.value as CloningMethod })}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Method</option>
               <option value="AEROPONIC_CLONER">Aeroponic Cloner</option>
@@ -2662,7 +2576,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               id="cutType"
               value={formData.cutType || ''}
               onChange={(e) => setFormData({ ...formData, cutType: e.target.value as CutType })}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Cut Type</option>
               <option value="TOP_CUT">Top Cut</option>
@@ -2711,7 +2625,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               id="sanitationMethod"
               value={formData.sanitationMethod || ''}
               onChange={(e) => setFormData({ ...formData, sanitationMethod: e.target.value as SanitationMethod })}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Method</option>
               <option value="FIRE">Fire</option>
@@ -2727,31 +2641,33 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
           <div>
             <Label htmlFor="cloningRh">RH (%)</Label>
-            <Input
-              type="number"
-              id="cloningRh"
-              min="1"
-              max="100"
-              value={formData.cloningRh || ''}
-              onChange={(e) => setFormData({ ...formData, cloningRh: parseInt(e.target.value) || undefined })}
-              className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+            <CustomNumberInput
+              value={formData.cloningRh}
+              onChange={(value) => setFormData({ ...formData, cloningRh: value })}
+              placeholder="Enter RH percentage"
+              className="bg-dark-bg-primary text-dark-text-primary"
+              min={1}
+              max={100}
+              step={1}
             />
           </div>
 
           <div>
             <Label htmlFor="cloningTemp">Temperature</Label>
             <div className="flex gap-2">
-              <Input
-                type="number"
-                id="cloningTemp"
-                value={formData.cloningTemp || ''}
-                onChange={(e) => setFormData({ ...formData, cloningTemp: parseFloat(e.target.value) || undefined })}
-                className="flex-1 bg-dark-bg-primary text-dark-text-primary border-dark-border"
+              <CustomNumberInput
+                value={formData.cloningTemp}
+                onChange={(value) => setFormData({ ...formData, cloningTemp: value })}
+                placeholder="Enter temperature"
+                className="flex-1 bg-dark-bg-primary text-dark-text-primary"
+                min={-50}
+                max={150}
+                step={0.1}
               />
               <select
                 value={formData.temperatureUnit}
                 onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value as TemperatureUnit })}
-                className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary"
+                className="w-24 rounded-md border border-dark-border bg-dark-bg-primary px-2 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
               >
                 {Object.values(TemperatureUnit).map((unit) => (
                   <option key={unit} value={unit}>{unit}</option>
@@ -2766,7 +2682,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               id="lightHoursPerDay"
               value={formData.lightHoursPerDay || ''}
               onChange={(e) => setFormData({ ...formData, lightHoursPerDay: parseInt(e.target.value) || undefined })}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Hours</option>
               {[18, 19, 20, 21, 22, 23, 24].map(hours => (
@@ -2781,7 +2697,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               id="lightType"
               value={formData.lightType || ''}
               onChange={(e) => setFormData({ ...formData, lightType: e.target.value as LightType })}
-              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+              className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
             >
               <option value="">Select Type</option>
               <option value="LED">LED</option>
@@ -2860,7 +2776,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="treatmentType"
             value={formData.treatmentType || ''}
             onChange={(e) => setFormData({ ...formData, treatmentType: e.target.value as TreatmentType })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Type</option>
             <option value="FOLIAR_SPRAY">Foliar Spray</option>
@@ -2947,12 +2863,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
         <div>
           <Label htmlFor="releaseCount">Release Count</Label>
-          <Input
-            type="number"
-            id="releaseCount"
-            value={formData.releaseCount || ''}
-            onChange={(e) => setFormData({ ...formData, releaseCount: parseInt(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.releaseCount}
+            onChange={(value) => setFormData({ ...formData, releaseCount: value })}
+            placeholder="Enter release count"
+            className="bg-dark-bg-primary text-dark-text-primary"
+            min={1}
+            max={10000}
+            step={1}
           />
         </div>
 
@@ -2962,7 +2880,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="applicationMethod"
             value={formData.applicationMethod || ''}
             onChange={(e) => setFormData({ ...formData, applicationMethod: e.target.value as ApplicationMethod })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Method</option>
             <option value="SPRINKLED">Sprinkled</option>
@@ -3018,7 +2936,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             id="coverageMethod"
             value={formData.coverageMethod || ''}
             onChange={(e) => setFormData({ ...formData, coverageMethod: e.target.value as CoverageMethod })}
-            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+            className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
           >
             <option value="">Select Method</option>
             <option value="HAND_PUMP_SPRAYER">Hand Pump Sprayer</option>
@@ -3033,15 +2951,14 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
         <div>
           <Label htmlFor="treatmentPh">pH of Treatment Solution</Label>
-          <Input
-            type="number"
-            id="treatmentPh"
-            min="0"
-            max="14"
-            step="0.1"
-            value={formData.treatmentPh || ''}
-            onChange={(e) => setFormData({ ...formData, treatmentPh: parseFloat(e.target.value) || undefined })}
-            className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+          <CustomNumberInput
+            value={formData.treatmentPh}
+            onChange={(value) => setFormData({ ...formData, treatmentPh: value })}
+            placeholder="Enter pH value"
+            className="bg-dark-bg-primary text-dark-text-primary"
+            min={0}
+            max={14}
+            step={0.1}
           />
         </div>
 
@@ -3134,7 +3051,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
                   id="stressDuration"
                   value={formData.stressDuration || ''}
                   onChange={(e) => setFormData({ ...formData, stressDuration: e.target.value as StressDuration })}
-                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
                 >
                   <option value="">Select Duration</option>
                   {Object.values(StressDuration).map((duration) => (
@@ -3147,22 +3064,18 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
               <div>
                 <Label htmlFor="suspectedCause">Suspected Cause</Label>
-                <Textarea
-                  id="suspectedCause"
+                <CustomTextarea
                   value={formData.suspectedCause || ''}
-                  onChange={(e) => setFormData({ ...formData, suspectedCause: e.target.value })}
-                  className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                  onChange={(value) => setFormData({ ...formData, suspectedCause: value })}
                   placeholder="Describe what you think caused the stress..."
                 />
               </div>
 
               <div>
                 <Label htmlFor="recoveryActions">Recovery Actions Taken</Label>
-                <Textarea
-                  id="recoveryActions"
+                <CustomTextarea
                   value={formData.recoveryActions || ''}
-                  onChange={(e) => setFormData({ ...formData, recoveryActions: e.target.value })}
-                  className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                  onChange={(value) => setFormData({ ...formData, recoveryActions: value })}
                   placeholder="Describe what actions you've taken to help the plant recover..."
                 />
               </div>
@@ -3173,7 +3086,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
                   id="expectedRecoveryTime"
                   value={formData.expectedRecoveryTime || ''}
                   onChange={(e) => setFormData({ ...formData, expectedRecoveryTime: e.target.value as ExpectedRecoveryTime })}
-                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                  className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
                 >
                   <option value="">Select Expected Time</option>
                   {Object.values(ExpectedRecoveryTime).map((time) => (
@@ -3277,7 +3190,6 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             <div>
               <Label htmlFor="stage">Stage</Label>
               <select
-                id="stage"
                 value={formData.stage}
                 onChange={(e) => setFormData({ ...formData, stage: e.target.value as Stage })}
                 className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
@@ -3296,7 +3208,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
                 id="datetime"
                 value={formData.datetime}
                 onChange={(e) => setFormData({ ...formData, datetime: e.target.value })}
-                className="bg-dark-bg-primary text-dark-text-primary border-dark-border"
+                className="bg-dark-bg-primary text-dark-text-primary border-dark-border focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none"
               />
             </div>
           </div>
@@ -3311,7 +3223,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
                   <select
                     value={plantId}
                     onChange={e => handlePlantChange(idx, e.target.value)}
-                    className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary"
+                    className="w-full rounded-md border border-dark-border bg-dark-bg-primary px-3 py-2 text-sm text-dark-text-primary focus:border-garden-500 focus:outline-none focus:ring-1 focus:ring-garden-500"
                   >
                     <option value="">Select plant</option>
                     {plants.map(p => (
@@ -3346,11 +3258,10 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
 
           <div>
             <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
+            <CustomTextarea
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="bg-dark-bg-primary text-dark-text-primary border-dark-border min-h-[100px]"
+              onChange={(value) => setFormData({ ...formData, notes: value })}
+              placeholder="Enter any additional notes..."
             />
           </div>
 

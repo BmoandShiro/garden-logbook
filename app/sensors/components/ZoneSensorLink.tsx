@@ -59,13 +59,13 @@ const CustomNumberInput = ({
       <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={handleIncrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
         >
           <ChevronUp className="w-3 h-3" />
         </button>
         <button
           onClick={handleDecrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
         >
           <ChevronDown className="w-3 h-3" />
         </button>

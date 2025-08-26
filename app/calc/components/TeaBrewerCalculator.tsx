@@ -72,20 +72,20 @@ const CustomNumberInput = ({
         placeholder={placeholder}
         value={value !== undefined && value !== null && !isNaN(value) ? value : ''}
         onChange={handleChange}
-        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
       />
       <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={handleIncrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
         >
           <ChevronUp className="w-3 h-3" />
         </button>
         <button
           type="button"
           onClick={handleDecrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
         >
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -191,7 +191,7 @@ export default function TeaBrewerCalculator() {
               id="growthStage"
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value as GrowthStage)}
-              className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none text-dark-text-primary"
+              className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none text-dark-text-primary"
             >
               <option value="Seedling">Seedling</option>
               <option value="Veg">Veg</option>
@@ -245,22 +245,22 @@ export default function TeaBrewerCalculator() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="font-medium">Earthworm Castings:</span>
-                <span className="text-emerald-400">{calculateTotalAmount(recipe.earthworm_castings, brewSize)}</span>
+                <span className="text-garden-500">{calculateTotalAmount(recipe.earthworm_castings, brewSize)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Fish & Kelp Extract:</span>
-                <span className="text-emerald-400">{calculateTotalAmount(recipe.fish_kelp_extract, brewSize)}</span>
+                <span className="text-garden-500">{calculateTotalAmount(recipe.fish_kelp_extract, brewSize)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Molasses:</span>
-                <span className="text-emerald-400">{calculateTotalAmount(recipe.molasses, brewSize)}</span>
+                <span className="text-garden-500">{calculateTotalAmount(recipe.molasses, brewSize)}</span>
               </div>
             </div>
 
             <div className="pt-4 border-t border-dark-border">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Recommended Brew Duration:</span>
-                <span className="text-emerald-400">{brewDuration}</span>
+                <span className="text-garden-500">{brewDuration}</span>
               </div>
               <p className="text-sm text-dark-text-secondary mt-2">
                 With water at {waterTemp}°F, brew for ~{brewDuration} with strong aeration.

@@ -136,7 +136,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="inline-flex items-center justify-center rounded-full p-2 text-emerald-300/70 hover:text-emerald-50 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="inline-flex items-center justify-center rounded-full p-2 text-emerald-300/70 hover:text-emerald-50 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-garden-500"
                   title="Plant Settings"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -147,7 +147,7 @@ export default function PlantList({ plants, gardenId, roomId, zoneId }: PlantLis
                   <Settings className="h-5 w-5" />
                 </button>
                 <button
-                  className="inline-flex items-center justify-center rounded-full p-2 text-emerald-300/70 hover:text-emerald-50 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="inline-flex items-center justify-center rounded-full p-2 text-emerald-300/70 hover:text-emerald-50 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-garden-500"
                   title="Duplicate Plant"
                   onClick={(e) => {
                     e.stopPropagation();

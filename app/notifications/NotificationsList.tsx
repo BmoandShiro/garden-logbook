@@ -467,7 +467,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                               </div>
                                                                             )}
                                                                           </div>
-                                                                          <div className="mt-4 text-xs text-emerald-400">
+                                                                          <div className="mt-4 text-xs text-garden-500">
                                                                             <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
                                                                           </div>
                                                                         </li>

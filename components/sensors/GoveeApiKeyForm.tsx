@@ -70,7 +70,7 @@ export function GoveeApiKeyForm() {
               <p className="mt-1 text-sm">API key saved successfully.</p>
             </div>
           )}
-          <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-500">
+          <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-garden-500">
             {loading ? 'Saving...' : 'Save API Key'}
           </Button>
         </form>

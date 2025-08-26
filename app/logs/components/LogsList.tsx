@@ -358,7 +358,7 @@ const renderLogContent = (log: LogWithLocation, merged: any, unitPreferences: an
         <div className="text-dark-text-primary">
           {merged.changeDetails || 'Changes made'}
         </div>
-        <div className="text-emerald-400 text-xs mt-1">
+        <div className="text-garden-500 text-xs mt-1">
           Changed by {merged.changedBy?.name || 'Unknown User'}
         </div>
       </div>

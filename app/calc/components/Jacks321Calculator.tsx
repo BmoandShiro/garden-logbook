@@ -489,20 +489,20 @@ const CustomNumberInput = ({
         placeholder={placeholder}
         value={value !== undefined && value !== null && !isNaN(value) ? value : ''}
         onChange={handleChange}
-        className="w-full px-3 py-2 text-sm bg-dark-bg-secondary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+        className="w-full px-3 py-2 text-sm bg-dark-bg-secondary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
       />
       <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={handleIncrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
         >
           <ChevronUp className="w-3 h-3" />
         </button>
         <button
           type="button"
           onClick={handleDecrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
         >
           <ChevronDownIcon className="w-3 h-3" />
         </button>
@@ -671,7 +671,7 @@ export default function Jacks321Calculator() {
     // Only set target PPM if it's empty or if stage/CO2/luxury settings change
     // Don't reset when symptoms change to preserve user's manual adjustments
     if (!targetPPM || targetPPM === '') {
-      setTargetPPM(basePPM.toString());
+    setTargetPPM(basePPM.toString());
     }
     
     setPPMAdjustments({
@@ -1294,9 +1294,9 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
       logTitle: `Watering - ${STAGE_DATA[selectedStage].name} Stage`,
       notes: (() => {
         let notes = `Nutrient mix: ${nutrientCalc ? 
-          Object.entries(nutrientCalc)
-            .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
-            .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
+        Object.entries(nutrientCalc)
+          .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
+          .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
             .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`;
         
         if (selectedSymptoms.length > 0) {
@@ -1333,6 +1333,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
       jacks321Unit: 'GRAMS' as const,
       partAAmount: nutrientCalc?.partA?.grams ? Number(nutrientCalc.partA.grams.toFixed(2)) : undefined,
       partBAmount: nutrientCalc?.partB?.grams ? Number(nutrientCalc.partB.grams.toFixed(2)) : undefined,
+      partCAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined, // Map epsom to partCAmount
       epsomAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined,
       bloomAmount: nutrientCalc?.bloom?.grams ? Number(nutrientCalc.bloom.grams.toFixed(2)) : undefined,
       finishAmount: nutrientCalc?.finish?.grams ? Number(nutrientCalc.finish.grams.toFixed(2)) : undefined,
@@ -1827,7 +1828,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                           value !== 0 && (
                             <div key={key} className="flex justify-between text-sm">
                               <span>{key}</span>
-                              <span className={value > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                              <span className={value > 0 ? 'text-garden-500' : 'text-red-400'}>
                                 {(value * 100).toFixed(1)}%
                               </span>
                             </div>
@@ -1910,7 +1911,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1933,7 +1934,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.partA.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.partA * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1956,7 +1957,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.partB.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.partB * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1979,7 +1980,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.bloom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.bloom * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -2002,7 +2003,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.finish.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -2018,11 +2019,11 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Nutrient PPM Added</span>
-                  <span className="font-medium text-emerald-400">{nutrientCalc.totalPPM.toFixed(1)}</span>
+                  <span className="font-medium text-garden-500">{nutrientCalc.totalPPM.toFixed(1)}</span>
                 </div>
                 <div className="flex justify-between items-center font-medium">
                   <span>Final Solution PPM</span>
-                  <span className="text-emerald-400">{nutrientCalc.finalPPM.toFixed(1)}</span>
+                  <span className="text-garden-500">{nutrientCalc.finalPPM.toFixed(1)}</span>
                 </div>
               </div>
             </div>
@@ -2118,7 +2119,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               className="w-full flex items-center justify-between bg-dark-bg-primary border-dark-border hover:bg-dark-bg-secondary"
             >
               <div className="flex items-center space-x-2">
-                <Leaf className="h-4 w-4 text-emerald-400" />
+                <Leaf className="h-4 w-4 text-garden-500" />
                 <span>Tea Brewer Calculator</span>
               </div>
               {isTeaBrewerOpen ? (
@@ -2141,7 +2142,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       id="teaGrowthStage"
                       value={teaGrowthStage}
                       onChange={(e) => setTeaGrowthStage(e.target.value as TeaGrowthStage)}
-                      className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none text-dark-text-primary"
+                      className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none text-dark-text-primary"
                     >
                       <option value="Seedling">Seedling</option>
                       <option value="Veg">Veg</option>
@@ -2195,22 +2196,22 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="font-medium">Earthworm Castings:</span>
-                        <span className="text-emerald-400">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].earthworm_castings, teaBrewSize)}</span>
+                        <span className="text-garden-500">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].earthworm_castings, teaBrewSize)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Fish & Kelp Extract:</span>
-                        <span className="text-emerald-400">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].fish_kelp_extract, teaBrewSize)}</span>
+                        <span className="text-garden-500">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].fish_kelp_extract, teaBrewSize)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Molasses:</span>
-                        <span className="text-emerald-400">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].molasses, teaBrewSize)}</span>
+                        <span className="text-garden-500">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].molasses, teaBrewSize)}</span>
                       </div>
                     </div>
 
                     <div className="pt-4 border-t border-dark-border">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Recommended Brew Duration:</span>
-                        <span className="text-emerald-400">{getBrewDuration(teaWaterTemp)}</span>
+                        <span className="text-garden-500">{getBrewDuration(teaWaterTemp)}</span>
                       </div>
                       <p className="text-sm text-dark-text-secondary mt-2">
                         With water at {teaWaterTemp}°F, brew for ~{getBrewDuration(teaWaterTemp)} with strong aeration.

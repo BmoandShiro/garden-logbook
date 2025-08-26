@@ -190,7 +190,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                 id="zone-select"
                 value={selectedZone}
                 onChange={e => setSelectedZone(e.target.value)}
-                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm"
+                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-garden-500 focus:ring-garden-500 shadow-sm"
               >
                 <option value="" disabled>Select a zone...</option>
                 {zones.map((zone) => (
@@ -207,7 +207,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                 id="device-select"
                 value={selectedDevice}
                 onChange={e => setSelectedDevice(e.target.value)}
-                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm"
+                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-garden-500 focus:ring-garden-500 shadow-sm"
               >
                 <option value="" disabled>Select a sensor...</option>
                 {unlinkedDevices.map((device) => (
@@ -222,7 +222,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
           <Button 
             onClick={handleLinkDevice} 
             disabled={!selectedZone || !selectedDevice || linking}
-            className="w-full bg-emerald-600 hover:bg-emerald-500"
+            className="w-full bg-emerald-600 hover:bg-garden-500"
           >
             {linking ? "Linking..." : "Link Sensor to Zone"}
           </Button>
@@ -268,7 +268,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                       id={`plant-alerts-toggle-${zone.id}`}
                       checked={zone.usePlantSpecificAlerts}
                       onCheckedChange={(checked) => updateZoneSetting(zone.id, { usePlantSpecificAlerts: checked })}
-                      className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#1a1b1e]"
+                      className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-[#1a1b1e]"
                     />
                     <Label htmlFor={`plant-alerts-toggle-${zone.id}`} className="text-emerald-300/70">
                       Use Plant-Specific Alert Thresholds
@@ -286,7 +286,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1">
                               {device.isOnline ?? true ? (
-                                <Wifi className="h-4 w-4 text-emerald-400" />
+                                <Wifi className="h-4 w-4 text-garden-500" />
                               ) : (
                                 <WifiOff className="h-4 w-4 text-red-400" />
                               )}
@@ -298,7 +298,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                           <div className="flex items-center gap-2">
                             {device.batteryLevel !== undefined && (
                               <div className="flex items-center gap-1">
-                                <Battery className="h-4 w-4 text-emerald-400" />
+                                <Battery className="h-4 w-4 text-garden-500" />
                                 <span className="text-sm text-emerald-300">{device.batteryLevel}%</span>
                               </div>
                             )}

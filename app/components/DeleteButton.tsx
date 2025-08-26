@@ -77,7 +77,7 @@ export default function DeleteButton({ onDelete, itemName, small = false }: Dele
                     <button
                       type="button"
                       onClick={() => setIsOpen(false)}
-                      className="rounded-md bg-dark-bg-primary border border-dark-border px-4 py-2 text-sm font-medium text-dark-text-secondary hover:bg-dark-bg-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                      className="rounded-md bg-dark-bg-primary border border-dark-border px-4 py-2 text-sm font-medium text-dark-text-secondary hover:bg-dark-bg-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-garden-500 focus-visible:ring-offset-2"
                       disabled={isDeleting}
                     >
                       Cancel

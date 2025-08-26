@@ -75,20 +75,20 @@ const CustomNumberInput = ({
         placeholder={placeholder}
         value={value !== undefined && value !== null && !isNaN(value) ? value : ''}
         onChange={handleChange}
-        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+        className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
       />
       <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={handleIncrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
         >
           <ChevronUp className="w-3 h-3" />
         </button>
         <button
           type="button"
           onClick={handleDecrement}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
         >
           <ChevronDown className="w-3 h-3" />
         </button>

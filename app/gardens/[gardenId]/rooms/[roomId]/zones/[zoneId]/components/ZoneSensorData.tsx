@@ -65,14 +65,14 @@ const CustomNumberInput = ({
         <button
           onClick={handleIncrement}
           disabled={disabled}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pt-2 disabled:opacity-50"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2 disabled:opacity-50"
         >
           <ChevronUp className="w-3 h-3" />
         </button>
         <button
           onClick={handleDecrement}
           disabled={disabled}
-          className="flex items-center justify-center text-emerald-400 hover:text-emerald-300 p-1 pb-2 disabled:opacity-50"
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2 disabled:opacity-50"
         >
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -236,7 +236,7 @@ export default function ZoneSensorData({
                   id="plant-alerts-toggle"
                   checked={usePlantAlerts}
                   onCheckedChange={handleUsePlantAlertsChange}
-                  className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#1a1b1e]"
+                  className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-[#1a1b1e]"
                 />
                 <Label htmlFor="plant-alerts-toggle" className="text-emerald-300/70">
                   Use Plant-Specific Alert Thresholds
@@ -348,7 +348,7 @@ export default function ZoneSensorData({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {parsed.online !== false ? (
-                          <Wifi className="h-4 w-4 text-emerald-400" />
+                          <Wifi className="h-4 w-4 text-garden-500" />
                         ) : (
                           <WifiOff className="h-4 w-4 text-red-500" />
                         )}

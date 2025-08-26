@@ -31,7 +31,7 @@ const getLogColor = (type: string) => {
     GENERAL: 'bg-gray-300',
     WEATHER_ALERT: 'bg-red-500',
     SENSOR_ALERT: 'bg-orange-500',
-    CHANGE_LOG: 'bg-emerald-500',
+    CHANGE_LOG: 'bg-garden-500',
   };
   return colors[type] || 'bg-gray-400';
 };
@@ -265,7 +265,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       </button>
                       <Link
                         href={`/gardens/${info.gardenId}`}
-                        className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-garden-500"
                         title={`Go to ${gardenName}`}
                       >
                         {gardenName}
@@ -273,7 +273,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="font-semibold text-emerald-400 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
+                            <span className="font-semibold text-garden-500 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             {(() => {
@@ -327,7 +327,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                               }
                               return uniqueZones.map((zone: any, idx: number, arr: any[]) =>
                                 zone.id && zone.gardenId && zone.roomId ? (
-                                  <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-emerald-400 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                                  <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-garden-500 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
                                 ) : (
                                   <span key={zone.name + idx}>{zone.name}{idx < arr.length - 1 ? ', ' : ''}</span>
                                 )
@@ -761,17 +761,17 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                   <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
                     <span>wAlert</span>
                     <span className="text-emerald-200">{gardenName}</span>
-                    <span className="font-semibold text-emerald-400 ml-1">{Array.from(new Set(details.map((d: any) => d.plantName))).length} plants</span>
+                    <span className="font-semibold text-garden-500 ml-1">{Array.from(new Set(details.map((d: any) => d.plantName))).length} plants</span>
                   </div>
                   <div className="mb-1">
-                    <span className="font-semibold">Plants:</span> <span className="text-emerald-400">{Array.from(new Set(details.map((d: any) => d.plantName))).join(", ")}</span>
+                    <span className="font-semibold">Plants:</span> <span className="text-garden-500">{Array.from(new Set(details.map((d: any) => d.plantName))).join(", ")}</span>
                   </div>
                   {details.map((d: any, idx: number) => (
                     <div key={idx} className="mb-2 border-b border-red-900 pb-2 last:border-b-0 last:pb-0">
                       <div className="font-bold text-red-200 mb-1">{d.type}{d.alertTypes?.length ? `: ${d.alertTypes.join(", ")}` : ""}</div>
                       {d.roomName && <div><span className="font-semibold">Room:</span> {d.roomName}</div>}
                       {d.zoneName && <div><span className="font-semibold">Zone:</span> {d.zoneName}</div>}
-                      {d.plantName && <div><span className="font-semibold">Plant:</span> <span className="text-emerald-400">{d.plantName}</span></div>}
+                      {d.plantName && <div><span className="font-semibold">Plant:</span> <span className="text-garden-500">{d.plantName}</span></div>}
                       {d.createdAt && <div><span className="font-semibold">Time:</span> <LogDateField date={d.createdAt} timezone={d.timezone} /></div>}
                       {d.message && <div className="mt-2 whitespace-pre-line">{renderForecastedMessage(d.message)}</div>}
                       {d.alertTypes && d.alertTypes.length > 0 && (
