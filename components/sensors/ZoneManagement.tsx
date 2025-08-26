@@ -222,7 +222,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
           <Button 
             onClick={handleLinkDevice} 
             disabled={!selectedZone || !selectedDevice || linking}
-            className="w-full bg-emerald-600 hover:bg-garden-500"
+            className="w-full bg-garden-500 hover:bg-garden-500"
           >
             {linking ? "Linking..." : "Link Sensor to Zone"}
           </Button>

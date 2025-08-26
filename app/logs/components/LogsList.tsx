@@ -187,7 +187,7 @@ const LogGroup = ({ logs, onLogDeleted }: { logs: LogWithLocation[], onLogDelete
                 </span>
               </div>
             </button>
-            <span className="inline-flex items-center px-4 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white">
+            <span className="inline-flex items-center px-4 py-1 rounded-md text-xs font-medium bg-garden-500 text-white">
               {logs.length} {logs.length === 1 ? 'entry' : 'entries'}
             </span>
           </div>

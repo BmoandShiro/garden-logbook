@@ -215,7 +215,7 @@ export default function ZoneList({ zones, gardenId, roomId }: ZoneListProps) {
                   <button
                     type="submit"
                     disabled={editLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-white bg-garden-500 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {editLoading ? 'Saving...' : 'Save Changes'}
                   </button>

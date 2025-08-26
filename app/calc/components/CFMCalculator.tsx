@@ -231,7 +231,7 @@ export default function CFMCalculator() {
                 checked={isClosedLoop}
                 onCheckedChange={setIsClosedLoop}
                 aria-label="Toggle room type"
-                className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
+                className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
               />
             </div>
 
@@ -247,7 +247,7 @@ export default function CFMCalculator() {
                   checked={hasScrubbing}
                   onCheckedChange={setHasScrubbing}
                   aria-label="Toggle scrubbing setup"
-                  className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
+                  className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
                 />
               </div>
             )}
@@ -257,7 +257,7 @@ export default function CFMCalculator() {
                 id="heatBoost" 
                 checked={heatBoost} 
                 onCheckedChange={(checked) => setHeatBoost(checked as boolean)}
-                className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
               />
               <Label htmlFor="heatBoost">
                 Add extra 25% boost for high-heat setups (HPS or high-power LED + filter)

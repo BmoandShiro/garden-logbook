@@ -86,7 +86,7 @@ export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProp
       {rooms.map((room) => (
         <div
           key={room.id}
-          className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-emerald-600"
+          className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-garden-500"
         >
           <div className="absolute top-0 right-0 z-10 flex items-center gap-2 p-2" onClick={(e) => e.stopPropagation()}>
             <button
@@ -252,7 +252,7 @@ export default function RoomList({ rooms, gardenId, logsByRoomId }: RoomListProp
                   <button
                     type="submit"
                     disabled={editLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-white bg-garden-500 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {editLoading ? 'Saving...' : 'Save Changes'}
                   </button>

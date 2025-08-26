@@ -1584,7 +1584,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             checked={isCO2Enriched}
             onCheckedChange={setIsCO2Enriched}
             aria-label="Toggle CO2 enriched environment"
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
           />
         </div>
 
@@ -1600,7 +1600,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             checked={isPPM700}
             onCheckedChange={setIsPPM700}
             aria-label="Toggle PPM scale"
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
           />
         </div>
 
@@ -1669,7 +1669,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       id="smallRoots"
                       checked={isSmallRoots}
                       onCheckedChange={(checked) => setIsSmallRoots(checked as boolean)}
-                      className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                      className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
                     />
                     <div className="grid gap-1.5 leading-none">
                       <Label htmlFor="smallRoots">
@@ -1790,7 +1790,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                                 setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
                               }
                             }}
-                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
                           />
                           <Label>{symptom}</Label>
                         </div>
@@ -1809,7 +1809,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                                 setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
                               }
                             }}
-                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
                           />
                           <Label>{symptom}</Label>
                         </div>
@@ -2066,7 +2066,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               });
             }}
             aria-label="Toggle luxury uptake mode"
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
           />
         </div>
       )}
@@ -2106,7 +2106,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           checked={isFirstWater}
           onCheckedChange={setIsFirstWater}
           aria-label="Toggle first water of new stage"
-          className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-border"
+          className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
         />
       </div>
 

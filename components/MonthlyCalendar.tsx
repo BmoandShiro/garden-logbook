@@ -339,7 +339,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="font-semibold text-emerald-600 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
+                            <span className="font-semibold text-garden-500 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             {(() => {

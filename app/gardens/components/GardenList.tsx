@@ -164,7 +164,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
         return (
           <div
             key={garden.id}
-            className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-emerald-600"
+            className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 shadow-sm transition-all hover:shadow-lg hover:border-garden-500"
           >
             <div className="absolute top-0 right-0 z-10 flex items-center gap-2 p-2" onClick={(e) => e.stopPropagation()}>
               {garden.isPrivate && (
@@ -461,7 +461,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                       id="edit-isPrivate"
                       checked={editFormData.isPrivate}
                       onChange={(e) => setEditFormData({ ...editFormData, isPrivate: e.target.checked })}
-                      className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-emerald-600 focus:ring-garden-500"
+                      className="h-4 w-4 rounded bg-dark-bg-primary border-dark-border text-garden-500 focus:ring-garden-500"
                     />
                     <label htmlFor="edit-isPrivate" className="ml-2 block text-sm text-dark-text-primary">
                       Make this garden private
@@ -479,7 +479,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     <button
                       type="submit"
                       disabled={editLoading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm font-medium text-white bg-garden-500 border border-transparent rounded-md hover:bg-garden-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-garden-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editLoading ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -553,7 +553,7 @@ export function GardenList({ gardens, logsByGardenId }: GardenListProps) {
                     <div className="flex gap-2 mt-2">
                       <button
                         type="submit"
-                        className="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
+                        className="px-4 py-2 rounded-md bg-garden-500 text-white hover:bg-emerald-700"
                         disabled={inviteLoading}
                       >
                         {inviteLoading ? 'Inviting...' : 'Send Invite'}

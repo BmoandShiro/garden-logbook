@@ -3247,7 +3247,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
               <Button
                 type="button"
                 onClick={handleAddPlantField}
-                className="bg-garden-600 text-white hover:bg-garden-700 w-full"
+                className="bg-garden-500 text-white hover:bg-emerald-700 w-full"
               >
                 Add Another Plant
               </Button>
@@ -3279,7 +3279,7 @@ export default function CreateLogModal({ isOpen, onClose, userId, onSuccess, ini
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="bg-garden-600 text-white hover:bg-garden-700"
+              className="bg-garden-500 text-white hover:bg-emerald-700"
             >
               {isSubmitting ? 'Creating...' : 'Create Log'}
             </Button>

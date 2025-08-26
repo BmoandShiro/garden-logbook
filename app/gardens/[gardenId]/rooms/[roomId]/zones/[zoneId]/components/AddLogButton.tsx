@@ -25,7 +25,7 @@ export default function AddLogButton({ zoneId, roomId, gardenId, plants }: AddLo
     <>
       <Button
         onClick={() => setIsModalOpen(true)}
-        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+        className="bg-garden-500 hover:bg-emerald-700 text-white"
       >
         <Plus className="h-4 w-4 mr-2" />
         Add Log

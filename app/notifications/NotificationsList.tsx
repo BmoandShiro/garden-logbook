@@ -296,7 +296,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
           <button
             onClick={handleMarkAllRead}
             disabled={loading || localNotifications.length === 0}
-            className="px-3 py-1 rounded bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-600 disabled:opacity-50"
+            className="px-3 py-1 rounded bg-emerald-700 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
           >
             {loading ? 'Marking...' : 'Mark all as read'}
           </button>

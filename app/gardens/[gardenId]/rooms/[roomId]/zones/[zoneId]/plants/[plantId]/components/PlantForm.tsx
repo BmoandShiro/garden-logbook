@@ -207,7 +207,7 @@ export default function PlantForm({
             <Switch
               checked={form.onlyTriggerAlertsDuringSeason}
               onCheckedChange={(checked) => setForm(f => ({ ...f, onlyTriggerAlertsDuringSeason: checked }))}
-              className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+              className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.heat.enabled}
             onCheckedChange={checked => updateSensitivity('heat', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Heat Sensitive</Label>
           {form.sensitivities.heat.enabled && (
@@ -250,7 +250,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.humidity?.enabled || false}
             onCheckedChange={checked => updateSensitivity('humidity', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Humidity Sensitive</Label>
           {form.sensitivities.humidity?.enabled && (
@@ -281,7 +281,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.frost.enabled}
             onCheckedChange={checked => updateSensitivity('frost', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Frost Sensitive</Label>
           {form.sensitivities.frost.enabled && (
@@ -297,7 +297,7 @@ export default function PlantForm({
                   placeholder="Label"
                   value={window.label}
                   onChange={e => updateFrostWindow(idx, { label: e.target.value })}
-                  className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-garden-500 focus:ring-emerald-600"
+                  className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-garden-500 focus:ring-garden-500"
                 />
               </div>
               <div className="flex-1 flex flex-col max-w-xs">
@@ -331,7 +331,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.drought.enabled}
             onCheckedChange={checked => updateSensitivity('drought', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Drought Sensitive</Label>
           {form.sensitivities.drought.enabled && (
@@ -350,7 +350,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.wind.enabled}
             onCheckedChange={checked => updateSensitivity('wind', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Wind Sensitive</Label>
           {form.sensitivities.wind.enabled && (
@@ -369,7 +369,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.flood.enabled}
             onCheckedChange={checked => updateSensitivity('flood', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Flood Sensitive</Label>
           <span className="text-xs text-emerald-300">(Triggers on official flood warnings for ZIP)</span>
@@ -379,7 +379,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.heavyRain.enabled}
             onCheckedChange={checked => updateSensitivity('heavyRain', { enabled: checked })}
-            className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-dark-bg-secondary"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Heavy Rain Sensitive</Label>
           {form.sensitivities.heavyRain.enabled && (

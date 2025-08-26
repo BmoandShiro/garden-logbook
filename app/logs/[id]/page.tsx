@@ -189,7 +189,6 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
 
           <Section title="Nutrient Information">
             <FieldRow label="Water Amount" value={merged.waterAmount ? `${merged.waterAmount} ${merged.waterUnit || ''}` : undefined} />
-            <FieldRow label="Water Temperature" value={merged.waterTemperature ? `${merged.waterTemperature}${merged.waterTemperatureUnit ? ` ${merged.waterTemperatureUnit}` : ''}` : undefined} />
             <FieldRow label="Nutrient Water Temperature" value={merged.nutrientWaterTemperature !== undefined ? `${merged.nutrientWaterTemperature}${merged.nutrientWaterTemperatureUnit ? ` ${merged.nutrientWaterTemperatureUnit}` : ''}` : undefined} />
             <FieldRow label="Nutrient Water pH" value={merged.nutrientWaterPh} />
             <FieldRow label="Nutrient Water PPM" value={merged.nutrientWaterPpm} />
@@ -200,17 +199,22 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
             <FieldRow label="Part A Amount (5-12-26)" value={merged.partAAmount} />
             <FieldRow label="Part B Amount (Calcium Nitrate 15-0-0)" value={merged.partBAmount} />
             <FieldRow label="Part C Amount (Epsom Salts)" value={merged.partCAmount} />
-            <FieldRow label="Booster Amount" value={merged.boosterAmount} />
+            <FieldRow label="Bloom Booster" value={merged.boosterAmount} />
             <FieldRow label="Finish Amount" value={merged.finishAmount} />
           </Section>
 
           <Section title="Additives">
-            <FieldRow label="Uncoated Aspirin (81-325mg/gal)" value={merged.uncoatedAspirin} />
-            <FieldRow label="Nukem Root Drench" value={merged.nukemRootDrench} />
-            <FieldRow label="Oxiphos" value={merged.oxiphos} />
-            <FieldRow label="SeaGreen" value={merged.seaGreen} />
-            <FieldRow label="Teabrewer Batch" value={merged.teabrewerBatch} />
-            <FieldRow label="Teabrewer Volume" value={merged.teabrewerVolume} />
+            <FieldRow label="Uncoated Aspirin (81-325mg/gal)" value={merged.aspirinAmount} />
+            <FieldRow label="Nukem Root Drench" value={merged.nukemAmount} />
+            <FieldRow label="Oxiphos" value={merged.oxiphosAmount} />
+            <FieldRow label="SeaGreen" value={merged.seagreenAmount} />
+            <FieldRow label="Tea Brewer Size" value={merged.teaBrewSize ? `${merged.teaBrewSize} gallons` : undefined} />
+            <FieldRow label="Tea Water Temperature" value={merged.teaWaterTemp ? `${merged.teaWaterTemp}°F` : undefined} />
+            <FieldRow label="Tea Growth Stage" value={merged.teaGrowthStage} />
+            <FieldRow label="Tea Earthworm Castings" value={merged.teaEarthwormCastings} />
+            <FieldRow label="Tea Fish Kelp Extract" value={merged.teaFishKelpExtract} />
+            <FieldRow label="Tea Molasses" value={merged.teaMolasses} />
+            <FieldRow label="Tea Brew Duration" value={merged.teaBrewDuration} />
           </Section>
         </>
       )}
