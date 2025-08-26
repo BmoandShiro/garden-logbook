@@ -199,7 +199,7 @@ export default async function LogDetailsPage({ params }: { params: Promise<{ id:
             <FieldRow label="Part A Amount (5-12-26)" value={merged.partAAmount} />
             <FieldRow label="Part B Amount (Calcium Nitrate 15-0-0)" value={merged.partBAmount} />
             <FieldRow label="Part C Amount (Epsom Salts)" value={merged.partCAmount} />
-            <FieldRow label="Bloom Booster" value={merged.boosterAmount} />
+            <FieldRow label="Bloom Booster" value={merged.bloomAmount} />
             <FieldRow label="Finish Amount" value={merged.finishAmount} />
           </Section>
 
