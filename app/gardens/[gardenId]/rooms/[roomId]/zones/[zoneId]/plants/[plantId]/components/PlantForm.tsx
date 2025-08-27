@@ -34,7 +34,7 @@ function DatePickerField({ value, onChange, placeholder }: { value: string; onCh
           variant="outline"
           className={
             'w-full justify-start text-left font-normal bg-emerald-950 border-emerald-800 text-emerald-100 hover:bg-emerald-900 hover:text-emerald-200' +
-            (!value ? ' text-emerald-400' : '')
+            (!value ? ' text-garden-500' : '')
           }
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -134,6 +134,7 @@ export default function PlantForm({
           onChange={handleChange}
           placeholder="Enter plant name"
           required
+          className="bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
         />
       </div>
       <div className="space-y-2">
@@ -144,6 +145,7 @@ export default function PlantForm({
           value={form.strainName || ''}
           onChange={handleChange}
           placeholder="Enter strain name (e.g. Mandarin Cookie R3 #01)"
+          className="bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
         />
       </div>
       <div className="space-y-2">
@@ -155,6 +157,7 @@ export default function PlantForm({
           onChange={handleChange}
           placeholder="Enter plant species"
           required
+          className="bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
         />
       </div>
       <div className="space-y-2">
@@ -165,6 +168,7 @@ export default function PlantForm({
           value={form.variety || ''}
           onChange={handleChange}
           placeholder="Enter plant variety"
+          className="bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
         />
       </div>
       <div className="space-y-2">
@@ -183,6 +187,7 @@ export default function PlantForm({
           value={form.notes || ''}
           onChange={handleChange}
           placeholder="Enter any notes about the plant"
+          className="bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
         />
       </div>
       {/* Growing Season Controls */}
@@ -202,7 +207,7 @@ export default function PlantForm({
             <Switch
               checked={form.onlyTriggerAlertsDuringSeason}
               onCheckedChange={(checked) => setForm(f => ({ ...f, onlyTriggerAlertsDuringSeason: checked }))}
-              className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.onlyTriggerAlertsDuringSeason ? 'border-emerald-400' : 'border-dark-border'}`}
+              className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
             />
           </div>
         </div>
@@ -215,7 +220,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.heat.enabled}
             onCheckedChange={checked => updateSensitivity('heat', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.heat.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Heat Sensitive</Label>
           {form.sensitivities.heat.enabled && (
@@ -227,12 +232,12 @@ export default function PlantForm({
                 value={form.sensitivities.heat.threshold}
                 onChange={e => updateSensitivity('heat', { threshold: e.target.value })}
                 placeholder="Temp threshold"
-                className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+                className="w-full max-w-xs bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
               />
               <select
                 value={form.sensitivities.heat.unit}
                 onChange={e => updateSensitivity('heat', { unit: e.target.value })}
-                className="ml-1 px-1 py-0.5 rounded border bg-emerald-950 border-emerald-800 text-emerald-100 w-20"
+                className="ml-1 px-1 py-0.5 rounded border bg-dark-bg-primary border-dark-border text-dark-text-primary w-20 focus:ring-garden-500 focus:border-garden-500"
               >
                 <option value="F">°F</option>
                 <option value="C">°C</option>
@@ -245,7 +250,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.humidity?.enabled || false}
             onCheckedChange={checked => updateSensitivity('humidity', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.humidity?.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Humidity Sensitive</Label>
           {form.sensitivities.humidity?.enabled && (
@@ -257,7 +262,7 @@ export default function PlantForm({
                 value={form.sensitivities.humidity.min || ''}
                 onChange={e => updateSensitivity('humidity', { min: e.target.value })}
                 placeholder="Min %"
-                className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+                className="w-full max-w-xs bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
               />
               <Input
                 type="number"
@@ -266,7 +271,7 @@ export default function PlantForm({
                 value={form.sensitivities.humidity.max || ''}
                 onChange={e => updateSensitivity('humidity', { max: e.target.value })}
                 placeholder="Max %"
-                className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+                className="w-full max-w-xs bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
               />
             </>
           )}
@@ -276,7 +281,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.frost.enabled}
             onCheckedChange={checked => updateSensitivity('frost', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.frost.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Frost Sensitive</Label>
           {form.sensitivities.frost.enabled && (
@@ -292,7 +297,7 @@ export default function PlantForm({
                   placeholder="Label"
                   value={window.label}
                   onChange={e => updateFrostWindow(idx, { label: e.target.value })}
-                  className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+                  className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-garden-500 focus:ring-garden-500"
                 />
               </div>
               <div className="flex-1 flex flex-col max-w-xs">
@@ -311,8 +316,8 @@ export default function PlantForm({
                   checked={window.repeat}
                   onChange={e => updateFrostWindow(idx, { repeat: e.target.checked })}
                   className={`appearance-none w-5 h-5 rounded border transition-colors duration-150
-                    ${window.repeat ? 'bg-emerald-900 border-emerald-400' : 'bg-dark-bg-secondary border-dark-border'}
-                    checked:bg-emerald-900 checked:border-emerald-400
+                    ${window.repeat ? 'bg-emerald-900 border-garden-500' : 'bg-dark-bg-secondary border-dark-border'}
+                    checked:bg-emerald-900 checked:border-garden-500
                   `}
                 />
                 <span className={window.repeat ? 'text-emerald-200' : 'text-emerald-100'}>Repeat Annually</span>
@@ -326,7 +331,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.drought.enabled}
             onCheckedChange={checked => updateSensitivity('drought', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.drought.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Drought Sensitive</Label>
           {form.sensitivities.drought.enabled && (
@@ -336,7 +341,7 @@ export default function PlantForm({
               value={form.sensitivities.drought.days}
               onChange={e => updateSensitivity('drought', { days: e.target.value })}
               placeholder="No rain for ___ days"
-              className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+              className="w-full max-w-xs bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
             />
           )}
         </div>
@@ -345,7 +350,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.wind.enabled}
             onCheckedChange={checked => updateSensitivity('wind', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.wind.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Wind Sensitive</Label>
           {form.sensitivities.wind.enabled && (
@@ -355,7 +360,7 @@ export default function PlantForm({
               value={form.sensitivities.wind.threshold}
               onChange={e => updateSensitivity('wind', { threshold: e.target.value })}
               placeholder="Wind speed (mph)"
-              className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+              className="w-full max-w-xs bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
             />
           )}
         </div>
@@ -364,7 +369,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.flood.enabled}
             onCheckedChange={checked => updateSensitivity('flood', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.flood.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Flood Sensitive</Label>
           <span className="text-xs text-emerald-300">(Triggers on official flood warnings for ZIP)</span>
@@ -374,7 +379,7 @@ export default function PlantForm({
           <Switch
             checked={form.sensitivities.heavyRain.enabled}
             onCheckedChange={checked => updateSensitivity('heavyRain', { enabled: checked })}
-            className={`data-[state=checked]:bg-emerald-900 data-[state=unchecked]:bg-dark-bg-secondary ${form.sensitivities.heavyRain.enabled ? 'border-emerald-400' : 'border-dark-border'}`}
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-bg-secondary"
           />
           <Label className="mr-2">Heavy Rain Sensitive</Label>
           {form.sensitivities.heavyRain.enabled && (
@@ -386,12 +391,12 @@ export default function PlantForm({
                 value={form.sensitivities.heavyRain.threshold}
                 onChange={e => updateSensitivity('heavyRain', { threshold: e.target.value })}
                 placeholder="Rain threshold"
-                className="w-full max-w-xs bg-emerald-950 border-emerald-800 text-emerald-100 placeholder-emerald-400 focus:ring-emerald-600"
+                className="w-full max-w-xs bg-dark-bg-primary border-dark-border text-dark-text-primary placeholder-dark-text-secondary focus:ring-garden-500 focus:border-garden-500"
               />
               <select
                 value={form.sensitivities.heavyRain.unit}
                 onChange={e => updateSensitivity('heavyRain', { unit: e.target.value })}
-                className="ml-1 px-1 py-0.5 rounded border bg-emerald-950 border-emerald-800 text-emerald-100 w-20"
+                className="ml-1 px-1 py-0.5 rounded border bg-dark-bg-primary border-dark-border text-dark-text-primary w-20 focus:ring-garden-500 focus:border-garden-500"
               >
                 <option value="in">in</option>
                 <option value="mm">mm</option>

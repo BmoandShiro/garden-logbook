@@ -66,10 +66,12 @@ export async function GET() {
         _max: {
           temperature: true,
           humidity: true,
+          vpd: true,
         },
         _min: {
           temperature: true,
           humidity: true,
+          vpd: true,
         },
       });
 
@@ -80,6 +82,8 @@ export async function GET() {
           tempLow24h: readings._min.temperature,
           humidityHigh24h: readings._max.humidity,
           humidityLow24h: readings._min.humidity,
+          vpdHigh24h: readings._max.vpd,
+          vpdLow24h: readings._min.vpd,
         },
       };
 

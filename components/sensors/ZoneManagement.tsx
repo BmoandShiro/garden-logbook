@@ -28,6 +28,7 @@ interface Zone {
   sensorAlertThresholds?: {
     temperature?: { min?: number; max?: number };
     humidity?: { min?: number; max?: number };
+    vpd?: { min?: number; max?: number };
   };
   usePlantSpecificAlerts?: boolean;
   goveeDevices?: Array<{
@@ -185,10 +186,11 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="zone-select" className="text-emerald-300">Select Zone</Label>
-              <Select
+              <select
+                id="zone-select"
                 value={selectedZone}
-                onValueChange={setSelectedZone}
-                className="bg-[#23272b] border-[#23282c] text-emerald-100"
+                onChange={e => setSelectedZone(e.target.value)}
+                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-garden-500 focus:ring-garden-500 shadow-sm"
               >
                 <option value="" disabled>Select a zone...</option>
                 {zones.map((zone) => (
@@ -196,32 +198,31 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                     {zone.name}
                   </option>
                 ))}
-              </Select>
+              </select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="device-select" className="text-emerald-300">Select Sensor</Label>
-              <Select
+              <select
+                id="device-select"
                 value={selectedDevice}
-                onValueChange={setSelectedDevice}
-                className="bg-[#23272b] border-[#23282c] text-emerald-100"
+                onChange={e => setSelectedDevice(e.target.value)}
+                className="block w-full rounded-md border border-[#23282c] bg-[#23272b] text-emerald-100 focus:border-garden-500 focus:ring-garden-500 shadow-sm"
               >
                 <option value="" disabled>Select a sensor...</option>
-                <SelectContent className="bg-[#1a1b1e] border-[#2f3136] text-emerald-100">
                 {unlinkedDevices.map((device) => (
-                    <SelectItem key={device.id} value={device.id}>
-                      {device.name} ({device.model})
-                    </SelectItem>
+                  <option key={device.id} value={device.id}>
+                    {device.name} ({device.type})
+                  </option>
                 ))}
-                </SelectContent>
-              </Select>
+              </select>
             </div>
           </div>
           
           <Button 
             onClick={handleLinkDevice} 
             disabled={!selectedZone || !selectedDevice || linking}
-            className="w-full bg-emerald-600 hover:bg-emerald-500"
+            className="w-full bg-garden-500 hover:bg-garden-500"
           >
             {linking ? "Linking..." : "Link Sensor to Zone"}
           </Button>
@@ -267,7 +268,7 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                       id={`plant-alerts-toggle-${zone.id}`}
                       checked={zone.usePlantSpecificAlerts}
                       onCheckedChange={(checked) => updateZoneSetting(zone.id, { usePlantSpecificAlerts: checked })}
-                      className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#1a1b1e]"
+                      className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-[#1a1b1e]"
                     />
                     <Label htmlFor={`plant-alerts-toggle-${zone.id}`} className="text-emerald-300/70">
                       Use Plant-Specific Alert Thresholds
@@ -285,20 +286,19 @@ export function ZoneManagement({ userId }: ZoneManagementProps) {
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1">
                               {device.isOnline ?? true ? (
-                                <Wifi className="h-4 w-4 text-emerald-400" />
+                                <Wifi className="h-4 w-4 text-garden-500" />
                               ) : (
                                 <WifiOff className="h-4 w-4 text-red-400" />
                               )}
                             </div>
                             <div>
                               <p className="font-medium text-emerald-100">{device.name}</p>
-                              <p className="text-sm text-emerald-300/70">{device.type}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             {device.batteryLevel !== undefined && (
                               <div className="flex items-center gap-1">
-                                <Battery className="h-4 w-4 text-emerald-400" />
+                                <Battery className="h-4 w-4 text-garden-500" />
                                 <span className="text-sm text-emerald-300">{device.batteryLevel}%</span>
                               </div>
                             )}

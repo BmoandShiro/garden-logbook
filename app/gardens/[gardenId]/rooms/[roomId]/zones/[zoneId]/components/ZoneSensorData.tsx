@@ -17,8 +17,69 @@ import {
   WifiOff,
   Settings,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Wind,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
+import { calculateVPDFromFahrenheit, formatVPD, getVPDStatus } from "@/lib/vpdCalculator";
+
+// Custom number input component with emerald chevrons
+const CustomNumberInput = ({ 
+  placeholder, 
+  value, 
+  onChange, 
+  disabled = false,
+  step = "0.1"
+}: {
+  placeholder: string;
+  value: string | number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+  step?: string;
+}) => {
+  const handleIncrement = () => {
+    const currentValue = parseFloat(value.toString()) || 0;
+    const stepValue = parseFloat(step);
+    onChange(currentValue + stepValue);
+  };
+
+  const handleDecrement = () => {
+    const currentValue = parseFloat(value.toString()) || 0;
+    const stepValue = parseFloat(step);
+    onChange(currentValue - stepValue);
+  };
+
+  return (
+    <div className="relative group">
+      <input
+        type="number"
+        step={step}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none pr-8"
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleIncrement}
+          disabled={disabled}
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2 disabled:opacity-50"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          onClick={handleDecrement}
+          disabled={disabled}
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2 disabled:opacity-50"
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface GoveeDevice {
   id: string;
@@ -40,6 +101,7 @@ interface ZoneSensorDataProps {
   sensorAlertThresholds?: {
     temperature?: { min?: number; max?: number };
     humidity?: { min?: number; max?: number };
+    vpd?: { min?: number; max?: number };
   };
   usePlantSpecificAlerts: boolean;
 }
@@ -119,7 +181,7 @@ export default function ZoneSensorData({
     await updateZone({ weatherAlertSource: source });
   };
 
-  const handleThresholdChange = (type: 'temperature' | 'humidity', field: 'min' | 'max', value: string) => {
+  const handleThresholdChange = (type: 'temperature' | 'humidity' | 'vpd', field: 'min' | 'max', value: string) => {
     const newThresholds = {
       ...thresholds,
       [type]: {
@@ -174,60 +236,79 @@ export default function ZoneSensorData({
                   id="plant-alerts-toggle"
                   checked={usePlantAlerts}
                   onCheckedChange={handleUsePlantAlertsChange}
-                  className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#1a1b1e]"
+                  className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-[#1a1b1e]"
                 />
                 <Label htmlFor="plant-alerts-toggle" className="text-emerald-300/70">
                   Use Plant-Specific Alert Thresholds
                 </Label>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-emerald-300/70">
+                  <Label className="flex items-center gap-2 text-emerald-300/70 whitespace-nowrap">
                     <Thermometer className="h-4 w-4" />
                     Temperature (°C)
                   </Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
+                    <CustomNumberInput
                       placeholder="Min"
-                      disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
                       value={thresholds.temperature?.min ?? ''}
-                      onChange={(e) => handleThresholdChange('temperature', 'min', e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
+                      onChange={(value) => handleThresholdChange('temperature', 'min', value.toString())}
                       disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
+                      step="0.1"
+                    />
+                    <CustomNumberInput
+                      placeholder="Max"
                       value={thresholds.temperature?.max ?? ''}
-                      onChange={(e) => handleThresholdChange('temperature', 'max', e.target.value)}
+                      onChange={(value) => handleThresholdChange('temperature', 'max', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="0.1"
                     />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-emerald-300/70">
+                  <Label className="flex items-center gap-2 text-emerald-300/70 whitespace-nowrap">
                     <Droplets className="h-4 w-4" />
                     Humidity (%)
                   </Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
+                    <CustomNumberInput
                       placeholder="Min"
-                      disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
                       value={thresholds.humidity?.min ?? ''}
-                      onChange={(e) => handleThresholdChange('humidity', 'min', e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
+                      onChange={(value) => handleThresholdChange('humidity', 'min', value.toString())}
                       disabled={usePlantAlerts}
-                      className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm disabled:opacity-50"
+                      step="1"
+                    />
+                    <CustomNumberInput
+                      placeholder="Max"
                       value={thresholds.humidity?.max ?? ''}
-                      onChange={(e) => handleThresholdChange('humidity', 'max', e.target.value)}
+                      onChange={(value) => handleThresholdChange('humidity', 'max', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-emerald-300/70 whitespace-nowrap">
+                    <Wind className="h-4 w-4" />
+                    VPD (kPa)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <CustomNumberInput
+                      placeholder="Min"
+                      value={thresholds.vpd?.min ?? ''}
+                      onChange={(value) => handleThresholdChange('vpd', 'min', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="0.01"
+                    />
+                    <CustomNumberInput
+                      placeholder="Max"
+                      value={thresholds.vpd?.max ?? ''}
+                      onChange={(value) => handleThresholdChange('vpd', 'max', value.toString())}
+                      disabled={usePlantAlerts}
+                      step="0.01"
                     />
                   </div>
                 </div>
@@ -267,7 +348,7 @@ export default function ZoneSensorData({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {parsed.online !== false ? (
-                          <Wifi className="h-4 w-4 text-emerald-400" />
+                          <Wifi className="h-4 w-4 text-garden-500" />
                         ) : (
                           <WifiOff className="h-4 w-4 text-red-500" />
                         )}
@@ -285,7 +366,7 @@ export default function ZoneSensorData({
                         </Badge>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pl-6">
+                    <div className="grid grid-cols-3 gap-x-8 gap-y-2 mt-4 pl-6">
                       <div className="flex flex-col">
                         <span className="text-emerald-300">
                           {parsed.temperature?.toFixed(1) ?? '--'}°F
@@ -296,6 +377,14 @@ export default function ZoneSensorData({
                           {parsed.humidity?.toFixed(1) ?? '--'}%
                         </span>
                       </div>
+                      <div className="flex flex-col">
+                        <span className="text-emerald-300">
+                          {parsed.temperature && parsed.humidity 
+                            ? formatVPD(calculateVPDFromFahrenheit(parsed.temperature, parsed.humidity))
+                            : '--'
+                          }
+                        </span>
+                      </div>
                       <div className="text-xs text-gray-400">
                         <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.tempHigh24h?.toFixed(1) ?? '--'}°F</span></p>
                         <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.tempLow24h?.toFixed(1) ?? '--'}°F</span></p>
@@ -304,8 +393,12 @@ export default function ZoneSensorData({
                         <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                         <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                       </div>
-                      </div>
+                               <div className="text-xs text-gray-400">
+           <p>High: <span className="font-medium text-emerald-300/80">{data?.history?.vpdHigh24h?.toFixed(2) ?? '--'}</span></p>
+           <p>Low: <span className="font-medium text-emerald-300/80">{data?.history?.vpdLow24h?.toFixed(2) ?? '--'}</span></p>
+         </div>
                     </div>
+                  </div>
                   );
                 })}
               </div>

@@ -1,62 +1,8 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 
 export default function SignInForm() {
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    // Check if user was verified via code entry
-    const verified = searchParams.get('verified');
-    const verifiedEmail = searchParams.get('email');
-    
-    if (verified === 'true' && verifiedEmail) {
-      setEmail(verifiedEmail);
-      // Automatically sign in the user
-      handleAutoSignIn(verifiedEmail);
-    }
-  }, [searchParams]);
-
-  const handleAutoSignIn = async (userEmail: string) => {
-    setIsLoading(true);
-    try {
-      const code = searchParams.get('code');
-      if (!code) {
-        throw new Error('No verification code provided');
-      }
-      
-      // Use the verified-email credentials provider
-      await signIn('verified-email', { 
-        email: userEmail,
-        code: code,
-        callbackUrl: '/',
-        redirect: true 
-      });
-    } catch (error) {
-      console.error('Auto sign in error:', error);
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('pendingSignInEmail', email);
-      }
-      await signIn('email', { email, callbackUrl: '/' });
-    } catch (error) {
-      console.error('Sign in error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-3">
@@ -105,46 +51,6 @@ export default function SignInForm() {
           Sign in with Discord
         </button>
       </div>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-dark-border" />
-        </div>
-        <div className="relative flex justify-center text-sm font-medium leading-6">
-          <span className="bg-dark-bg-secondary px-6 text-dark-text-secondary">Or continue with email</span>
-        </div>
-      </div>
-
-      <form onSubmit={handleEmailSignIn}>
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium leading-6 text-dark-text-secondary">
-            Email address
-          </label>
-          <div>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="block w-full rounded-lg border-0 bg-dark-bg-primary py-2 px-3 text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border placeholder:text-dark-text-secondary focus:ring-2 focus:ring-inset focus:ring-garden-500 sm:text-sm sm:leading-6"
-              placeholder="you@example.com"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex w-full justify-center rounded-lg bg-garden-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-garden-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-garden-500 disabled:opacity-50"
-          >
-            {isLoading ? 'Sending link...' : 'Sign in with Email'}
-          </button>
-        </div>
-      </form>
     </div>
   );
 } 

@@ -35,9 +35,10 @@ interface SensorDashboardProps {
   devices: DeviceWithZone[];
   zones: ZoneWithDevices[];
   readings: GoveeReading[];
+  totalReadingsCount: number;
 }
 
-export function SensorDashboard({ devices, zones, readings }: SensorDashboardProps) {
+export function SensorDashboard({ devices, zones, readings, totalReadingsCount }: SensorDashboardProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const readingsPerPage = 5;
 
@@ -61,7 +62,6 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
     const onlineSensors = devices.filter(d => d.isOnline ?? true).length;
     const linkedSensors = devices.filter(d => d.zoneId).length;
     const activeZones = zones.length;
-    const totalReadings = readings.length;
     const avgBattery = devices.filter(d => d.batteryLevel != null).length > 0
       ? Math.round(
           devices
@@ -88,7 +88,7 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                     <Card className="bg-[#23272b] border border-[#23282c]">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-emerald-300">Total Sensors</CardTitle>
-                        <Thermometer className="h-4 w-4 text-emerald-400" />
+                        <Thermometer className="h-4 w-4 text-garden-500" />
                         </CardHeader>
                         <CardContent>
                         <div className="text-2xl font-bold text-emerald-100">{totalSensors}</div>
@@ -101,7 +101,7 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                     <Card className="bg-[#23272b] border border-[#23282c]">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-emerald-300">Linked to Zones</CardTitle>
-                        <MapPin className="h-4 w-4 text-emerald-400" />
+                        <MapPin className="h-4 w-4 text-garden-500" />
                         </CardHeader>
                         <CardContent>
                         <div className="text-2xl font-bold text-emerald-100">{linkedSensors}</div>
@@ -114,7 +114,7 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                     <Card className="bg-[#23272b] border border-[#23282c]">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-emerald-300">Active Zones</CardTitle>
-                        <Settings className="h-4 w-4 text-emerald-400" />
+                        <Settings className="h-4 w-4 text-garden-500" />
                         </CardHeader>
                         <CardContent>
                         <div className="text-2xl font-bold text-emerald-100">{activeZones}</div>
@@ -127,10 +127,10 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                     <Card className="bg-[#23272b] border border-[#23282c]">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-emerald-300">Total Readings</CardTitle>
-                        <Activity className="h-4 w-4 text-emerald-400" />
+                        <Activity className="h-4 w-4 text-garden-500" />
                         </CardHeader>
                         <CardContent>
-                        <div className="text-2xl font-bold text-emerald-100">{totalReadings}</div>
+                        <div className="text-2xl font-bold text-emerald-100">{totalReadingsCount}</div>
                         <p className="text-xs text-emerald-300/70">
                             data points
                         </p>
@@ -140,7 +140,7 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                     <Card className="bg-[#23272b] border border-[#23282c]">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-emerald-300">Avg Battery</CardTitle>
-                        <Battery className="h-4 w-4 text-emerald-400" />
+                        <Battery className="h-4 w-4 text-garden-500" />
                         </CardHeader>
                         <CardContent>
                         <div className="text-2xl font-bold text-emerald-100">
@@ -238,7 +238,7 @@ export function SensorDashboard({ devices, zones, readings }: SensorDashboardPro
                                     <div key={device.id} className="flex items-center justify-between text-sm">
                                         <div className="flex items-center gap-2">
                                         {device.isOnline ?? true ? (
-                                            <Wifi className="h-3 w-3 text-emerald-400" />
+                                            <Wifi className="h-3 w-3 text-garden-500" />
                                         ) : (
                                             <WifiOff className="h-3 w-3 text-red-400" />
                                         )}

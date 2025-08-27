@@ -1,0 +1,10 @@
+# RustDesk Configuration - Using Public Servers (Temporary)
+# This will use the default public relay servers
+
+[network]
+use-relay-server = false
+direct = true
+
+[advanced]
+low-bandwidth = true
+hardware-acceleration = false 

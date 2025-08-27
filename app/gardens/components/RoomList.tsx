@@ -33,7 +33,7 @@ export default function RoomList({ rooms }: RoomListProps) {
         <Link
           key={room.id}
           href={`/gardens/${room.gardenId}/rooms/${room.id}`}
-          className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 p-4 shadow-sm transition-all hover:shadow-lg hover:border-emerald-600"
+          className="group relative flex flex-col overflow-hidden rounded-lg border border-emerald-800 bg-emerald-900/30 p-4 shadow-sm transition-all hover:shadow-lg hover:border-garden-500"
         >
           <h3 className="text-sm font-medium text-emerald-100 group-hover:text-emerald-50">
             {room.name}

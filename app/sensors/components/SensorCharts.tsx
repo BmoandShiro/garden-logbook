@@ -11,8 +11,11 @@ import {
   Battery, 
   Calendar,
   Download,
-  RefreshCw
+  RefreshCw,
+  Wind
 } from "lucide-react";
+import { calculateVPD, formatVPD, getVPDStatus } from "@/lib/vpdCalculator";
+import { SensorChart } from "@/components/sensors/SensorChart";
 
 interface GoveeReading {
   id: string;
@@ -117,6 +120,14 @@ export default function SensorCharts({
       min: Math.min(...filteredReadings.filter(r => r.humidity !== undefined).map(r => r.humidity!)),
       max: Math.max(...filteredReadings.filter(r => r.humidity !== undefined).map(r => r.humidity!)),
       avg: filteredReadings.filter(r => r.humidity !== undefined).reduce((sum, r) => sum + r.humidity!, 0) / filteredReadings.filter(r => r.humidity !== undefined).length
+    },
+    vpd: {
+      current: readings[0]?.temperature && readings[0]?.humidity 
+        ? calculateVPD(readings[0].temperature, readings[0].humidity)
+        : undefined,
+      min: Math.min(...filteredReadings.filter(r => r.temperature !== undefined && r.humidity !== undefined).map(r => calculateVPD(r.temperature!, r.humidity!))),
+      max: Math.max(...filteredReadings.filter(r => r.temperature !== undefined && r.humidity !== undefined).map(r => calculateVPD(r.temperature!, r.humidity!))),
+      avg: filteredReadings.filter(r => r.temperature !== undefined && r.humidity !== undefined).reduce((sum, r) => sum + calculateVPD(r.temperature!, r.humidity!), 0) / filteredReadings.filter(r => r.temperature !== undefined && r.humidity !== undefined).length
     }
   };
 
@@ -164,7 +175,7 @@ export default function SensorCharts({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
+                <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -303,26 +314,69 @@ export default function SensorCharts({
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Chart Placeholder */}
+        {/* VPD Stats */}
       <Card>
         <CardHeader>
-          <CardTitle>Sensor Data Chart</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Wind className="h-5 w-5" />
+              VPD
+            </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-            <div className="text-center">
-              <p className="text-muted-foreground mb-2">
-                Chart visualization will be implemented here
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {filteredReadings.length} data points available for {timeRange} range
-              </p>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Current</span>
+                <span className="font-medium">
+                  {stats.vpd.current !== undefined 
+                    ? formatVPD(stats.vpd.current)
+                    : 'N/A'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Average</span>
+                <span className="font-medium">
+                  {!isNaN(stats.vpd.avg) 
+                    ? formatVPD(stats.vpd.avg)
+                    : 'N/A'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Min</span>
+                <span className="font-medium">
+                  {!isNaN(stats.vpd.min) 
+                    ? formatVPD(stats.vpd.min)
+                    : 'N/A'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Max</span>
+                <span className="font-medium">
+                  {!isNaN(stats.vpd.max) 
+                    ? formatVPD(stats.vpd.max)
+                    : 'N/A'
+                  }
+                </span>
+              </div>
             </div>
+          </CardContent>
+        </Card>
           </div>
+
+      {/* Chart Placeholders */}
+      <div className="grid grid-cols-1 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sensor Data Charts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SensorChart deviceId={device.id} />
         </CardContent>
       </Card>
+      </div>
 
       {/* Recent Readings Table */}
       <Card>
@@ -337,6 +391,7 @@ export default function SensorCharts({
                   <th className="text-left py-2">Time</th>
                   <th className="text-left py-2">Temperature</th>
                   <th className="text-left py-2">Humidity</th>
+                  <th className="text-left py-2">VPD</th>
                   <th className="text-left py-2">Battery</th>
                   <th className="text-left py-2">Source</th>
                 </tr>
@@ -356,6 +411,12 @@ export default function SensorCharts({
                     <td className="py-2">
                       {reading.humidity !== undefined 
                         ? `${reading.humidity.toFixed(1)}%` 
+                        : 'N/A'
+                      }
+                    </td>
+                    <td className="py-2">
+                      {reading.temperature !== undefined && reading.humidity !== undefined
+                        ? formatVPD(calculateVPD(reading.temperature, reading.humidity))
                         : 'N/A'
                       }
                     </td>

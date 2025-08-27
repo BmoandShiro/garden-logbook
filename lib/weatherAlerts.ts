@@ -3,6 +3,7 @@ import zipcodeToTimezone from 'zipcode-to-timezone';
 import { prisma } from '../lib/prisma';
 import { getWeatherDataForZip } from '../lib/weather';
 import { Stage, LogType, Prisma } from '@prisma/client';
+import { calculateVPDFromFahrenheit } from './vpdCalculator';
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 interface JsonObject {
@@ -31,6 +32,7 @@ interface PlantSensitivities {
   drought?: { enabled: boolean; threshold: number; days?: number };
   flood?: { enabled: boolean; threshold: number };
   heavyRain?: { enabled: boolean; threshold: number; unit?: string };
+  vpd?: { enabled: boolean; threshold: number };
   unit?: string;
   [key: string]: any;
 }
@@ -130,19 +132,20 @@ function getHeavyRainUnit(sensitivities: Prisma.JsonValue): string {
 }
 
 // Helper to get the timezone for a garden, falling back to zipcode
-function getGardenTimezone(garden: { timezone?: string | null; zipcode?: string | null }): string | null {
+function getGardenTimezone(garden: { timezone?: string | null; zipcode?: string | null }): string {
   if (garden.timezone) return garden.timezone;
   if (garden.zipcode) {
     try {
-      return zipcodeToTimezone.lookup(garden.zipcode) || null;
+      return zipcodeToTimezone.lookup(garden.zipcode) || 'America/New_York';
     } catch {
-      return null;
+      return 'America/New_York';
     }
   }
-  return null;
+  return 'America/New_York';
 }
 
 export async function processWeatherAlerts() {
+  console.log('[DEBUG] processWeatherAlerts called at', new Date().toISOString());
   console.log('[WEATHER_ALERTS] Starting weather alert processing...');
   
   const plants = await prisma.plant.findMany({
@@ -223,8 +226,13 @@ export async function processWeatherAlerts() {
           ? plantThresholds?.humidity
           : zoneThresholds?.humidity;
         
+        const vpdThresholds = usePlantSpecific
+          ? plantThresholds?.vpd
+          : zoneThresholds?.vpd;
+        
         console.log(`[ALERTS] Final temp thresholds for ${plant.name}:`, tempThresholds);
         console.log(`[ALERTS] Final humidity thresholds for ${plant.name}:`, humidityThresholds);
+        console.log(`[ALERTS] Final VPD thresholds for ${plant.name}:`, vpdThresholds);
 
         if (tempThresholds && sensorData.temperature != null) {
           const { temperature } = sensorData;
@@ -253,6 +261,20 @@ export async function processWeatherAlerts() {
             await maybeSendOrUpdateAlert(plant, plant.garden, 'Low Humidity (Sensor)', dummyWeather, sensorData.humidity, 'SENSOR', sensorData);
           }
         }
+
+        if (vpdThresholds && sensorData.temperature != null && sensorData.humidity != null) {
+          const vpd = calculateVPDFromFahrenheit(sensorData.temperature, sensorData.humidity);
+          console.log(`[ALERTS] Checking VPD ${vpd.toFixed(2)} kPa against thresholds (Min: ${vpdThresholds.min}, Max: ${vpdThresholds.max})`);
+          const dummyWeather = { temperature: sensorData.temperature, humidity: sensorData.humidity } as Weather;
+          if (vpdThresholds.max != null && vpd > vpdThresholds.max) {
+            console.log(`[ALERTS] TRIGGER: High VPD for ${plant.name}`);
+            await maybeSendOrUpdateAlert(plant, plant.garden, 'High VPD (Sensor)', dummyWeather, vpd, 'SENSOR', sensorData);
+          }
+          if (vpdThresholds.min != null && vpd < vpdThresholds.min) {
+            console.log(`[ALERTS] TRIGGER: Low VPD for ${plant.name}`);
+            await maybeSendOrUpdateAlert(plant, plant.garden, 'Low VPD (Sensor)', dummyWeather, vpd, 'SENSOR', sensorData);
+          }
+        }
       }
 
       // Fetch Weather API data if source is WEATHER_API or BOTH
@@ -272,15 +294,16 @@ export async function processWeatherAlerts() {
       }
 
       // Process alerts based on sensitivities
-      if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
-        // await maybeSendOrUpdateAlert(
-        //   plantWithGarden,
-        //   plantWithGarden.garden,
-        //   'heat',
-        //   weather,
-        //   Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5))
-        // );
-      }
+      // if (sensitivities.heat?.enabled && weather.temperature > sensitivities.heat.threshold) {
+      //   await maybeSendOrUpdateAlert(
+      //     plantWithGarden,
+      //     plantWithGarden.garden,
+      //     'heat',
+      //     weather,
+      //     Math.min(5, Math.floor((weather.temperature - sensitivities.heat.threshold) / 5)),
+      //     'WEATHER_API'
+      //   );
+      // }
 
       // Debug log for plant and garden
       console.log('[PLANT DEBUG]', {
@@ -654,9 +677,8 @@ export async function processWeatherAlerts() {
         let message = `Current weather conditions in ${garden.name} (${garden.zipcode}) may affect ${plantWithGarden.name} in ${roomName}, ${zoneName}:
 \n`;
         for (const type of allAlertTypes) {
-          message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}:`;
           if (currentAlerts[type]) {
-            message += ' ';
+            message += `• ${type.charAt(0).toUpperCase() + type.slice(1)}: `;
             if (type === 'heat') message += `${currentAlerts[type].weather.temperature}°F`;
             else if (type === 'wind') message += `${currentAlerts[type].weather.windSpeed} mph`;
             else if (type === 'heavyRain') message += `${formatPrecipitation(currentAlerts[type].weather.precipitation, getHeavyRainUnit(sensitivitiesTyped))} precipitation`;
@@ -665,8 +687,6 @@ export async function processWeatherAlerts() {
             else if (type === 'drought') message += `${currentAlerts[type].weather.daysWithoutRain} days`;
             else message += `${currentAlerts[type].severity}`;
             message += '\n';
-          } else {
-            message += ' None\n';
           }
         }
         message += '\nPlease take necessary precautions to protect your plant.';
@@ -697,7 +717,7 @@ export async function processWeatherAlerts() {
           }
         }
 
-        // Create a log entry for the plant
+        // Create a single log entry for the plant (with all triggered categories)
         const weatherInfo = {
           temperature: `${weather.temperature}°F`,
           humidity: `${weather.humidity}%`,
@@ -705,7 +725,7 @@ export async function processWeatherAlerts() {
           precipitation: formatPrecipitation(weather.precipitation, getHeavyRainUnit(sensitivitiesTyped)),
           conditions: weather.conditions
         };
-        const createdLog = await prisma.log.create({
+        await prisma.log.create({
           data: {
             plantId: plantWithGarden.id,
             userId: plantWithGarden.userId,
@@ -747,11 +767,11 @@ export async function processWeatherAlerts() {
                   type: 'WEATHER_ALERT',
                   title: `⚠️ Current Weather Alerts for ${plantWithGarden.name}`,
                   message: message,
-                  link: `/logs/${createdLog.id}`,
+                  link: `/logs/`, // logId is not available here, but can be linked later if needed
                   meta: {
                     plantId: plantWithGarden.id,
                     plantName: plantWithGarden.name,
-                    gardenId: plantWithGarden.gardenId,
+                    gardenId: garden.id,
                     gardenName: garden.name,
                     roomId: plantWithGarden.roomId,
                     roomName,
@@ -760,7 +780,6 @@ export async function processWeatherAlerts() {
                     alertTypes: currentAlertTypes,
                     currentAlerts,
                     date: new Date().toISOString().slice(0, 10),
-                    logId: createdLog.id,
                     timezone: getGardenTimezone(garden),
                   } as NotificationMeta
                 }
@@ -982,7 +1001,37 @@ async function maybeSendOrUpdateAlert(
   if (!garden) return;
 
   const userIds = await getAllGardenUserIds(garden.id, plant.userId);
-  const logMessage = `${sourceType === 'SENSOR' ? 'Sensor' : 'Weather'} alert for ${plant.name}: ${type}`;
+  // Build a detailed message similar to grouped alerts
+  let message = `${sourceType === 'SENSOR' ? 'Sensor' : 'Weather'} alert for ${plant.name} in ${garden.name}`;
+  let details = '';
+  if (sourceType === 'SENSOR') {
+    details += `\n\n• Type: ${type}`;
+    if (type.includes('Temperature') && typeof weather.temperature === 'number') {
+      details += `\n• Temperature: ${weather.temperature}°F`;
+    }
+    if (type.includes('Humidity') && typeof weather.humidity === 'number') {
+      details += `\n• Humidity: ${weather.humidity}%`;
+    }
+  } else {
+    details += `\n\n• Type: ${type}`;
+    if (type === 'heat' && typeof weather.temperature === 'number') {
+      details += `\n• Heat: ${weather.temperature}°F`;
+    } else if (type === 'frost' && typeof weather.temperature === 'number') {
+      details += `\n• Frost: ${weather.temperature}°F`;
+    } else if (type === 'wind' && typeof weather.windSpeed === 'number') {
+      details += `\n• Wind: ${weather.windSpeed} mph`;
+    } else if (type === 'heavyRain' && typeof weather.precipitation === 'number') {
+      details += `\n• HeavyRain: ${weather.precipitation} precipitation`;
+    } else if (type === 'drought' && typeof weather.daysWithoutRain === 'number') {
+      details += `\n• Drought: ${weather.daysWithoutRain} days`;
+    } else if (type === 'flood' && typeof weather.precipitation === 'number') {
+      details += `\n• Flood: ${weather.precipitation} precipitation`;
+    } else {
+      details += `\n• Value: ${severity}`;
+    }
+  }
+  message += details + '\n\nPlease check your plant and environment.';
+
   const logType = sourceType === 'SENSOR' ? LogType.SENSOR_ALERT : LogType.WEATHER_ALERT;
   const notificationType = sourceType === 'SENSOR' ? 'SENSOR_ALERT' : 'WEATHER_ALERT';
 
@@ -994,7 +1043,7 @@ async function maybeSendOrUpdateAlert(
       roomId: plant.roomId,
       zoneId: plant.zoneId,
       type: logType,
-      notes: logMessage,
+      notes: message,
       logDate: new Date(),
       stage: plant.stage || Stage.VEGETATIVE,
       data: {
@@ -1048,7 +1097,7 @@ async function maybeSendOrUpdateAlert(
             userId,
           type: notificationType,
           title: `⚠️ Current ${sourceType === 'SENSOR' ? 'Sensor' : 'Weather'} Alerts for ${plant.name}`,
-          message: logMessage,
+          message: message,
             link: `/logs/${createdLog.id}`,
             meta: {
               plantId: plant.id,
@@ -1067,10 +1116,11 @@ async function maybeSendOrUpdateAlert(
             }),
             date: new Date().toISOString(),
               logId: createdLog.id,
-            } as NotificationMeta
-          }
-        })
-      ));
+            timezone: getGardenTimezone(garden),
+          } as NotificationMeta
+        }
+      })
+    ));
     }
   }
 

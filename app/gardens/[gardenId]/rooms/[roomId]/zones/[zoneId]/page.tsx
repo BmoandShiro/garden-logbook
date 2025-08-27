@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import PlantList from './components/PlantList';
 import CreatePlantButton from './components/CreatePlantButton';
 import CreateEquipmentButton from './components/CreateEquipmentButton';
+import AddLogButton from './components/AddLogButton';
+import EquipmentList from './components/EquipmentList';
 import ZoneSensorData from './components/ZoneSensorData';
 import LogsListWrapper from '@/app/logs/components/LogsListWrapper';
 // @ts-expect-error: no types for zipcode-to-timezone
@@ -48,6 +50,26 @@ export default async function ZonePage({ params }: PageProps) {
       plants: {
         include: {
           user: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      },
+      equipment: {
+        include: {
+          maintenanceTasks: {
+            orderBy: {
+              nextDueDate: 'asc'
+            }
+          },
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
         },
         orderBy: {
           createdAt: 'desc'
@@ -107,15 +129,33 @@ export default async function ZonePage({ params }: PageProps) {
 
   return (
     <div className="h-full p-4 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
         <h1 className="text-2xl font-bold tracking-tight text-emerald-100">{zone.name}</h1>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap gap-2">
           <CreatePlantButton zoneId={zoneId} roomId={roomId} gardenId={gardenId} />
           <CreateEquipmentButton zoneId={zoneId} roomId={roomId} gardenId={gardenId} />
+          <AddLogButton 
+            zoneId={zoneId} 
+            roomId={roomId} 
+            gardenId={gardenId} 
+            plants={zone.plants.map((plant: any) => ({ id: plant.id, name: plant.name }))}
+          />
         </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Mobile: Weather Alert Settings and Linked Sensors first */}
+        <div className="lg:hidden space-y-4">
+          <ZoneSensorData
+            zoneId={zoneId}
+            devices={zone.goveeDevices}
+            weatherAlertSource={zone.weatherAlertSource}
+            sensorAlertThresholds={zone.sensorAlertThresholds}
+            usePlantSpecificAlerts={zone.usePlantSpecificAlerts}
+          />
+        </div>
+
+        {/* Main content area */}
         <div className="lg:col-span-2 space-y-4">
           <div className="p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
             <h2 className="text-xl font-semibold mb-2 text-emerald-100">Zone Details</h2>
@@ -136,10 +176,14 @@ export default async function ZonePage({ params }: PageProps) {
 
           <div className="p-4 border border-dark-border rounded-lg bg-dark-bg-secondary">
             <h2 className="text-xl font-semibold mb-2 text-emerald-100">Zone Statistics</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-emerald-300/70">Total Plants</p>
                 <p className="text-2xl font-semibold text-emerald-100">{zone.plants.length}</p>
+              </div>
+              <div>
+                <p className="text-sm text-emerald-300/70">Equipment</p>
+                <p className="text-2xl font-semibold text-emerald-100">{zone.equipment.length}</p>
               </div>
               <div>
                 <p className="text-sm text-emerald-300/70">Linked Sensors</p>
@@ -156,13 +200,31 @@ export default async function ZonePage({ params }: PageProps) {
           />
         </div>
 
-        <div className="space-y-4">
+        {/* Desktop: Weather Alert Settings and Linked Sensors on the right */}
+        <div className="hidden lg:block space-y-4">
           <ZoneSensorData
             zoneId={zoneId}
             devices={zone.goveeDevices}
             weatherAlertSource={zone.weatherAlertSource}
             sensorAlertThresholds={zone.sensorAlertThresholds}
             usePlantSpecificAlerts={zone.usePlantSpecificAlerts}
+          />
+          
+          <EquipmentList 
+            zoneId={zoneId}
+            roomId={roomId}
+            gardenId={gardenId}
+            equipment={zone.equipment}
+          />
+        </div>
+
+        {/* Mobile: Equipment list below plant list */}
+        <div className="lg:hidden">
+          <EquipmentList 
+            zoneId={zoneId}
+            roomId={roomId}
+            gardenId={gardenId}
+            equipment={zone.equipment}
           />
         </div>
       </div>

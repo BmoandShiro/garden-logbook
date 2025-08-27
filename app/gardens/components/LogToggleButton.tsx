@@ -46,7 +46,7 @@ export default function LogToggleButton({ gardenId }: LogToggleButtonProps) {
       type="button"
       onClick={toggle}
       disabled={loading || showLogs === null}
-      className={`ml-2 px-2 py-1 rounded text-xs font-semibold border border-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+      className={`ml-2 px-2 py-1 rounded text-xs font-semibold border border-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-garden-500 ${
         showLogs === false
           ? "text-red-500 border-red-500 bg-emerald-950 hover:bg-red-950"
           : "text-emerald-200 bg-emerald-950 hover:bg-emerald-800"

@@ -47,7 +47,7 @@ export default async function Home() {
                 </Link>
               )}
               <Link
-                href="/about"
+                href="/learn-more"
                 className="text-sm font-semibold leading-6 text-dark-text-secondary hover:text-dark-text-primary"
               >
                 Learn more <span aria-hidden="true">→</span>

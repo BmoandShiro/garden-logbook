@@ -19,7 +19,7 @@ export default async function SensorsPage() {
 
   const userId = session.user.id;
 
-  const [devices, zones, readings, user] = await Promise.all([
+  const [devices, zones, readings, totalReadingsCount, user] = await Promise.all([
     prisma.goveeDevice.findMany({
       where: { userId },
       include: {
@@ -58,6 +58,13 @@ export default async function SensorsPage() {
       orderBy: { timestamp: 'desc' },
       take: 100,
     }),
+    prisma.goveeReading.count({
+      where: {
+        device: {
+          userId: userId,
+        },
+      },
+    }),
     prisma.user.findUnique({
       where: { id: userId },
       select: { encryptedGoveeApiKey: true },
@@ -68,7 +75,7 @@ export default async function SensorsPage() {
 
   return (
     <div className="container mx-auto py-6">
-      <SensorDashboard devices={devices} zones={zones} readings={readings} />
+      <SensorDashboard devices={devices} zones={zones} readings={readings} totalReadingsCount={totalReadingsCount} />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight tracking-tight text-emerald-100">Govee Device Management</h1>
       </div>

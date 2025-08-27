@@ -1,11 +1,18 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { HelpCircle, ChevronDown } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertTriangle, HelpCircle, Info, Thermometer, Droplets, Wind, Lightbulb, Zap, Leaf, Flower, Sprout, WashingMachine, ChevronDown, ChevronUp, ChevronDown as ChevronDownIcon } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import CreateLogModal from '@/app/logs/components/CreateLogModal';
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,29 +27,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LogType, VolumeUnit, Stage } from '@/types/enums';
 
 // Types and Enums
 type GrowStage = 'propagation' | 'vegetative' | 'budset' | 'flower' | 'lateflower' | 'flush';
+type TeaGrowthStage = 'Seedling' | 'Veg' | 'Flower';
 
 enum RootSize {
   SMALL = 'SMALL',
@@ -160,8 +155,8 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
   propagation: {
     name: 'Propagation',
     ec: 1.1,
-    ppm500: 775,
-    ppm700: 1085,
+    ppm500: 550,
+    ppm700: 770,
     nutrients: ['Clone formula'],
     co2Max: 1000,
     ratios: [] // Optional, low PPM
@@ -182,8 +177,8 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
   budset: {
     name: 'Bud Set',
     ec: 1.9,
-    ppm500: 1050,
-    ppm700: 1470,
+    ppm500: 950,
+    ppm700: 1330,
     nutrients: ['Bloom', 'Epsom'],
     co2Max: 1400,
     ratios: [
@@ -227,20 +222,20 @@ const STAGE_DATA: Record<GrowStage, StageData> = {
 };
 
 const BASE_GRAMS_PER_GALLON = {
-  partA: 3.78,
-  partB: 2.52,
-  epsom: 0.99,
-  bloom: 5.68,
-  finish: 5.05,
+  partA: 3.79,    // Jack's official: 5-12-26 Part A
+  partB: 2.52,    // Jack's official: 15-0-0 Part B
+  epsom: 0.99,    // Jack's official: Epsom Salt
+  bloom: 5.68,    // Jack's official: 10-30-20 Bloom
+  finish: 5.41,   // Jack's official: 7-15-30 Finish
 };
 
-// PPM contribution per gram per gallon
+// PPM contribution per gram per gallon (total PPM values for meter reading)
 const PPM_CONTRIBUTION = {
-  partA: 13.2,
-  partB: 39.7,
-  epsom: 23.0,
-  bloom: 26.4,
-  finish: 20.8,
+  partA: 26.4,    // Jack's Part A: ~100 total PPM / 3.79g = 26.4 PPM per gram
+  partB: 79.4,    // Jack's Part B: ~200 total PPM / 2.52g = 79.4 PPM per gram
+  epsom: 46.5,    // Epsom Salt: ~46 total PPM / 0.99g = 46.5 PPM per gram
+  bloom: 52.8,    // Jack's Bloom: ~300 total PPM / 5.68g = 52.8 PPM per gram
+  finish: 37.0,   // Jack's Finish: ~200 total PPM / 5.41g = 37.0 PPM per gram
 };
 
 // Root size options
@@ -433,6 +428,144 @@ interface PPMAdjustment {
   luxuryRatio?: number;
 }
 
+// Custom number input component with emerald arrows
+const CustomNumberInput = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className = "",
+  min,
+  max,
+  step,
+  id
+}: { 
+  value: number | undefined;
+  onChange: (value: number) => void; 
+  placeholder: string; 
+  className?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  id?: string;
+}) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    
+    // Allow empty input or valid numbers including 0
+    if (inputValue === '' || inputValue === '0') {
+      onChange(0);
+    } else {
+      const newValue = parseFloat(inputValue);
+      if (!isNaN(newValue)) {
+        onChange(newValue);
+      }
+    }
+  };
+
+  const handleIncrement = () => {
+    const currentValue = value || 0;
+    const stepValue = step || 1;
+    const maxValue = max || Infinity;
+    const newValue = Math.min(maxValue, currentValue + stepValue);
+    onChange(newValue);
+  };
+
+  const handleDecrement = () => {
+    const currentValue = value || 0;
+    const stepValue = step || 1;
+    const minValue = min || 0;
+    const newValue = Math.max(minValue, currentValue - stepValue);
+    onChange(newValue);
+  };
+
+  return (
+    <div className={`relative group ${className}`}>
+      <input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        placeholder={placeholder}
+        value={value !== undefined && value !== null && !isNaN(value) ? value : ''}
+        onChange={handleChange}
+        className="w-full px-3 py-2 text-sm bg-dark-bg-secondary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={handleIncrement}
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          type="button"
+          onClick={handleDecrement}
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
+        >
+          <ChevronDownIcon className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Tea Brewer Calculator Data
+interface TeaRecipe {
+  earthworm_castings: string;
+  fish_kelp_extract: string;
+  molasses: string;
+}
+
+const TEA_RECIPES: Record<TeaGrowthStage, TeaRecipe> = {
+  Seedling: {
+    earthworm_castings: "0.5 cups",
+    fish_kelp_extract: "2–5 mL",
+    molasses: "0–1 tsp",
+  },
+  Veg: {
+    earthworm_castings: "1 cup",
+    fish_kelp_extract: "10–15 mL",
+    molasses: "1 tbsp",
+  },
+  Flower: {
+    earthworm_castings: "1 cup",
+    fish_kelp_extract: "5–10 mL",
+    molasses: "1 tbsp",
+  },
+};
+
+const getBrewDuration = (temperature: number): string => {
+  if (temperature < 65) return "36–48 hours";
+  if (temperature >= 65 && temperature <= 75) return "24–36 hours";
+  if (temperature > 75 && temperature <= 78) return "12–24 hours";
+  if (temperature > 80) return "12-15 hours max";
+  return "24–36 hours"; // Default for 78-80°F
+};
+
+const parseAmount = (amount: string): { value: number; unit: string } => {
+  const match = amount.match(/^([\d.–]+)\s*(.+)$/);
+  if (!match) return { value: 0, unit: '' };
+  
+  const value = parseFloat(match[1].replace('–', '.'));
+  const unit = match[2];
+  
+  return { value, unit };
+};
+
+const calculateTotalAmount = (amount: string, gallons: number): string => {
+  const { value, unit } = parseAmount(amount);
+  const total = value * gallons;
+  
+  if (unit === 'cups') return `${total} cups`;
+  if (unit === 'mL') return `${total} mL`;
+  if (unit === 'tbsp') return `${total} tbsp`;
+  if (unit === 'tsp') return `${total} tsp`;
+  
+  return `${total} ${unit}`;
+};
+
 export default function Jacks321Calculator() {
   // Core state
   const [selectedStage, setSelectedStage] = useState<GrowStage>('vegetative');
@@ -466,6 +599,16 @@ export default function Jacks321Calculator() {
 
   // Add state for first water toggle
   const [isFirstWater, setIsFirstWater] = useState(false);
+
+  // Add state for watering log modal
+  const [isWateringLogModalOpen, setIsWateringLogModalOpen] = useState(false);
+  const { data: session } = useSession();
+
+  // Tea Brewer Calculator state
+  const [teaGrowthStage, setTeaGrowthStage] = useState<TeaGrowthStage>('Veg');
+  const [teaBrewSize, setTeaBrewSize] = useState<number>(5);
+  const [teaWaterTemp, setTeaWaterTemp] = useState<number>(72);
+  const [isTeaBrewerOpen, setIsTeaBrewerOpen] = useState(false);
 
   // Helper components
   const InfoTooltip = ({ content }: { content: string }) => (
@@ -525,25 +668,45 @@ export default function Jacks321Calculator() {
       basePPM = Math.min(stageData.co2Max, Math.floor(basePPM * CO2_PPM_MODIFIER));
     }
 
-    // Step 3: Check for underfeeding
+    // Only set target PPM if it's empty or if stage/CO2/luxury settings change
+    // Don't reset when symptoms change to preserve user's manual adjustments
+    if (!targetPPM || targetPPM === '') {
+    setTargetPPM(basePPM.toString());
+    }
+    
+    setPPMAdjustments({
+      baseTargetPPM: isPPM700 ? stageData.ppm700 : stageData.ppm500,
+      finalTargetPPM: basePPM,
+      underfeedingPPM: undefined, // Will be set by symptoms useEffect
+      luxuryScaledPPM: luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 ? 
+        Math.floor((isPPM700 ? stageData.ppm700 : stageData.ppm500) * luxuryUptakeMode.multiplier) : undefined
+    });
+  }, [selectedStage, isPPM700, isCO2Enriched, luxuryUptakeMode, targetPPM]);
+
+  // Separate useEffect for symptoms to handle underfeeding warnings without resetting target PPM
+  useEffect(() => {
     const warnings = getSymptomWarnings(selectedSymptoms);
     const isUnderfeeding = warnings.some(warning => 
       warning.message.includes('Possible General Underfeeding')
     );
 
     if (isUnderfeeding) {
-      basePPM += UNDERFEEDING_PPM_INCREASE;
+      const currentTargetPPM = parseInt(targetPPM) || 0;
+      const adjustedPPM = currentTargetPPM + UNDERFEEDING_PPM_INCREASE;
+      
+      // Update PPM adjustments with underfeeding info
+      setPPMAdjustments(prev => ({
+        ...prev,
+        underfeedingPPM: adjustedPPM
+      }));
+    } else {
+      // Clear underfeeding PPM if no underfeeding symptoms
+      setPPMAdjustments(prev => ({
+        ...prev,
+        underfeedingPPM: undefined
+      }));
     }
-
-    setTargetPPM(basePPM.toString());
-    setPPMAdjustments({
-      baseTargetPPM: isPPM700 ? stageData.ppm700 : stageData.ppm500,
-      finalTargetPPM: basePPM,
-      underfeedingPPM: isUnderfeeding ? basePPM : undefined,
-      luxuryScaledPPM: luxuryUptakeMode.enabled && luxuryUptakeMode.multiplier > 1 ? 
-        Math.floor((isPPM700 ? stageData.ppm700 : stageData.ppm500) * luxuryUptakeMode.multiplier) : undefined
-    });
-  }, [selectedStage, isPPM700, isCO2Enriched, selectedSymptoms, luxuryUptakeMode]);
+  }, [selectedSymptoms, targetPPM]);
 
   // Update calculateNutrients to use the already-adjusted target PPM
   const calculateNutrients = (): NutrientCalculation => {
@@ -554,7 +717,6 @@ export default function Jacks321Calculator() {
       };
     }
 
-    const stageData = STAGE_DATA[selectedStage];
     const volumeNum = parseFloat(volume);
     const sourcePPMNum = parseInt(sourceWaterPPM);
     const targetPPMNum = parseInt(targetPPM);
@@ -562,30 +724,75 @@ export default function Jacks321Calculator() {
     // Calculate nutrient PPM (target PPM already includes luxury uptake if enabled)
     const nutrientPPM = targetPPMNum - sourcePPMNum;
 
-    // Calculate weighted PPM total and shares
-    let weightedPPM = 0;
-    const ppmShares: PPMAllocation = {};
-
-    if (stageData.ratios && stageData.ratios.length > 0) {
-      weightedPPM = stageData.ratios.reduce((total, { nutrient, ratio }) => {
-        const ppmPerGram = getPPMPerGram(nutrient);
-        return total + (ratio * ppmPerGram);
-      }, 0);
-
-      stageData.ratios.forEach(({ nutrient, ratio }) => {
-        const ppmPerGram = getPPMPerGram(nutrient);
-        const share = (ratio * ppmPerGram) / weightedPPM;
-        const nutrientKey = getNutrientKey(nutrient);
-        if (nutrientKey) {
-          ppmShares[nutrientKey] = share;
+    // Full-strength reference values from Jack's official schedule
+    const FULL_STRENGTH_VALUES = {
+      vegetative: {
+        partA: 3.79,
+        partB: 2.52,
+        epsom: 0.99,
+        targetPPM500: 1200,
+        targetPPM700: 1680
+      },
+      flower: {
+        partA: 3.79,
+        partB: 2.52,
+        epsom: 0.99,
+        targetPPM500: 1200,
+        targetPPM700: 1680
+      },
+      propagation: {
+        partA: 3.79,
+        partB: 2.52,
+        epsom: 0, // Excluded at propagation stage
+        targetPPM500: 550,
+        targetPPM700: 770
+      },
+      budset: {
+        bloom: 5.68,
+        epsom: 0.99,
+        targetPPM500: 950,
+        targetPPM700: 1330
+      },
+      lateflower: {
+        finish: 5.41,
+        epsom: 0.99,
+        targetPPM500: 1050,
+        targetPPM700: 1470
         }
-      });
-    }
+    };
 
     const calc: NutrientCalculation = {
       totalPPM: 0,
       finalPPM: sourcePPMNum
     };
+
+    // Get the appropriate full-strength values for current stage
+    let stageValues;
+    switch (selectedStage) {
+      case 'propagation':
+        stageValues = FULL_STRENGTH_VALUES.propagation;
+        break;
+      case 'vegetative':
+        stageValues = FULL_STRENGTH_VALUES.vegetative;
+        break;
+      case 'flower':
+        stageValues = FULL_STRENGTH_VALUES.flower;
+        break;
+      case 'budset':
+        stageValues = FULL_STRENGTH_VALUES.budset;
+        break;
+      case 'lateflower':
+        stageValues = FULL_STRENGTH_VALUES.lateflower;
+        break;
+      default:
+        stageValues = FULL_STRENGTH_VALUES.vegetative;
+    }
+
+    // Get the correct target PPM based on scale
+    const fullStrengthPPM = isPPM700 ? stageValues.targetPPM700 : stageValues.targetPPM500;
+
+    // Calculate scaling factor based on target PPM
+    const scaleFactor = nutrientPPM / fullStrengthPPM;
 
     // Check for underfeeding
     const warnings = getSymptomWarnings(selectedSymptoms);
@@ -593,26 +800,95 @@ export default function Jacks321Calculator() {
       warning.message.includes('Possible General Underfeeding')
     );
 
-    Object.entries(ppmShares).forEach(([nutrientKey, share]) => {
-      if (share && share > 0) {
-        const allocatedPPM = nutrientPPM * share;
-        const ppmPerGram = PPM_CONTRIBUTION[nutrientKey as keyof typeof PPM_CONTRIBUTION];
-        const baseGrams = (allocatedPPM / ppmPerGram) * volumeNum;
-        
-        // Only apply symptom modifiers if not underfeeding
-        const modifier = isUnderfeeding ? 1 : 1 + (calculateModifiers()[nutrientKey as keyof SymptomModifier] || 0);
-        const adjustedGrams = baseGrams * modifier;
-        
-        const nutrientAmount: NutrientAmount = {
-          grams: adjustedGrams,
-          ppmContribution: (adjustedGrams / volumeNum) * ppmPerGram
+    // Calculate modifiers (only apply if not underfeeding)
+    const modifiers = calculateModifiers();
+
+    // Calculate grams for each nutrient based on scaling
+    if (selectedStage === 'propagation' || selectedStage === 'vegetative' || selectedStage === 'flower') {
+      // 3-2-1 ratio stages
+      const stageValues321 = stageValues as typeof FULL_STRENGTH_VALUES.vegetative;
+      const partAGrams = stageValues321.partA * scaleFactor * (1 + (modifiers.partA || 0)) * volumeNum;
+      const partBGrams = stageValues321.partB * scaleFactor * (1 + (modifiers.partB || 0)) * volumeNum;
+      const epsomGrams = stageValues321.epsom * scaleFactor * (1 + (modifiers.epsom || 0)) * volumeNum;
+
+      // Real-world PPM-per-gram constants from Jack's official feed chart
+      const PPM_PER_GRAM = {
+        partA: 79.2,    // 300 PPM / 3.79g = 79.2 PPM/g
+        partB: 198.4,   // 500 PPM / 2.52g = 198.4 PPM/g
+        epsom: 404.0    // 400 PPM / 0.99g = 404.0 PPM/g
+      };
+
+      // Calculate PPM from the adjusted grams per gallon
+      const partAGramsPerGallon = partAGrams / volumeNum;
+      const partBGramsPerGallon = partBGrams / volumeNum;
+      const epsomGramsPerGallon = epsomGrams / volumeNum;
+
+      calc.partA = {
+        grams: partAGrams,
+        ppmContribution: partAGramsPerGallon * PPM_PER_GRAM.partA
+      };
+      calc.partB = {
+        grams: partBGrams,
+        ppmContribution: partBGramsPerGallon * PPM_PER_GRAM.partB
+      };
+      if (epsomGrams > 0) {
+        calc.epsom = {
+          grams: epsomGrams,
+          ppmContribution: epsomGramsPerGallon * PPM_PER_GRAM.epsom
         };
-
-        (calc as any)[nutrientKey] = nutrientAmount;
-        calc.totalPPM += nutrientAmount.ppmContribution;
       }
-    });
+    } else if (selectedStage === 'budset') {
+      // Bloom + Epsom stage
+      const stageValuesBloom = stageValues as typeof FULL_STRENGTH_VALUES.budset;
+      const bloomGrams = stageValuesBloom.bloom * scaleFactor * (1 + (modifiers.bloom || 0)) * volumeNum;
+      const epsomGrams = stageValuesBloom.epsom * scaleFactor * (1 + (modifiers.epsom || 0)) * volumeNum;
+        
+      // PPM-per-gram constants for bloom stage
+      const PPM_PER_GRAM_BLOOM = {
+        bloom: 52.8,    // Based on Jack's bloom formula
+        epsom: 404.0    // Same as above
+      };
 
+      // Calculate PPM from the adjusted grams per gallon
+      const bloomGramsPerGallon = bloomGrams / volumeNum;
+      const epsomGramsPerGallon = epsomGrams / volumeNum;
+
+      calc.bloom = {
+        grams: bloomGrams,
+        ppmContribution: bloomGramsPerGallon * PPM_PER_GRAM_BLOOM.bloom
+      };
+      calc.epsom = {
+        grams: epsomGrams,
+        ppmContribution: epsomGramsPerGallon * PPM_PER_GRAM_BLOOM.epsom
+      };
+    } else if (selectedStage === 'lateflower') {
+      // Finish + Epsom stage
+      const stageValuesFinish = stageValues as typeof FULL_STRENGTH_VALUES.lateflower;
+      const finishGrams = stageValuesFinish.finish * scaleFactor * (1 + (modifiers.finish || 0)) * volumeNum;
+      const epsomGrams = stageValuesFinish.epsom * scaleFactor * (1 + (modifiers.epsom || 0)) * volumeNum;
+
+      // PPM-per-gram constants for finish stage
+      const PPM_PER_GRAM_FINISH = {
+        finish: 37.0,   // Based on Jack's finish formula
+        epsom: 404.0    // Same as above
+      };
+
+      // Calculate PPM from the adjusted grams per gallon
+      const finishGramsPerGallon = finishGrams / volumeNum;
+      const epsomGramsPerGallon = epsomGrams / volumeNum;
+
+      calc.finish = {
+        grams: finishGrams,
+        ppmContribution: finishGramsPerGallon * PPM_PER_GRAM_FINISH.finish
+      };
+      calc.epsom = {
+        grams: epsomGrams,
+        ppmContribution: epsomGramsPerGallon * PPM_PER_GRAM_FINISH.epsom
+      };
+    }
+
+    // Calculate total PPM (this will be the meter reading)
+    calc.totalPPM = nutrientPPM;
     calc.finalPPM = calc.totalPPM + sourcePPMNum;
     return calc;
   };
@@ -998,6 +1274,105 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
     checkLuxuryUptakeConditions();
   }, [lastFeedPPM, selectedStage, isPPM700, isFirstWater]);
 
+  // Function to get current calculator data for the modal
+  const getCurrentCalculatorData = () => {
+    const baseData = {
+      // Basic info
+      logType: LogType.WATERING,
+      stage: (() => {
+        // Map calculator stages to enum values
+        switch (selectedStage) {
+          case 'propagation': return Stage.PROPAGATION;
+          case 'vegetative': return Stage.VEGETATIVE;
+          case 'budset': return Stage.BUDSET;
+          case 'flower': return Stage.FLOWER;
+          case 'lateflower': return Stage.LATEFLOWER;
+          case 'flush': return Stage.FLUSH;
+          default: return Stage.VEGETATIVE;
+        }
+      })(),
+      logTitle: `Watering - ${STAGE_DATA[selectedStage].name} Stage`,
+      notes: (() => {
+        let notes = `Nutrient mix: ${nutrientCalc ? 
+        Object.entries(nutrientCalc)
+          .filter(([key, value]) => key !== 'totalPPM' && key !== 'finalPPM' && value && typeof value === 'object' && 'grams' in value)
+          .map(([key, value]) => `${key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key}: ${(value as any).grams.toFixed(2)}g`)
+            .join(', ') : 'No nutrients'} | Target PPM: ${targetPPM} | Final PPM: ${nutrientCalc?.finalPPM.toFixed(1) || 0}`;
+        
+        if (selectedSymptoms.length > 0) {
+          const symptomsText = selectedSymptoms.map(symptom => {
+            const modifier = SYMPTOM_MODIFIERS[symptom];
+            const modifierText = Object.entries(modifier)
+              .filter(([key, value]) => key !== 'warning' && value !== 0)
+              .map(([key, value]) => {
+                const keyName = key === 'partA' ? 'Part A' : key === 'partB' ? 'Part B' : key === 'epsom' ? 'Epsom' : key === 'bloom' ? 'Bloom' : key === 'finish' ? 'Finish' : key;
+                return `${keyName} ${value > 0 ? '+' : ''}${(value * 100).toFixed(1)}%`;
+              })
+              .join(', ');
+            return `${symptom} (${modifierText})`;
+          }).join('; ');
+          notes += ` | Symptoms: ${symptomsText}`;
+        }
+        
+        return notes;
+      })(),
+      
+      // Water & Feeding data
+      waterAmount: parseFloat(volume),
+      waterUnit: VolumeUnit.GALLONS,
+      nutrientWaterPh: parseFloat(feedPH),
+      sourceWaterPpm: parseInt(sourceWaterPPM),
+      nutrientWaterPpm: nutrientCalc?.finalPPM || 0,
+      ppmScale: isPPM700 ? 'PPM_700' as const : 'PPM_500' as const,
+      
+      // Jack's 321 data
+      jacks321Used: nutrientCalc ? 
+        Object.keys(nutrientCalc).filter(key => 
+          key !== 'totalPPM' && key !== 'finalPPM' && nutrientCalc[key as keyof NutrientCalculation]
+        ) as any : [],
+      jacks321Unit: 'GRAMS' as const,
+      partAAmount: nutrientCalc?.partA?.grams ? Number(nutrientCalc.partA.grams.toFixed(2)) : undefined,
+      partBAmount: nutrientCalc?.partB?.grams ? Number(nutrientCalc.partB.grams.toFixed(2)) : undefined,
+      partCAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined, // Map epsom to partCAmount
+      epsomAmount: nutrientCalc?.epsom?.grams ? Number(nutrientCalc.epsom.grams.toFixed(2)) : undefined,
+      bloomAmount: nutrientCalc?.bloom?.grams ? Number(nutrientCalc.bloom.grams.toFixed(2)) : undefined,
+      finishAmount: nutrientCalc?.finish?.grams ? Number(nutrientCalc.finish.grams.toFixed(2)) : undefined,
+      
+      // Jack's PPM values (calculated from grams)
+      partAPpm: nutrientCalc?.partA?.ppmContribution,
+      partBPpm: nutrientCalc?.partB?.ppmContribution,
+      epsomPpm: nutrientCalc?.epsom?.ppmContribution,
+      bloomPpm: nutrientCalc?.bloom?.ppmContribution,
+      finishPpm: nutrientCalc?.finish?.ppmContribution,
+      
+      // Location (empty for user to select)
+      selectedPlants: [], // Empty array means "all plants"
+    };
+
+    // Add tea brewing data if tea brewer is open
+    if (isTeaBrewerOpen) {
+      const teaRecipe = TEA_RECIPES[teaGrowthStage];
+      const brewDuration = getBrewDuration(teaWaterTemp);
+      
+      return {
+        ...baseData,
+        notes: `${baseData.notes} | Tea Brew: ${teaBrewSize}g ${teaGrowthStage} stage - ${calculateTotalAmount(teaRecipe.earthworm_castings, teaBrewSize)} castings, ${calculateTotalAmount(teaRecipe.fish_kelp_extract, teaBrewSize)} extract, ${calculateTotalAmount(teaRecipe.molasses, teaBrewSize)} molasses | Brew duration: ${brewDuration} at ${teaWaterTemp}°F`,
+        waterAmount: teaBrewSize, // Use tea brew size instead of nutrient volume
+        waterUnit: VolumeUnit.GALLONS,
+        // Tea Brewer fields
+        teaBrewSize: teaBrewSize,
+        teaWaterTemp: teaWaterTemp,
+        teaGrowthStage: teaGrowthStage,
+        teaEarthwormCastings: calculateTotalAmount(teaRecipe.earthworm_castings, teaBrewSize),
+        teaFishKelpExtract: calculateTotalAmount(teaRecipe.fish_kelp_extract, teaBrewSize),
+        teaMolasses: calculateTotalAmount(teaRecipe.molasses, teaBrewSize),
+        teaBrewDuration: brewDuration,
+      };
+    }
+
+    return baseData;
+  };
+
   return (
     <div className="space-y-6">
       {/* Stage Selection Chart */}
@@ -1209,6 +1584,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             checked={isCO2Enriched}
             onCheckedChange={setIsCO2Enriched}
             aria-label="Toggle CO2 enriched environment"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
           />
         </div>
 
@@ -1224,6 +1600,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             checked={isPPM700}
             onCheckedChange={setIsPPM700}
             aria-label="Toggle PPM scale"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
           />
         </div>
 
@@ -1234,15 +1611,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               <Label htmlFor="volume">Solution Volume (gallons)</Label>
               <InfoTooltip content="Enter the total volume of nutrient solution you want to mix" />
             </div>
-            <Input
-              id="volume"
-              type="number"
-              min="0.1"
-              step="0.1"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
+            <CustomNumberInput
+              value={parseFloat(volume)}
+              onChange={(value) => setVolume(value.toString())}
               placeholder="Enter volume in gallons"
               className="bg-dark-bg-secondary border-dark-border"
+              min={0.1}
+              step={0.1}
+              id="volume"
             />
           </div>
 
@@ -1251,15 +1627,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               <Label htmlFor="sourceWaterPPM">Source Water PPM</Label>
               <InfoTooltip content="Enter the PPM of your source water before adding nutrients" />
             </div>
-            <Input
-              id="sourceWaterPPM"
-              type="number"
-              min="0"
-              step="1"
-              value={sourceWaterPPM}
-              onChange={(e) => setSourceWaterPPM(e.target.value)}
+            <CustomNumberInput
+              value={parseInt(sourceWaterPPM)}
+              onChange={(value) => setSourceWaterPPM(value.toString())}
               placeholder="Enter source water PPM"
               className="bg-dark-bg-secondary border-dark-border"
+              min={0}
+              step={1}
+              id="sourceWaterPPM"
             />
           </div>
         </div>
@@ -1270,15 +1645,14 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             <Label htmlFor="targetPPM">Target PPM (you can edit this)</Label>
             <InfoTooltip content="Default is set by growth stage, but you can adjust as needed" />
           </div>
-          <Input
-            id="targetPPM"
-            type="number"
-            min="0"
-            step="50"
-            value={targetPPM}
-            onChange={(e) => setTargetPPM(e.target.value)}
+          <CustomNumberInput
+            value={parseInt(targetPPM)}
+            onChange={(value) => setTargetPPM(value.toString())}
             placeholder="Enter target PPM"
             className="bg-dark-bg-secondary border-dark-border"
+            min={0}
+            step={50}
+            id="targetPPM"
           />
         </div>
 
@@ -1295,7 +1669,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       id="smallRoots"
                       checked={isSmallRoots}
                       onCheckedChange={(checked) => setIsSmallRoots(checked as boolean)}
-                      className="bg-dark-bg-secondary border-dark-border"
+                      className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
                     />
                     <div className="grid gap-1.5 leading-none">
                       <Label htmlFor="smallRoots">
@@ -1319,24 +1693,26 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="lastFeedPPM">Last Feed PPM</Label>
-                    <Input
-                      id="lastFeedPPM"
-                      type="number"
-                      value={lastFeedPPM}
-                      onChange={(e) => setLastFeedPPM(e.target.value)}
+                    <CustomNumberInput
+                      value={parseInt(lastFeedPPM)}
+                      onChange={(value) => setLastFeedPPM(value.toString())}
                       placeholder="Enter last feed PPM"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      step={1}
+                      id="lastFeedPPM"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="runoffPPM">Runoff PPM</Label>
-                    <Input
-                      id="runoffPPM"
-                      type="number"
-                      value={runoffPPM}
-                      onChange={(e) => setRunoffPPM(e.target.value)}
+                    <CustomNumberInput
+                      value={parseInt(runoffPPM)}
+                      onChange={(value) => setRunoffPPM(value.toString())}
                       placeholder="Enter runoff PPM"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      step={1}
+                      id="runoffPPM"
                     />
                   </div>
                 </div>
@@ -1348,16 +1724,15 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <Label htmlFor="feedPH">Feed pH</Label>
                       <InfoTooltip content="Target pH range: 5.6-6.5. Outside this range can cause nutrient lockout." />
                     </div>
-                    <Input
-                      id="feedPH"
-                      type="number"
-                      value={feedPH}
-                      onChange={(e) => setFeedPH(e.target.value)}
+                    <CustomNumberInput
+                      value={parseFloat(feedPH)}
+                      onChange={(value) => setFeedPH(value.toString())}
                       placeholder="Enter feed pH"
-                      min="0"
-                      max="14"
-                      step="0.1"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      max={14}
+                      step={0.1}
+                      id="feedPH"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1365,16 +1740,15 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <Label htmlFor="runoffPH">Runoff pH</Label>
                       <InfoTooltip content="Compare with feed pH to detect root zone issues." />
                     </div>
-                    <Input
-                      id="runoffPH"
-                      type="number"
-                      value={runoffPH}
-                      onChange={(e) => setRunoffPH(e.target.value)}
+                    <CustomNumberInput
+                      value={runoffPH ? parseFloat(runoffPH) : undefined}
+                      onChange={(value) => setRunoffPH(value ? value.toString() : '')}
                       placeholder="Enter runoff pH (optional)"
-                      min="0"
-                      max="14"
-                      step="0.1"
                       className="bg-dark-bg-secondary border-dark-border"
+                      min={0}
+                      max={14}
+                      step={0.1}
+                      id="runoffPH"
                     />
                   </div>
                 </div>
@@ -1416,7 +1790,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                                 setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
                               }
                             }}
-                            className="bg-dark-bg-secondary border-dark-border"
+                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
                           />
                           <Label>{symptom}</Label>
                         </div>
@@ -1435,7 +1809,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                                 setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
                               }
                             }}
-                            className="bg-dark-bg-secondary border-dark-border"
+                            className="bg-dark-bg-secondary border-dark-border data-[state=checked]:bg-garden-500 data-[state=checked]:border-garden-500"
                           />
                           <Label>{symptom}</Label>
                         </div>
@@ -1454,7 +1828,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                           value !== 0 && (
                             <div key={key} className="flex justify-between text-sm">
                               <span>{key}</span>
-                              <span className={value > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                              <span className={value > 0 ? 'text-garden-500' : 'text-red-400'}>
                                 {(value * 100).toFixed(1)}%
                               </span>
                             </div>
@@ -1537,7 +1911,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.epsom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.epsom * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.epsom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1560,7 +1934,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.partA.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.partA * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.partA.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1583,7 +1957,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.partB.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.partB * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.partB.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1606,7 +1980,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.bloom.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.bloom * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.bloom.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1629,7 +2003,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                       <p className="font-medium">{nutrientCalc.finish.grams.toFixed(2)}g</p>
                       <p className="text-sm text-dark-text-secondary">
                         Base: {(BASE_GRAMS_PER_GALLON.finish * parseFloat(volume)).toFixed(2)}g | 
-                        <span className="font-medium text-emerald-400"> Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM</span>
+                        <span className="font-medium text-garden-500"> Adds {nutrientCalc.finish.ppmContribution.toFixed(1)} PPM</span>
                       </p>
                     </div>
                   </div>
@@ -1645,11 +2019,11 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Nutrient PPM Added</span>
-                  <span className="font-medium text-emerald-400">{nutrientCalc.totalPPM.toFixed(1)}</span>
+                  <span className="font-medium text-garden-500">{nutrientCalc.totalPPM.toFixed(1)}</span>
                 </div>
                 <div className="flex justify-between items-center font-medium">
                   <span>Final Solution PPM</span>
-                  <span className="text-emerald-400">{nutrientCalc.finalPPM.toFixed(1)}</span>
+                  <span className="text-garden-500">{nutrientCalc.finalPPM.toFixed(1)}</span>
                 </div>
               </div>
             </div>
@@ -1692,6 +2066,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
               });
             }}
             aria-label="Toggle luxury uptake mode"
+            className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
           />
         </div>
       )}
@@ -1731,8 +2106,161 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
           checked={isFirstWater}
           onCheckedChange={setIsFirstWater}
           aria-label="Toggle first water of new stage"
+          className="data-[state=checked]:bg-garden-500 data-[state=unchecked]:bg-dark-border"
         />
       </div>
+
+      {/* Tea Brewer Calculator */}
+      <div className="mt-6 pt-4 border-t border-dark-border">
+        <Collapsible open={isTeaBrewerOpen} onOpenChange={setIsTeaBrewerOpen}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-between bg-dark-bg-primary border-dark-border hover:bg-dark-bg-secondary"
+            >
+              <div className="flex items-center space-x-2">
+                <Leaf className="h-4 w-4 text-garden-500" />
+                <span>Tea Brewer Calculator</span>
+              </div>
+              {isTeaBrewerOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4 space-y-4">
+            <div className="p-4 rounded-lg bg-dark-bg-secondary border border-dark-border">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="teaGrowthStage">Growth Stage</Label>
+                      <InfoTooltip content="Select the current growth stage to determine appropriate ingredient ratios" />
+                    </div>
+                    <select
+                      id="teaGrowthStage"
+                      value={teaGrowthStage}
+                      onChange={(e) => setTeaGrowthStage(e.target.value as TeaGrowthStage)}
+                      className="w-full px-3 py-2 text-sm bg-dark-bg-primary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none text-dark-text-primary"
+                    >
+                      <option value="Seedling">Seedling</option>
+                      <option value="Veg">Veg</option>
+                      <option value="Flower">Flower</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="teaBrewSize">Brew Size (gallons)</Label>
+                      <InfoTooltip content="Enter the total volume of tea you want to brew" />
+                    </div>
+                    <CustomNumberInput
+                      value={teaBrewSize}
+                      onChange={setTeaBrewSize}
+                      placeholder="Enter brew size"
+                      className="bg-dark-bg-primary border-dark-border"
+                      min={1}
+                      step={1}
+                      id="teaBrewSize"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="teaWaterTemp">Water Temperature (°F)</Label>
+                    <InfoTooltip content="Water temperature affects brew duration and microbial activity" />
+                  </div>
+                  <CustomNumberInput
+                    value={teaWaterTemp}
+                    onChange={setTeaWaterTemp}
+                    placeholder="Enter water temperature"
+                    className="bg-dark-bg-primary border-dark-border"
+                    min={50}
+                    max={90}
+                    step={1}
+                    id="teaWaterTemp"
+                  />
+                </div>
+
+                {/* Tea Brewing Results */}
+                <div className="p-4 rounded-lg bg-dark-bg-primary border border-dark-border">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">
+                        Recipe for {teaBrewSize} gallons during {teaGrowthStage} stage:
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Earthworm Castings:</span>
+                        <span className="text-garden-500">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].earthworm_castings, teaBrewSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Fish & Kelp Extract:</span>
+                        <span className="text-garden-500">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].fish_kelp_extract, teaBrewSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Molasses:</span>
+                        <span className="text-garden-500">{calculateTotalAmount(TEA_RECIPES[teaGrowthStage].molasses, teaBrewSize)}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-dark-border">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Recommended Brew Duration:</span>
+                        <span className="text-garden-500">{getBrewDuration(teaWaterTemp)}</span>
+                      </div>
+                      <p className="text-sm text-dark-text-secondary mt-2">
+                        With water at {teaWaterTemp}°F, brew for ~{getBrewDuration(teaWaterTemp)} with strong aeration.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brew Duration Guide */}
+                <div className="p-4 rounded-lg bg-yellow-900/20 border border-yellow-900/30">
+                  <h4 className="font-medium mb-2">Brew Duration Guide:</h4>
+                  <div className="space-y-1 text-sm">
+                    <div>• &lt;65°F → 36–48 hours</div>
+                    <div>• 65–75°F → 24–36 hours</div>
+                    <div>• 75-78°F → 12–24 hours</div>
+                    <div>• &gt;80°F → 12-15 hours max</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
+      {/* Add Watering Log Button */}
+      {session?.user && nutrientCalc && nutrientCalc.totalPPM > 0 && (
+        <div className="mt-6 pt-4 border-t border-dark-border">
+          <Button
+            onClick={() => setIsWateringLogModalOpen(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Add Watering Log
+          </Button>
+        </div>
+      )}
+
+      {/* Watering Log Modal */}
+      {session?.user && (
+        <CreateLogModal
+          isOpen={isWateringLogModalOpen}
+          onClose={() => setIsWateringLogModalOpen(false)}
+          userId={session.user.id}
+          onSuccess={() => {
+            setIsWateringLogModalOpen(false);
+            // Optionally refresh or show success message
+          }}
+          initialValues={getCurrentCalculatorData()}
+        />
+      )}
     </div>
   );
 } 

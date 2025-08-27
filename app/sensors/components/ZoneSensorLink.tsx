@@ -16,8 +16,63 @@ import {
   Wifi, 
   WifiOff,
   Settings,
-  AlertTriangle
+  AlertTriangle,
+  Wind,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
+
+// Custom number input component with emerald chevrons
+const CustomNumberInput = ({ 
+  placeholder, 
+  value, 
+  onChange, 
+  step = "0.1"
+}: {
+  placeholder: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  step?: string;
+}) => {
+  const handleIncrement = () => {
+    const currentValue = parseFloat(value.toString()) || 0;
+    const stepValue = parseFloat(step);
+    onChange((currentValue + stepValue).toString());
+  };
+
+  const handleDecrement = () => {
+    const currentValue = parseFloat(value.toString()) || 0;
+    const stepValue = parseFloat(step);
+    onChange((currentValue - stepValue).toString());
+  };
+
+  return (
+    <div className="relative group">
+      <input
+        type="number"
+        step={step}
+        placeholder={placeholder}
+        className="block w-full rounded-md border-0 bg-dark-bg-primary text-dark-text-primary shadow-sm ring-1 ring-inset ring-dark-border focus:ring-2 focus:ring-inset focus:ring-garden-400 sm:text-sm [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none pr-8"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleIncrement}
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pt-2"
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button
+          onClick={handleDecrement}
+          className="flex items-center justify-center text-garden-500 hover:text-emerald-300 p-1 pb-2"
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface Zone {
   id: string;
@@ -27,6 +82,7 @@ interface Zone {
   sensorAlertThresholds?: {
     temperature?: { min?: number; max?: number };
     humidity?: { min?: number; max?: number };
+    vpd?: { min?: number; max?: number };
   };
 }
 
@@ -100,7 +156,7 @@ export default function ZoneSensorLink({
     }
   };
 
-  const handleThresholdChange = async (zoneId: string, type: 'temperature' | 'humidity', field: 'min' | 'max', value: string) => {
+  const handleThresholdChange = async (zoneId: string, type: 'temperature' | 'humidity' | 'vpd', field: 'min' | 'max', value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
     const zone = zones.find(z => z.id === zoneId);
     if (!zone) return;
@@ -223,45 +279,66 @@ export default function ZoneSensorLink({
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
+                        <Label className="flex items-center gap-2 whitespace-nowrap">
                           <Thermometer className="h-4 w-4" />
                           Temperature (°C)
                         </Label>
                         <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            type="number"
+                          <CustomNumberInput
                             placeholder="Min"
                             value={zone.sensorAlertThresholds?.temperature?.min || ''}
-                            onChange={(e) => handleThresholdChange(zone.id, 'temperature', 'min', e.target.value)}
+                            onChange={(value) => handleThresholdChange(zone.id, 'temperature', 'min', value)}
+                            step="0.1"
                           />
-                          <Input
-                            type="number"
+                          <CustomNumberInput
                             placeholder="Max"
                             value={zone.sensorAlertThresholds?.temperature?.max || ''}
-                            onChange={(e) => handleThresholdChange(zone.id, 'temperature', 'max', e.target.value)}
+                            onChange={(value) => handleThresholdChange(zone.id, 'temperature', 'max', value)}
+                            step="0.1"
                           />
                         </div>
                       </div>
                       
                       <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
+                        <Label className="flex items-center gap-2 whitespace-nowrap">
                           <Droplets className="h-4 w-4" />
                           Humidity (%)
                         </Label>
                         <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            type="number"
+                          <CustomNumberInput
                             placeholder="Min"
                             value={zone.sensorAlertThresholds?.humidity?.min || ''}
-                            onChange={(e) => handleThresholdChange(zone.id, 'humidity', 'min', e.target.value)}
+                            onChange={(value) => handleThresholdChange(zone.id, 'humidity', 'min', value)}
+                            step="1"
                           />
-                          <Input
-                            type="number"
+                          <CustomNumberInput
                             placeholder="Max"
                             value={zone.sensorAlertThresholds?.humidity?.max || ''}
-                            onChange={(e) => handleThresholdChange(zone.id, 'humidity', 'max', e.target.value)}
+                            onChange={(value) => handleThresholdChange(zone.id, 'humidity', 'max', value)}
+                            step="1"
                           />
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 whitespace-nowrap">
+                        <Wind className="h-4 w-4" />
+                        VPD (kPa)
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <CustomNumberInput
+                          placeholder="Min"
+                          value={zone.sensorAlertThresholds?.vpd?.min || ''}
+                          onChange={(value) => handleThresholdChange(zone.id, 'vpd', 'min', value)}
+                          step="0.01"
+                        />
+                        <CustomNumberInput
+                          placeholder="Max"
+                          value={zone.sensorAlertThresholds?.vpd?.max || ''}
+                          onChange={(value) => handleThresholdChange(zone.id, 'vpd', 'max', value)}
+                          step="0.01"
+                        />
                       </div>
                     </div>
                   </div>

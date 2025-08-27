@@ -8,38 +8,33 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { renderForecastedMessage } from '@/lib/renderForecastedMessage';
 import LogDateField from '../app/logs/[id]/LogDateField';
 
-function getLogColor(type: string) {
-  switch (type) {
-    case "WATERING":
-      return "bg-blue-600";
-    case "ENVIRONMENTAL":
-      return "bg-cyan-600";
-    case "LST":
-      return "bg-lime-600";
-    case "HST":
-      return "bg-green-700";
-    case "HARVEST":
-      return "bg-green-600";
-    case "DRYING":
-      return "bg-yellow-600 text-black";
-    case "PEST STRESS DISEASE":
-      return "bg-red-600";
-    case "TRANSPLANT":
-      return "bg-indigo-600";
-    case "TRANSFER":
-      return "bg-indigo-500";
-    case "GERMINATION":
-      return "bg-emerald-600";
-    case "CLONING":
-      return "bg-purple-600";
-    case "TREATMENT":
-      return "bg-pink-600";
-    case "EQUIPMENT":
-      return "bg-amber-500 text-black";
-    default:
-      return "bg-dark-bg-primary text-dark-text-secondary";
-  }
-}
+const getLogColor = (type: string) => {
+  const colors: Record<string, string> = {
+    WATERING: 'bg-blue-500',
+    ENVIRONMENTAL: 'bg-green-500',
+    LST: 'bg-purple-500',
+    HST: 'bg-orange-500',
+    HARVEST: 'bg-yellow-500',
+    DRYING: 'bg-red-500',
+    PEST_STRESS_DISEASE: 'bg-red-600',
+    PEST_DISEASE: 'bg-red-600',
+    TRANSPLANT: 'bg-green-600',
+    TRANSFER: 'bg-blue-600',
+    GERMINATION: 'bg-green-400',
+    CLONING: 'bg-purple-400',
+    INSPECTION: 'bg-yellow-400',
+    TREATMENT: 'bg-red-400',
+    STRESS: 'bg-orange-400',
+    EQUIPMENT: 'bg-gray-500',
+    CUSTOM: 'bg-gray-400',
+    FLUSHING: 'bg-blue-400',
+    GENERAL: 'bg-gray-300',
+    WEATHER_ALERT: 'bg-red-500',
+    SENSOR_ALERT: 'bg-orange-500',
+    CHANGE_LOG: 'bg-garden-500',
+  };
+  return colors[type] || 'bg-gray-400';
+};
 
 interface CalendarProps {
   month?: Date; // Defaults to current month if not provided
@@ -96,6 +91,47 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   const [selectedDayDetails, setSelectedDayDetails] = useState<{ date: Date, logs: any[], alerts: any } | null>(null);
+  const [expandedDropdowns, setExpandedDropdowns] = useState<{ [dateKey: string]: { [type: string]: boolean } }>({});
+
+  // Helper function to group logs by type
+  const groupLogsByType = (logs: any[]) => {
+    const grouped = logs.reduce((acc: any, log: any) => {
+      const type = log.type || 'OTHER';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(log);
+      return acc;
+    }, {});
+    
+    return grouped;
+  };
+
+  // Helper function to toggle dropdown
+  const toggleDropdown = (dateKey: string, type: string) => {
+    setExpandedDropdowns(prev => ({
+      ...prev,
+      [dateKey]: {
+        ...prev[dateKey],
+        [type]: !prev[dateKey]?.[type]
+      }
+    }));
+  };
+
+  // Close all dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setExpandedDropdowns({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch locations on popover open
   React.useEffect(() => {
@@ -229,7 +265,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       </button>
                       <Link
                         href={`/gardens/${info.gardenId}`}
-                        className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="font-semibold text-emerald-200 hover:underline focus:outline-none focus:ring-2 focus:ring-garden-500"
                         title={`Go to ${gardenName}`}
                       >
                         {gardenName}
@@ -237,7 +273,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="font-semibold text-emerald-400 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
+                            <span className="font-semibold text-garden-500 ml-1 cursor-pointer">{info.roomNames.size} room/plot{info.roomNames.size !== 1 ? 's' : ''}</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             {(() => {
@@ -291,7 +327,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                               }
                               return uniqueZones.map((zone: any, idx: number, arr: any[]) =>
                                 zone.id && zone.gardenId && zone.roomId ? (
-                                  <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-emerald-400 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
+                                  <Link key={zone.id} href={`/gardens/${zone.gardenId}/rooms/${zone.roomId}/zones/${zone.id}`} className="underline text-garden-500 hover:text-emerald-200 mr-1">{zone.name}{idx < arr.length - 1 ? ', ' : ''}</Link>
                                 ) : (
                                   <span key={zone.name + idx}>{zone.name}{idx < arr.length - 1 ? ', ' : ''}</span>
                                 )
@@ -303,7 +339,7 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="font-semibold text-emerald-600 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
+                            <span className="font-semibold text-garden-500 ml-1 cursor-pointer">{info.plantNames.size} plant{info.plantNames.size !== 1 ? 's' : ''}</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             {(() => {
@@ -445,18 +481,49 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                 </div>
               )}
               <div className="w-full flex-1 flex flex-col gap-1">
-                {logs
-                  .filter((log) => log.title !== 'WEATHER_ALERT')
-                  .map((log) => (
-                    <Link
-                      key={log.id}
-                      href={`/logs/${log.id}`}
-                      className={`${getLogColor(log.type || "")} rounded px-1 py-0.5 text-xs truncate cursor-pointer hover:underline`}
-                      title={log.notes || log.title}
-                    >
-                      {log.title}
-                    </Link>
-                  ))}
+                {(() => {
+                  const filteredLogs = logs.filter((log) => log.title !== 'WEATHER_ALERT');
+                  const groupedLogs = groupLogsByType(filteredLogs);
+                  
+                  return Object.entries(groupedLogs).map(([type, typeLogs]) => {
+                    const logs = typeLogs as any[];
+                    const isExpanded = expandedDropdowns[dateKey]?.[type] || false;
+                    const logCount = logs.length;
+                    
+                    return (
+                      <div key={type} className="relative dropdown-container">
+                        <button
+                          onClick={() => toggleDropdown(dateKey, type)}
+                          className={`w-full text-left px-1 py-0.5 text-xs rounded flex items-center justify-between ${getLogColor(type)} hover:opacity-80 transition-opacity`}
+                          title={`${type} (${logCount} ${logCount === 1 ? 'entry' : 'entries'})`}
+                        >
+                          <span className="truncate">{type}</span>
+                          <span className="ml-1 text-xs opacity-75">({logCount})</span>
+                          <ChevronDown 
+                            className={`w-3 h-3 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                        
+                        {isExpanded && (
+                          <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-dark-bg-secondary border border-dark-border rounded shadow-lg p-2 max-h-32 overflow-y-auto">
+                            {logs.map((log, idx) => (
+                              <Link
+                                key={log.id || idx}
+                                href={`/logs/${log.id}`}
+                                className="block text-xs py-1 px-2 rounded hover:bg-dark-bg-primary transition-colors mb-1 last:mb-0"
+                                title={log.notes || log.title}
+                              >
+                                <div className="font-medium text-dark-text-primary truncate">
+                                  {log.notes || log.title || 'Log entry'}
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
                 {/* Custom note pills from backend */}
                 {calendarNotes.filter(note => {
                   return note.date === dateKey;
@@ -694,17 +761,17 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                   <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
                     <span>wAlert</span>
                     <span className="text-emerald-200">{gardenName}</span>
-                    <span className="font-semibold text-emerald-400 ml-1">{Array.from(new Set(details.map((d: any) => d.plantName))).length} plants</span>
+                    <span className="font-semibold text-garden-500 ml-1">{Array.from(new Set(details.map((d: any) => d.plantName))).length} plants</span>
                   </div>
                   <div className="mb-1">
-                    <span className="font-semibold">Plants:</span> <span className="text-emerald-400">{Array.from(new Set(details.map((d: any) => d.plantName))).join(", ")}</span>
+                    <span className="font-semibold">Plants:</span> <span className="text-garden-500">{Array.from(new Set(details.map((d: any) => d.plantName))).join(", ")}</span>
                   </div>
                   {details.map((d: any, idx: number) => (
                     <div key={idx} className="mb-2 border-b border-red-900 pb-2 last:border-b-0 last:pb-0">
                       <div className="font-bold text-red-200 mb-1">{d.type}{d.alertTypes?.length ? `: ${d.alertTypes.join(", ")}` : ""}</div>
                       {d.roomName && <div><span className="font-semibold">Room:</span> {d.roomName}</div>}
                       {d.zoneName && <div><span className="font-semibold">Zone:</span> {d.zoneName}</div>}
-                      {d.plantName && <div><span className="font-semibold">Plant:</span> <span className="text-emerald-400">{d.plantName}</span></div>}
+                      {d.plantName && <div><span className="font-semibold">Plant:</span> <span className="text-garden-500">{d.plantName}</span></div>}
                       {d.createdAt && <div><span className="font-semibold">Time:</span> <LogDateField date={d.createdAt} timezone={d.timezone} /></div>}
                       {d.message && <div className="mt-2 whitespace-pre-line">{renderForecastedMessage(d.message)}</div>}
                       {d.alertTypes && d.alertTypes.length > 0 && (
@@ -734,15 +801,44 @@ export const MonthlyCalendar: React.FC<CalendarProps> = ({ month: initialMonth, 
                 <div className="text-dark-text-secondary">No logs or alerts for this day.</div>
               ) : (
                 <>
-                  {selectedDayDetails.logs.map((log, idx) => (
-                    <Link key={log.id || idx} href={`/logs/${log.id}`} className="block rounded bg-dark-bg-primary border border-garden-700 p-2 text-xs mb-2 hover:bg-dark-bg-hover transition-colors">
-                      <div className="font-bold mb-1 flex items-center gap-2">
-                        <span className={getLogColor(log.type || '') + ' w-2 h-2 rounded-full inline-block'}></span>
-                        <span>{log.type || 'Log'}</span>
-                      </div>
-                      <div className="text-sm">{log.notes}</div>
-                    </Link>
-                  ))}
+                  {(() => {
+                    const filteredLogs = selectedDayDetails.logs.filter((log: any) => log.title !== 'WEATHER_ALERT');
+                    const groupedLogs = groupLogsByType(filteredLogs);
+                    
+                    return Object.entries(groupedLogs).map(([type, typeLogs]) => {
+                      const logs = typeLogs as any[];
+                      const isExpanded = expandedDropdowns[format(selectedDayDetails.date, "yyyy-MM-dd")]?.[type] || false;
+                      const logCount = logs.length;
+                      
+                      return (
+                        <div key={type} className="space-y-2 dropdown-container">
+                          <button
+                            onClick={() => toggleDropdown(format(selectedDayDetails.date, "yyyy-MM-dd"), type)}
+                            className="w-full text-left p-2 rounded bg-dark-bg-primary border border-dark-border hover:bg-dark-bg-hover transition-colors flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`w-3 h-3 rounded-full ${getLogColor(type)}`}></span>
+                              <span className="font-bold">{type}</span>
+                              <span className="text-sm text-dark-text-secondary">({logCount})</span>
+                            </div>
+                            <ChevronDown 
+                              className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+                          
+                          {isExpanded && (
+                            <div className="ml-4 space-y-2">
+                              {logs.map((log, idx) => (
+                                <Link key={log.id || idx} href={`/logs/${log.id}`} className="block rounded bg-dark-bg-secondary border border-dark-border p-2 text-xs hover:bg-dark-bg-hover transition-colors">
+                                  <div className="text-sm">{log.notes || log.title || 'Log entry'}</div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                   {selectedDayDetails.alerts && selectedDayDetails.alerts.details && selectedDayDetails.alerts.details.length > 0 && (
                     selectedDayDetails.alerts.details.map((alert: any, idx: number) => (
                       <Link key={alert.id || idx} href={alert.plantId && alert.gardenId ? `/gardens/${alert.gardenId}/plants/${alert.plantId}` : '#'} className="block rounded bg-dark-bg-primary border border-red-700 p-2 text-xs mb-2 hover:bg-dark-bg-hover transition-colors">

@@ -185,6 +185,8 @@ model Log {
   runoffPpm    Float?
   waterPpm     Float?
   waterTemp    Float?
+  equipmentId  String?
+  equipment    Equipment? @relation(fields: [equipmentId], references: [id])
 
   // Watering-specific fields
   waterSource           String?
@@ -209,6 +211,15 @@ model Log {
   sourceWaterTemperatureUnit String?
   nutrientWaterTemperature Float?
   nutrientWaterTemperatureUnit String?
+
+  // Tea Brewer fields
+  teaBrewSize          Float?
+  teaWaterTemp         Float?
+  teaGrowthStage       String?
+  teaEarthwormCastings String?
+  teaFishKelpExtract   String?
+  teaMolasses          String?
+  teaBrewDuration      String?
 
   // Relations
   garden       Garden?    @relation(fields: [gardenId], references: [id])
@@ -360,6 +371,7 @@ model GardenMember {
 model Equipment {
   id          String   @id @default(cuid())
   name        String
+  equipmentType String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -372,6 +384,7 @@ model Equipment {
   zone        Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   maintenanceTasks MaintenanceTask[]
+  logs        Log[]
 }
 
 model CleaningSOP {
@@ -559,6 +572,7 @@ model GoveeReading {
   timestamp   DateTime @default(now())
   temperature Float?   // Temperature in Celsius
   humidity    Float?   // Humidity percentage
+  vpd         Float?   // Vapor Pressure Deficit in kPa
   battery     Int?     // Battery level if applicable
   rawData     Json?    // Raw data from Govee API
   source      String   @default("API") // API, MQTT, etc.
@@ -657,6 +671,8 @@ enum LogType {
   WEATHER_ALERT
   SENSOR_ALERT
   NOTE
+  MAINTENANCE_TASK
+  CHANGE_LOG
 }
 
 enum LSTIntensity {

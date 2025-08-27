@@ -223,7 +223,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
   // --- Pagination state ---
   // { [plantId]: { page: number, pageSize: number } }
   const [plantPagination, setPlantPagination] = useState<Record<string, { page: number; pageSize: number }>>({});
-  const PAGE_SIZE_OPTIONS = [1, 3, 10, 25, 50];
+  const PAGE_SIZE_OPTIONS = [1, 2, 3, 5, 10, 25, 50];
   const DEFAULT_PAGE_SIZE = 10;
 
   // Extract invite notifications
@@ -296,7 +296,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
           <button
             onClick={handleMarkAllRead}
             disabled={loading || localNotifications.length === 0}
-            className="px-3 py-1 rounded bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-600 disabled:opacity-50"
+            className="px-3 py-1 rounded bg-emerald-700 text-white text-sm font-medium hover:bg-garden-500 disabled:opacity-50"
           >
             {loading ? 'Marking...' : 'Mark all as read'}
           </button>
@@ -416,7 +416,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                         >
                                                                           <div className="flex items-center justify-between">
                                                                             <div className="font-semibold text-garden-400">{n.title}</div>
-                                                                            <div className="flex flex-col items-end gap-1">
+                                                                            <div className="flex flex-col items-end ml-4">
                                                                               <div className="text-xs text-dark-text-secondary">
                                                                                 <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
                                                                               </div>
@@ -429,7 +429,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                             </div>
                                                                           )}
                                                                           <div className="mt-1 space-y-1">
-                                                                            {renderCurrentAlertLabels(n.message)}
+                                                                            {renderForecastedMessage(n.message.replace(/\n\s*• Type:.*\n?/g, '\n'))}
                                                                           </div>
                                                                         </a>
                                                                       );
@@ -441,7 +441,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                         >
                                                                           <div className="flex items-center justify-between">
                                                                             <div className="font-semibold text-garden-400">{n.title}</div>
-                                                                            <div className="flex items-center gap-2">
+                                                                            <div className="flex flex-col items-end ml-4">
                                                                               <div className="text-xs text-dark-text-secondary">
                                                                                 <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
                                                                               </div>
@@ -467,7 +467,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
                                                                               </div>
                                                                             )}
                                                                           </div>
-                                                                          <div className="mt-4 text-xs text-emerald-400">
+                                                                          <div className="mt-4 text-xs text-garden-500">
                                                                             <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
                                                                           </div>
                                                                         </li>
@@ -550,7 +550,7 @@ export default function NotificationsList({ notifications, userEmail }: Notifica
             >
               <div className="flex items-center justify-between">
                 <div className="font-semibold text-garden-400">{n.title}</div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-end ml-4">
                   <div className="text-xs text-dark-text-secondary">
                     <LogDateField date={n.createdAt} timezone={n.meta?.timezone} />
                   </div>

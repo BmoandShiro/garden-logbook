@@ -25,6 +25,9 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV HUSKY=0
 
+# Install cron and curl
+RUN apk add --no-cache dcron curl bash
+
 # Copy necessary files from builder
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
@@ -39,9 +42,21 @@ RUN npm install --omit=dev --ignore-scripts
 COPY prisma ./prisma/
 RUN npx prisma generate
 
+# Copy cron scripts and make them executable
+COPY scripts/cron.sh /app/scripts/cron.sh
+COPY scripts/cron-weather.sh /app/scripts/cron-weather.sh
+COPY scripts/cron-sensors.sh /app/scripts/cron-sensors.sh
+RUN chmod +x /app/scripts/cron.sh /app/scripts/cron-weather.sh /app/scripts/cron-sensors.sh
+
+# Create cron jobs for different frequencies
+RUN echo "0 0,4,8,12,16,20 * * * /app/scripts/cron-weather.sh >> /var/log/cron.log 2>&1" > /etc/crontabs/root && \
+    echo "0 9 * * * /app/scripts/cron.sh >> /var/log/cron.log 2>&1" >> /etc/crontabs/root && \
+    echo "*/15 * * * * /app/scripts/cron-sensors.sh >> /var/log/cron.log 2>&1" >> /etc/crontabs/root
+
 EXPOSE 3000
 
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["npm", "start"] 
+# Start cron daemon and the application
+CMD ["sh", "-c", "crond -f -d 8 & npm start"] 

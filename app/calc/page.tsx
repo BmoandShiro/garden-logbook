@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CFMCalculator from './components/CFMCalculator';
 import Jacks321Calculator from './components/Jacks321Calculator';
+import TeaBrewerCalculator from './components/TeaBrewerCalculator';
 
 export default function CalculatorPage() {
   return (
@@ -20,12 +21,16 @@ export default function CalculatorPage() {
         <TabsList className="bg-dark-bg-secondary border-dark-border">
           <TabsTrigger value="cfm">CFM Calculator</TabsTrigger>
           <TabsTrigger value="jacks">Jacks 3-2-1 Calculator</TabsTrigger>
+          <TabsTrigger value="tea">Tea Brewer Calculator</TabsTrigger>
         </TabsList>
         <TabsContent value="cfm" className="mt-6">
           <CFMCalculator />
         </TabsContent>
         <TabsContent value="jacks" className="mt-6">
           <Jacks321Calculator />
+        </TabsContent>
+        <TabsContent value="tea" className="mt-6">
+          <TeaBrewerCalculator />
         </TabsContent>
       </Tabs>
     </div>

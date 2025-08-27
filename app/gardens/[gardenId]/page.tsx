@@ -95,13 +95,25 @@ export default async function GardenPage({ params }: GardenPageProps) {
   // Only show logs for rooms the user has access to in this garden
   const accessibleRoomIds = garden.rooms.map((room: { id: string }) => room.id);
 
-  // Fetch 3 most recent logs for each room
+  // Fetch 10 most recent logs for each room (increased from 3)
   const logsByRoomId: Record<string, any[]> = {};
   for (const room of garden.rooms) {
-    const roomLogs = await prisma.log.findMany({
+    // Get all zones in this room
+    const roomZones = await prisma.zone.findMany({
       where: { roomId: room.id },
+      select: { id: true }
+    });
+    const zoneIds = roomZones.map((zone: { id: string }) => zone.id);
+
+    const roomLogs = await prisma.log.findMany({
+      where: { 
+        OR: [
+          { roomId: room.id },
+          { zoneId: { in: zoneIds } }
+        ]
+      },
       orderBy: { logDate: 'desc' },
-      take: 3,
+      take: 10,
       include: {
         plant: { select: { name: true } },
         garden: { select: { name: true, timezone: true, zipcode: true } },
@@ -126,7 +138,10 @@ export default async function GardenPage({ params }: GardenPageProps) {
   const logsRaw = await prisma.log.findMany({
     where: {
       gardenId: gardenId,
-      roomId: { in: accessibleRoomIds }
+      OR: [
+        { roomId: { in: accessibleRoomIds } },
+        { roomId: null } // Include logs that don't have roomId set (like garden-level changes)
+      ]
     },
     orderBy: { logDate: 'desc' },
     include: {

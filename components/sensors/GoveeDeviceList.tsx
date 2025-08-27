@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle2, RefreshCw, Info, Battery, Clock, MapPin, Wif
 import { Spinner } from '@/components/ui/spinner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SensorChart } from './SensorChart';
+import { calculateVPDFromFahrenheit, formatVPD, getVPDStatus } from '@/lib/vpdCalculator';
 
 interface GoveeDeviceListProps {
   devices: GoveeDevice[];
@@ -87,7 +88,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
   };
 
   const getBatteryColor = (level: number) => {
-    if (level > 50) return 'text-emerald-400';
+    if (level > 50) return 'text-garden-500';
     if (level > 20) return 'text-yellow-400';
     return 'text-red-400';
   };
@@ -135,7 +136,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
               <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="sm:mr-4">
-                    <CardTitle className="text-emerald-400 text-xl font-bold">{device.name}</CardTitle>
+                    <CardTitle className="text-garden-500 text-xl font-bold">{device.name}</CardTitle>
                     <CardDescription className="text-gray-400">Device ID: {device.deviceId}</CardDescription>
                   </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -164,7 +165,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     {parsed.online !== false ? (
-                      <Wifi className="h-5 w-5 text-emerald-400" />
+                      <Wifi className="h-5 w-5 text-garden-500" />
                     ) : (
                       <WifiOff className="h-5 w-5 text-red-500" />
                     )}
@@ -193,7 +194,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                 )}
 
                 {/* Sensor Readings */}
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                   <div className="flex flex-col items-center">
                     <span className="text-gray-400 text-xs">Temperature</span>
                     <span className="text-2xl font-bold text-emerald-300">
@@ -206,8 +207,19 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       {parsed.humidity !== undefined ? `${parsed.humidity}%` : '--'}
                     </span>
                   </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-400 text-xs">VPD</span>
+                    <span className="text-2xl font-bold text-emerald-300">
+                      {parsed.temperature && parsed.humidity 
+                        ? formatVPD(calculateVPDFromFahrenheit(parsed.temperature, parsed.humidity))
+                        : '--'
+                      }
+                    </span>
+                  </div>
+                  </div>
 
                     {/* 24h High/Low */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                     <div className="text-center text-xs text-gray-400">
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.tempHigh24h?.toFixed(1) ?? '--'}°F</span></p>
                       <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.tempLow24h?.toFixed(1) ?? '--'}°F</span></p>
@@ -216,6 +228,10 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                       <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.humidityHigh24h?.toFixed(1) ?? '--'}%</span></p>
                       <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.humidityLow24h?.toFixed(1) ?? '--'}%</span></p>
                     </div>
+                             <div className="text-center text-xs text-gray-400">
+           <p>24h High: <span className="font-medium text-emerald-300">{data?.history?.vpdHigh24h?.toFixed(2) ?? '--'}</span></p>
+           <p>24h Low: <span className="font-medium text-emerald-300">{data?.history?.vpdLow24h?.toFixed(2) ?? '--'}</span></p>
+         </div>
                 </div>
 
                 {/* Device Status */}
@@ -240,7 +256,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
       {modalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="bg-[#23282c] p-6 rounded-lg shadow-lg max-w-lg w-full">
-            <h3 className="text-lg font-bold text-emerald-400 mb-2">Raw Sensor Data</h3>
+            <h3 className="text-lg font-bold text-garden-500 mb-2">Raw Sensor Data</h3>
             <pre className="bg-[#181c1f] text-gray-200 p-4 rounded overflow-x-auto max-h-96">
               {JSON.stringify(modalData, null, 2)}
             </pre>

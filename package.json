@@ -17,7 +17,8 @@
     "check:migrations": "ts-node scripts/check-migrations.ts",
     "prepare": "husky",
     "precommit": "ts-node scripts/check-migrations.ts && prisma validate",
-    "cron": "ts-node -r tsconfig-paths/register start-cron.ts"
+    "cron": "ts-node -r tsconfig-paths/register start-cron.ts",
+    "check:maintenance": "ts-node scripts/check-maintenance.ts"
   },
   "dependencies": {
     "@auth/core": "0.34.2",

@@ -6,6 +6,7 @@ import { Log, LogType } from '@prisma/client';
 import { format } from 'date-fns';
 import LogFilters from './LogFilters';
 import LogsList from './LogsList';
+import { groupLogs } from './LogsList';
 import CreateLogModal from './CreateLogModal';
 import UnitPreferences from './UnitPreferences';
 import { Settings } from 'lucide-react';
@@ -107,7 +108,7 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
   const [plants, setPlants] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250, 500, 1000];
+  const PAGE_SIZE_OPTIONS = [1, 2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
 
   // On mount, initialize filters from query params if present
   useEffect(() => {
@@ -203,10 +204,15 @@ export default function LogsDisplay({ userId }: LogsDisplayProps) {
     refetchOnWindowFocus: true,
   });
 
-  const totalPages = logs && logs.length ? Math.max(1, Math.ceil(logs.length / pageSize)) : 1;
+  // Group the logs first, then paginate the groups
+  const groupedLogs = logs ? groupLogs(logs) : [];
+  const totalPages = groupedLogs.length ? Math.max(1, Math.ceil(groupedLogs.length / pageSize)) : 1;
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedLogs = logs ? logs.slice(startIndex, endIndex) : [];
+  const paginatedGroups = groupedLogs.slice(startIndex, endIndex);
+  
+  // Flatten the paginated groups back to individual logs for LogsList
+  const paginatedLogs = paginatedGroups.flat();
 
   if (isLoading) {
     return (
