@@ -2,112 +2,91 @@
 
 A comprehensive, self-hosted web application for tracking and managing garden activities, plant health, environmental monitoring, and maintenance tasks. Built for serious growers who want complete control over their data.
 
-![Garden Logbook Dashboard](Images/SharpShot_20260121_162042.png)
-*Main dashboard showing garden overview and quick statistics*
+![Sign In Page](Images/SharpShot_20260121_162042.png)
+*Secure authentication with multiple sign-in options: Google OAuth, GitHub OAuth, and Discord OAuth*
 
 ## 🌟 Key Features
 
 ### 🔐 Secure Authentication
 Multiple sign-in options including email magic links with 6-digit codes, Google OAuth, GitHub OAuth, and Discord OAuth. All authentication is handled securely with NextAuth.js.
 
-![Authentication Options](Images/SharpShot_20260121_163620.png)
-*Flexible authentication options for secure access*
+![Weather Monitoring](Images/SharpShot_20260121_163620.png)
+*Weather page showing real-time weather status for multiple gardens with active alerts and forecast information*
 
 ### 🌱 Plant Management
 Track plants across multiple gardens and rooms with detailed growth monitoring, health tracking, and strain management.
 
-![Plant Management](Images/SharpShot_20260121_163633.png)
-*Comprehensive plant tracking with growth stages and health monitoring*
+![Sensor Charts](Images/SharpShot_20260121_163633.png)
+*Environmental monitoring dashboard with time-series graphs for Temperature (°F), Humidity (%), and VPD (kPa) with adjustable date ranges*
 
 ### 📅 Activity Calendar
 Visual calendar view showing all plant activities, weather events, and custom notes with mobile-friendly interface.
 
-![Activity Calendar](Images/SharpShot_20260121_163707.png)
-*Interactive calendar view of all garden activities and events*
+![Calculator Overview](Images/SharpShot_20260121_163707.png)
+*Professional Nutrient Calculators page showcasing Jack's 3-2-1 Calculator and Tea Brewer Calculator features*
 
 ### 🌦️ Environmental Monitoring
 Real-time weather tracking and alerts with Govee sensor integration for precise environmental control.
 
-![Weather Monitoring](Images/SharpShot_20260121_163722.png)
-*Real-time weather data and forecast integration*
+![Equipment Management](Images/SharpShot_20260121_163722.png)
+*Equipment detail page showing RO System information, maintenance tasks, and equipment logs*
 
 ### 📊 Sensor Dashboard
 Monitor environmental sensors with real-time readings, battery status, and zone integration.
 
-![Sensor Dashboard](Images/SharpShot_20260121_163852.png)
-*Comprehensive sensor dashboard with device status and readings*
+![Tea Brewer Calculator](Images/SharpShot_20260121_163852.png)
+*Tea Brewer Calculator interface with growth stage selection, brew size input, water temperature settings, and calculated recipe amounts*
 
 ### 🧮 Grow Calculators
 Professional-grade calculators for CFM (airflow), Jack's 3-2-1 nutrients, and compost tea brewing.
 
-![CFM Calculator](Images/SharpShot_20260121_163907.png)
-*CFM calculator for determining proper ventilation requirements*
+![My Gardens](Images/SharpShot_20260121_163907.png)
+*My Gardens page displaying garden cards with room counts, member information, and recent activity logs*
 
-![Jacks 3-2-1 Calculator](Images/SharpShot_20260121_163918.png)
-*Advanced nutrient calculator with Jack's 3-2-1 formula and luxury uptake mode*
+![Activity Calendar](Images/SharpShot_20260121_163918.png)
+*Calendar view for January 2026 showing weather alerts and plant activities with day-by-day event tracking*
 
-![Tea Brewer Calculator](Images/SharpShot_20260121_164138.png)
-*Compost tea brewer calculator with growth stage-specific recipes*
+![Sensor Dashboard](Images/SharpShot_20260121_164138.png)
+*Sensor Dashboard showing total sensors, linked zones, active zones, total readings, and recent sensor activity with zone status*
 
-### 🏗️ Garden Organization
-Multi-garden and room management with zones, equipment tracking, and detailed organization.
+![CFM Calculator](Images/SharpShot_20260121_164205.png)
+*CFM Calculator for calculating proper ventilation requirements with room dimensions, exchange intervals, and carbon filter options*
 
-![Garden Overview](Images/SharpShot_20260121_164205.png)
-*Garden overview showing rooms, zones, and plant distribution*
+![Govee Device Management](Images/SharpShot_20260121_164306.png)
+*Govee Device Management page showing device status, online/offline indicators, temperature, humidity, and VPD readings*
 
-![Room Management](Images/SharpShot_20260121_164306.png)
-*Detailed room view with zones, equipment, and plant organization*
+![Jacks 3-2-1 Calculator](Images/SharpShot_20260121_164342.png)
+*Jacks 3-2-1 Calculator showing nutrient mix calculations for Vegetative stage with Part A, Part B, and Epsom Salt amounts*
 
-![Zone Details](Images/SharpShot_20260121_164342.png)
-*Zone management with sensor integration and plant assignments*
+![Nutrient pH Ranges](Images/SharpShot_20260121_164354.png)
+*Nutrient Uptake pH Ranges settings with CO2 enrichment toggles, PPM scale options, solution volume inputs, and symptom-based adjustments*
 
-### 📝 Activity Logging
-Comprehensive logging system for watering, feeding, training, pest management, and plant health.
+![Notifications](Images/SharpShot_20260121_164407.png)
+*Notifications page displaying forecasted weather alerts with detailed conditions for specific zones and plants*
 
-![Activity Logs](Images/SharpShot_20260121_164354.png)
-*Detailed activity logging with custom templates and data entry*
+![Jacks Calculator Table](Images/SharpShot_20260121_164421.png)
+*Jacks 3-2-1 Calculator main view showing nutrient schedule table for all growth stages from Propagation to Flush*
 
-![Log Entry Form](Images/SharpShot_20260121_164407.png)
-*Customizable log entry forms with field validation*
+![Garden Detail View](Images/SharpShot_20260121_164641.png)
+*BMO garden detail page showing rooms/plots, plant counts, members, and comprehensive activity logs with timestamps*
 
-### ⚠️ Smart Alerts
-Weather-based notifications for frost, heat, drought, and other conditions with customizable thresholds.
+![Room Management](Images/SharpShot_20260121_172149.png)
+*Room detail view (Yard) showing equipment, cleaning SOPs, maintenance tasks, and zone management with activity logs*
 
-![Weather Alerts](Images/SharpShot_20260121_164421.png)
-*Weather alert system with customizable thresholds and notifications*
+![Garage Room View](Images/SharpShot_20260121_172230.png)
+*Garage room view displaying equipment list, cleaning SOPs, maintenance tasks, and available zones (Foyer, Main Room, Tent)*
 
-### 🔧 Equipment & Maintenance
-Track equipment usage, maintenance schedules, and cleaning procedures with detailed SOPs.
+![Zone Detail View](Images/SharpShot_20260121_172259.png)
+*Main Room zone detail view showing zone statistics, weather alert settings, and equipment list with maintenance task warnings*
 
-![Equipment Management](Images/SharpShot_20260121_164641.png)
-*Equipment tracking with maintenance schedules and SOPs*
+![Feature Overview](Images/SharpShot_20260121_172432.png)
+*Professional Garden Management Features overview page showcasing all 11 key features with descriptions and sub-features*
 
-### 📱 Mobile-Friendly
-Fully responsive design optimized for use in the garden on any device.
+![Log Entries](Images/SharpShot_20260121_172745.png)
+*Log Entries page with advanced search and filtering options, displaying sensor alerts and activity logs with detailed timestamps*
 
-![Mobile View](Images/SharpShot_20260121_172149.png)
-*Mobile-optimized interface for garden use*
-
-### 📈 Analytics & Insights
-Dashboard analytics showing garden overview, plant statistics, and environmental insights.
-
-![Dashboard Analytics](Images/SharpShot_20260121_172230.png)
-*Comprehensive analytics dashboard with garden statistics*
-
-![Plant Statistics](Images/SharpShot_20260121_172259.png)
-*Detailed plant statistics and growth tracking*
-
-### 🌡️ Sensor Integration
-Govee device integration for real-time temperature, humidity, and VPD monitoring.
-
-![Sensor Integration](Images/SharpShot_20260121_172432.png)
-*Govee sensor integration with real-time readings*
-
-![Sensor Charts](Images/SharpShot_20260121_172745.png)
-*Historical sensor data visualization with charts*
-
-![Sensor Settings](Images/SharpShot_20260121_172753.png)
-*Sensor configuration and zone linking interface*
+![Dashboard](Images/SharpShot_20260121_172753.png)
+*Main Dashboard showing plant statistics, weather alerts summary, garden overview, and recent activity*
 
 ---
 
