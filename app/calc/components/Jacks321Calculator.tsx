@@ -489,7 +489,7 @@ const CustomNumberInput = ({
         placeholder={placeholder}
         value={value !== undefined && value !== null && !isNaN(value) ? value : ''}
         onChange={handleChange}
-        className="w-full px-3 py-2 text-sm bg-dark-bg-secondary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+        className="w-full px-3 py-2 text-sm bg-dark-bg-secondary border border-dark-border rounded focus:border-garden-500 focus:ring-1 focus:ring-garden-500 focus:outline-none pr-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none [-moz-appearance:textfield]"
       />
       <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <button
@@ -1434,7 +1434,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             <span className="font-medium">Extreme CO₂ Optimization Mode (Advanced Growers Only)</span>
           </div>
           <ChevronDown
-            className={`h-4 w-4 transition-transform ${
+            className={`h-4 w-4 transition-transform text-garden-500 ${
               isAdvancedOpen ? 'transform rotate-180' : ''
             }`}
           />
@@ -1485,7 +1485,7 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
             <span className="text-lg">📊</span>
             <span className="font-medium">Nutrient Uptake pH Ranges</span>
           </div>
-          <ChevronDown className="h-4 w-4 transition-transform" />
+          <ChevronDown className="h-4 w-4 transition-transform text-garden-500" />
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="p-4 space-y-4">
@@ -2123,9 +2123,9 @@ Recommend increasing total PPM by +200 PPM, maintaining current nutrient ratios.
                 <span>Tea Brewer Calculator</span>
               </div>
               {isTeaBrewerOpen ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-4 w-4 text-garden-500" />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4 text-garden-500" />
               )}
             </Button>
           </CollapsibleTrigger>

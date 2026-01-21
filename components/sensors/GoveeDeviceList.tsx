@@ -153,7 +153,7 @@ export function GoveeDeviceList({ devices: initialDevices }: GoveeDeviceListProp
                     </Button>
                       <CollapsibleTrigger asChild>
                         <Button variant="dark-outline">
-                          <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${expandedCharts[device.id] ? 'rotate-180' : ''}`} />
+                          <ChevronDown className={`h-4 w-4 mr-1 transition-transform text-garden-500 ${expandedCharts[device.id] ? 'rotate-180' : ''}`} />
                           View History
                         </Button>
                       </CollapsibleTrigger>
