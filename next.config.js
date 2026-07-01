@@ -1,11 +1,17 @@
 /** @type {import('next').NextConfig} */
+const basePath = '/gardenlogbook';
+
 const nextConfig = {
   reactStrictMode: true,
+  basePath,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
   images: {
     domains: [
-      'lh3.googleusercontent.com', // Google
-      'avatars.githubusercontent.com', // GitHub
-      'cdn.discordapp.com', // Discord
+      'lh3.googleusercontent.com',
+      'avatars.githubusercontent.com',
+      'cdn.discordapp.com',
     ],
   },
   output: 'standalone',
@@ -15,6 +21,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-}
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig;

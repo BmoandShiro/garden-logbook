@@ -232,6 +232,28 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      const bp = '/gardenlogbook';
+      const origin = new URL(baseUrl).origin;
+
+      if (url.startsWith('/')) {
+        if (url === '/') return `${origin}${bp}`;
+        if (url.startsWith(bp)) return `${origin}${url}`;
+        return `${origin}${bp}${url}`;
+      }
+
+      try {
+        const parsed = new URL(url);
+        if (parsed.origin === origin && !parsed.pathname.startsWith(bp)) {
+          parsed.pathname = `${bp}${parsed.pathname === '/' ? '' : parsed.pathname}`;
+          return parsed.toString();
+        }
+      } catch {
+        // ignore malformed URLs
+      }
+
+      return url.startsWith(baseUrl) ? url : `${origin}${bp}/dashboard`;
+    },
     async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id;

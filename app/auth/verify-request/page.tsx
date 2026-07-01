@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
+import { withBasePath } from '@/lib/paths';
 
 function VerifyRequestContent() {
   const searchParams = useSearchParams();
@@ -44,7 +45,7 @@ function VerifyRequestContent() {
 
       const data = await res.json();
       if (data.success) {
-        window.location.href = data.redirect || '/';
+        window.location.href = data.redirect || withBasePath('/dashboard');
       } else {
         setError(data.error || "The code you entered is incorrect. Please try again.");
       }

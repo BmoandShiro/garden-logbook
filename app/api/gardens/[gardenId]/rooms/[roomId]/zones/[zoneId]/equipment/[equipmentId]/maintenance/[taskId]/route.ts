@@ -106,7 +106,8 @@ export async function PUT(
     // If marking as completed, create a log entry using the new dedicated endpoint
     if (body.completed) {
       // Call the dedicated maintenance log creation endpoint
-      const logResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/maintenance-logs`, {
+      const appOrigin = (process.env.NEXTAUTH_URL || 'http://localhost:3000/gardenlogbook/api/auth').replace(/\/api\/auth\/?$/, '');
+      const logResponse = await fetch(`${appOrigin}/api/maintenance-logs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

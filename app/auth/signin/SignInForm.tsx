@@ -1,13 +1,16 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { withBasePath } from '@/lib/paths';
 
 export default function SignInForm() {
+  const callbackUrl = withBasePath('/dashboard');
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-3">
       <button
-        onClick={() => signIn('google', { callbackUrl: '/' })}
+        onClick={() => signIn('google', { callbackUrl })}
         className="flex w-full items-center justify-center gap-3 rounded-lg bg-dark-bg-primary px-3 py-2 text-sm font-semibold text-dark-text-primary shadow-sm ring-1 ring-dark-border hover:bg-dark-bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-garden-500"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -32,7 +35,7 @@ export default function SignInForm() {
       </button>
 
         <button
-          onClick={() => signIn('github', { callbackUrl: '/' })}
+          onClick={() => signIn('github', { callbackUrl })}
           className="flex w-full items-center justify-center gap-3 rounded-lg bg-dark-bg-primary px-3 py-2 text-sm font-semibold text-dark-text-primary shadow-sm ring-1 ring-dark-border hover:bg-dark-bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-garden-500"
         >
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -42,7 +45,7 @@ export default function SignInForm() {
         </button>
 
         <button
-          onClick={() => signIn('discord', { callbackUrl: '/' })}
+          onClick={() => signIn('discord', { callbackUrl })}
           className="flex w-full items-center justify-center gap-3 rounded-lg bg-dark-bg-primary px-3 py-2 text-sm font-semibold text-dark-text-primary shadow-sm ring-1 ring-dark-border hover:bg-dark-bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-garden-500"
         >
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
