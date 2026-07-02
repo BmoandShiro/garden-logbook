@@ -1,5 +1,6 @@
 services:
   app:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
@@ -38,6 +39,7 @@ services:
 #        condition: service_healthy
 
   db:
+    restart: unless-stopped
     image: postgres:15-alpine
     ports:
       - "5433:5432"
