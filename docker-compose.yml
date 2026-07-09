@@ -7,7 +7,7 @@ services:
       args:
         GOVEE_API_KEY_ENCRYPTION_KEY: ${GOVEE_API_KEY_ENCRYPTION_KEY}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - GOVEE_API_KEY_ENCRYPTION_KEY=cZN/NYhw+exaGAQJVyml/UQ9bVYcQihtq/Z6FcfIx7c=
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/garden
@@ -42,7 +42,7 @@ services:
     restart: unless-stopped
     image: postgres:15-alpine
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
